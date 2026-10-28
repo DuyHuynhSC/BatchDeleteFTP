@@ -69,7 +69,7 @@ public class FtpCleanupService
     public async Task TestConnectionAsync(FtpSettings settings, CancellationToken ct = default)
     {
         await using var client = CreateClient(settings);
-        _logger.Info($"Đang kết nối tới {settings.Host}:{settings.Port} (Implicit TLS)...");
+        _logger.Info($"Đang kết nối tới {settings.Host}:{settings.Port} ({settings.EncryptionMode} TLS)...");
         await client.AutoConnect(ct);
         _logger.Info("Kết nối FTP thành công!");
     }

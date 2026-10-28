@@ -15,6 +15,11 @@
 
         <TreeView x:Name="FolderTreeView" Grid.Row="1" BorderBrush="#CCCCCC" BorderThickness="1"
                   TreeViewItem.Expanded="FolderTreeViewItem_Expanded">
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="TreeViewItem">
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                </Style>
+            </TreeView.ItemContainerStyle>
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                     <StackPanel Orientation="Horizontal" Margin="2">
