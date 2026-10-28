@@ -1,12 +1,96 @@
-﻿<Window x:Class="BatchDeleteFTP.MainWindow"
+<Window x:Class="BatchDeleteFTP.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:BatchDeleteFTP"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="BatchDeleteFTP - Quản lý Xóa &amp; Backup File FTP (Implicit TLS)" Height="720" Width="1020"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="160"/>
+        </Grid.RowDefinitions>
 
+        <GroupBox Header="1. Cấu hình Kết nối FTP &amp; Backup" Grid.Row="0" Padding="10" Margin="0,0,0,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="220"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Host / Encryption:" VerticalAlignment="Center" Margin="0,4"/>
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,4">
+                    <TextBox x:Name="TxtHost" Width="220" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox x:Name="CboEncryption" Width="190" SelectedIndex="0" VerticalContentAlignment="Center">
+                        <ComboBoxItem Content="Implicit (FTP over TLS)" Tag="Implicit"/>
+                        <ComboBoxItem Content="Explicit (FTP over TLS)" Tag="Explicit"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="Port / Số ngày (+N):" VerticalAlignment="Center" Margin="8,4,0,4"/>
+                <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" Margin="0,4">
+                    <TextBox x:Name="TxtPort" Width="70" VerticalContentAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="Upload +" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox x:Name="TxtRetentionDays" Width="50" VerticalContentAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="User:" VerticalAlignment="Center" Margin="0,4"/>
+                <TextBox x:Name="TxtUser" Grid.Row="1" Grid.Column="1" VerticalContentAlignment="Center" Margin="0,4,12,4"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="Password:" VerticalAlignment="Center" Margin="8,4,0,4"/>
+                <PasswordBox x:Name="TxtPassword" Grid.Row="1" Grid.Column="3" VerticalContentAlignment="Center" Margin="0,4"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Remote Paths (;):" VerticalAlignment="Center" Margin="0,4"/>
+                <DockPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
+                    <Button x:Name="BtnBrowseRemote" DockPanel.Dock="Right" Content="Chọn thư mục FTP..." Width="150" Margin="8,0,0,0" Click="BtnBrowseRemote_Click"/>
+                    <TextBox x:Name="TxtRemotePaths" VerticalContentAlignment="Center" ToolTip="Nhiều đường dẫn ngăn cách bởi dấu chấm phẩy (;), ví dụ: /FolderA;/FolderB"/>
+                </DockPanel>
+
+                <CheckBox x:Name="ChkEnableBackup" Grid.Row="3" Grid.Column="0" Content="Backup trước xóa" VerticalAlignment="Center" Margin="0,4"/>
+                <DockPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
+                    <Button x:Name="BtnBrowseLocalBackup" DockPanel.Dock="Right" Content="Chọn thư mục Local..." Width="150" Margin="8,0,0,0" Click="BtnBrowseLocalBackup_Click"/>
+                    <TextBox x:Name="TxtLocalBackupPath" VerticalContentAlignment="Center"/>
+                </DockPanel>
+            </Grid>
+        </GroupBox>
+
+        <DockPanel Grid.Row="1" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <Button x:Name="BtnSaveConfig" Content="💾 Lưu Cấu Hình" Width="130" Height="32" Margin="0,0,8,0" Click="BtnSaveConfig_Click"/>
+                <Button x:Name="BtnTestConnection" Content="🔌 Kiểm Tra Kết Nối" Width="145" Height="32" Margin="0,0,8,0" Click="BtnTestConnection_Click"/>
+                <Button x:Name="BtnPreview" Content="🔍 Xem Trước (Preview)" Width="165" Height="32" Margin="0,0,8,0" FontWeight="SemiBold" Click="BtnPreview_Click"/>
+                <Button x:Name="BtnExecuteDelete" Content="🗑 Thực Hiện Backup &amp; Xóa" Width="195" Height="32" FontWeight="Bold" Foreground="DarkRed" Click="BtnExecuteDelete_Click"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Chọn tất cả" Width="90" Height="28" Margin="0,0,6,0" Click="BtnSelectAll_Click"/>
+                <Button Content="Bỏ chọn tất cả" Width="100" Height="28" Click="BtnUnselectAll_Click"/>
+            </StackPanel>
+        </DockPanel>
+
+        <GroupBox Header="2. Danh sách File Thỏa Điều Kiện Xóa (SystemDate.Date &gt; UploadDate.Date + N)" Grid.Row="2" Margin="0,0,0,8">
+            <DataGrid x:Name="GridCandidates" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="False">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Chọn xóa" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="75"/>
+                    <DataGridTextColumn Header="Đường dẫn FTP (Remote Path)" Binding="{Binding FullPath}" Width="*" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Ngày Upload (Modified)" Binding="{Binding ModifiedDate, StringFormat=yyyy-MM-dd HH:mm:ss}" Width="155" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Dung lượng (Bytes)" Binding="{Binding Size, StringFormat={}{0:N0}}" Width="125" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="180" IsReadOnly="True"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+
+        <GroupBox Header="3. Nhật ký hoạt động (Log)" Grid.Row="3">
+            <TextBox x:Name="TxtLogs" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                     FontFamily="Consolas" FontSize="12" Background="#1E1E1E" Foreground="#D4D4D4"/>
+        </GroupBox>
     </Grid>
 </Window>
