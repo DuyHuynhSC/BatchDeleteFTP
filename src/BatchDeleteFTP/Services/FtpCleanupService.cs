@@ -87,8 +87,8 @@ public class FtpCleanupService
             : FtpEncryptionMode.Implicit;
         client.Config.ValidateAnyCertificate = true;
         client.Config.DataConnectionType = FtpDataConnectionType.AutoPassive;
-        client.Config.ConnectTimeout = 15000;
-        client.Config.ReadTimeout = 30000;
+        client.Config.ConnectTimeout = 10000;
+        client.Config.ReadTimeout = 20000;
         return client;
     }
 
@@ -100,14 +100,14 @@ public class FtpCleanupService
             : string.Empty;
 
         _logger.Info($"Đang kết nối{proxyInfo} tới {settings.Host}:{settings.Port} ({settings.EncryptionMode} TLS)...");
-        await client.AutoConnect(ct);
+        await client.Connect(ct);
         _logger.Info("Kết nối FTP thành công!");
     }
 
     public async Task<List<FtpFolderNode>> GetSubDirectoriesAsync(FtpSettings settings, string remotePath, CancellationToken ct = default)
     {
         await using var client = CreateClient(settings);
-        await client.AutoConnect(ct);
+        await client.Connect(ct);
 
         var items = await client.GetListing(remotePath, FtpListOption.Auto, ct);
         var folders = new List<FtpFolderNode>();
@@ -138,7 +138,7 @@ public class FtpCleanupService
 
         await using var client = CreateClient(settings);
         _logger.Info($"Đang kết nối tới {settings.Host}:{settings.Port} để quét file...");
-        await client.AutoConnect(ct);
+        await client.Connect(ct);
 
         foreach (string remoteRoot in targetPaths)
         {
@@ -230,7 +230,7 @@ public class FtpCleanupService
 
         await using var client = CreateClient(settings);
         _logger.Info($"Đang kết nối tới {settings.Host}:{settings.Port} để thực thi {(settings.EnableBackup ? "Backup & Xóa" : "Xóa")} {selectedFiles.Count} file...");
-        await client.AutoConnect(ct);
+        await client.Connect(ct);
 
         foreach (var file in selectedFiles)
         {

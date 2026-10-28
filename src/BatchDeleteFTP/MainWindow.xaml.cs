@@ -1,8 +1,11 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using BatchDeleteFTP.Models;
 using BatchDeleteFTP.Services;
 using BatchDeleteFTP.Views;
@@ -101,13 +104,27 @@ public partial class MainWindow : Window
         };
     }
 
-    private void SetUiBusy(bool isBusy)
+    private void SetUiBusy(bool isBusy, string? busyText = null)
     {
         BtnSaveConfig.IsEnabled = !isBusy;
         BtnTestConnection.IsEnabled = !isBusy;
         BtnPreview.IsEnabled = !isBusy;
         BtnExecuteDelete.IsEnabled = !isBusy;
         BtnBrowseRemote.IsEnabled = !isBusy;
+
+        if (isBusy)
+        {
+            Mouse.OverrideCursor = Cursors.Wait;
+            if (!string.IsNullOrEmpty(busyText))
+            {
+                BtnTestConnection.Content = busyText;
+            }
+        }
+        else
+        {
+            Mouse.OverrideCursor = null;
+            BtnTestConnection.Content = "🔌 Kiểm Tra Kết Nối";
+        }
     }
 
     private void BtnSaveConfig_Click(object sender, RoutedEventArgs e)
@@ -121,12 +138,18 @@ public partial class MainWindow : Window
 
     private async void BtnTestConnection_Click(object sender, RoutedEventArgs e)
     {
-        SetUiBusy(true);
+        SetUiBusy(true, "⏳ Đang kết nối...");
         try
         {
             var settings = ReadSettingsFromUi();
-            await _ftpService.TestConnectionAsync(settings);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+            await Task.Run(() => _ftpService.TestConnectionAsync(settings, cts.Token));
             MessageBox.Show("Kết nối tới FTP Server thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.Error("Kết nối thất bại: Quá thời gian chờ (Timeout 12s). Vui lòng kiểm tra lại Proxy hoặc đường truyền mạng.");
+            MessageBox.Show("Kết nối thất bại: Quá thời gian chờ (Timeout 12s). Vui lòng kiểm tra lại cấu hình Proxy hoặc đường truyền mạng.", "Hết thời gian chờ", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         catch (Exception ex)
         {
