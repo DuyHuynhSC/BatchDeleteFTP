@@ -10,6 +10,11 @@ public class FtpSettings
     public string EncryptionMode { get; set; } = "Implicit";
     public string Username { get; set; } = "UCD-MOROZOFF";
     public string Password { get; set; } = string.Empty;
+    public bool UseProxy { get; set; } = true;
+    public string ProxyHost { get; set; } = "prox2.fujinet.vn";
+    public int ProxyPort { get; set; } = 8080;
+    public string ProxyUser { get; set; } = string.Empty;
+    public string ProxyPassword { get; set; } = string.Empty;
     public List<string> RemotePaths { get; set; } = new() { "/" };
     public int RetentionDays { get; set; } = 1;
     public bool EnableBackup { get; set; } = true;

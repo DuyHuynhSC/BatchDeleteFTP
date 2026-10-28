@@ -25,6 +25,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Host / Encryption:" VerticalAlignment="Center" Margin="0,4"/>
@@ -49,14 +50,27 @@
                 <TextBlock Grid.Row="1" Grid.Column="2" Text="Password:" VerticalAlignment="Center" Margin="8,4,0,4"/>
                 <PasswordBox x:Name="TxtPassword" Grid.Row="1" Grid.Column="3" VerticalContentAlignment="Center" Margin="0,4"/>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Remote Paths (;):" VerticalAlignment="Center" Margin="0,4"/>
-                <DockPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
+                <CheckBox x:Name="ChkUseProxy" Grid.Row="2" Grid.Column="0" Content="Sử dụng Proxy" VerticalAlignment="Center" Margin="0,4"/>
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,4">
+                    <TextBox x:Name="TxtProxyHost" Width="220" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="Port:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox x:Name="TxtProxyPort" Width="60" VerticalContentAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="Proxy User/Pass:" VerticalAlignment="Center" Margin="8,4,0,4"/>
+                <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Horizontal" Margin="0,4">
+                    <TextBox x:Name="TxtProxyUser" Width="95" VerticalContentAlignment="Center" Margin="0,0,6,0" ToolTip="Tên đăng nhập Proxy (nếu có)"/>
+                    <PasswordBox x:Name="TxtProxyPassword" Width="95" VerticalContentAlignment="Center" ToolTip="Mật khẩu Proxy (nếu có)"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Remote Paths (;):" VerticalAlignment="Center" Margin="0,4"/>
+                <DockPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
                     <Button x:Name="BtnBrowseRemote" DockPanel.Dock="Right" Content="Chọn thư mục FTP..." Width="150" Margin="8,0,0,0" Click="BtnBrowseRemote_Click"/>
                     <TextBox x:Name="TxtRemotePaths" VerticalContentAlignment="Center" ToolTip="Nhiều đường dẫn ngăn cách bởi dấu chấm phẩy (;), ví dụ: /FolderA;/FolderB"/>
                 </DockPanel>
 
-                <CheckBox x:Name="ChkEnableBackup" Grid.Row="3" Grid.Column="0" Content="Backup trước xóa" VerticalAlignment="Center" Margin="0,4"/>
-                <DockPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
+                <CheckBox x:Name="ChkEnableBackup" Grid.Row="4" Grid.Column="0" Content="Backup trước xóa" VerticalAlignment="Center" Margin="0,4"/>
+                <DockPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
                     <Button x:Name="BtnBrowseLocalBackup" DockPanel.Dock="Right" Content="Chọn thư mục Local..." Width="150" Margin="8,0,0,0" Click="BtnBrowseLocalBackup_Click"/>
                     <TextBox x:Name="TxtLocalBackupPath" VerticalContentAlignment="Center"/>
                 </DockPanel>

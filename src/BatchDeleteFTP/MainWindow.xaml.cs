@@ -54,6 +54,11 @@ public partial class MainWindow : Window
         CboEncryption.SelectedIndex = string.Equals(s.EncryptionMode, "Explicit", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
         TxtUser.Text = s.Username;
         TxtPassword.Password = s.Password;
+        ChkUseProxy.IsChecked = s.UseProxy;
+        TxtProxyHost.Text = s.ProxyHost;
+        TxtProxyPort.Text = s.ProxyPort.ToString();
+        TxtProxyUser.Text = s.ProxyUser;
+        TxtProxyPassword.Password = s.ProxyPassword;
         TxtRemotePaths.Text = string.Join(";", s.RemotePaths);
         TxtRetentionDays.Text = s.RetentionDays.ToString();
         ChkEnableBackup.IsChecked = s.EnableBackup;
@@ -64,6 +69,9 @@ public partial class MainWindow : Window
     {
         int.TryParse(TxtPort.Text, out int port);
         if (port <= 0) port = 6021;
+
+        int.TryParse(TxtProxyPort.Text, out int proxyPort);
+        if (proxyPort <= 0) proxyPort = 8080;
 
         int.TryParse(TxtRetentionDays.Text, out int retentionDays);
         if (retentionDays < 0) retentionDays = 1;
@@ -81,6 +89,11 @@ public partial class MainWindow : Window
             EncryptionMode = encTag,
             Username = TxtUser.Text.Trim(),
             Password = TxtPassword.Password,
+            UseProxy = ChkUseProxy.IsChecked == true,
+            ProxyHost = TxtProxyHost.Text.Trim(),
+            ProxyPort = proxyPort,
+            ProxyUser = TxtProxyUser.Text.Trim(),
+            ProxyPassword = TxtProxyPassword.Password,
             RemotePaths = FtpCleanupService.NormalizeRemotePaths(paths).ToList(),
             RetentionDays = retentionDays,
             EnableBackup = ChkEnableBackup.IsChecked == true,

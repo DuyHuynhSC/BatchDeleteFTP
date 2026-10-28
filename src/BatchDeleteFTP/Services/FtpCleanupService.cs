@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using BatchDeleteFTP.Helpers;
 using BatchDeleteFTP.Models;
 using FluentFTP;
+using FluentFTP.Proxy.AsyncProxy;
 
 namespace BatchDeleteFTP.Services;
 
@@ -53,9 +55,33 @@ public class FtpCleanupService
         return result.Count > 0 ? result : new List<string> { "/" };
     }
 
-    private AsyncFtpClient CreateClient(FtpSettings settings)
+    public AsyncFtpClient CreateClient(FtpSettings settings)
     {
-        var client = new AsyncFtpClient(settings.Host, settings.Username, settings.Password, settings.Port);
+        AsyncFtpClient client;
+
+        if (settings.UseProxy && !string.IsNullOrWhiteSpace(settings.ProxyHost) && settings.ProxyPort > 0)
+        {
+            var profile = new FtpProxyProfile
+            {
+                ProxyHost = settings.ProxyHost.Trim(),
+                ProxyPort = settings.ProxyPort,
+                FtpHost = settings.Host.Trim(),
+                FtpPort = settings.Port,
+                FtpCredentials = new NetworkCredential(settings.Username, settings.Password)
+            };
+
+            if (!string.IsNullOrWhiteSpace(settings.ProxyUser))
+            {
+                profile.ProxyCredentials = new NetworkCredential(settings.ProxyUser, settings.ProxyPassword);
+            }
+
+            client = new AsyncFtpClientHttp11Proxy(profile);
+        }
+        else
+        {
+            client = new AsyncFtpClient(settings.Host, settings.Username, settings.Password, settings.Port);
+        }
+
         client.Config.EncryptionMode = string.Equals(settings.EncryptionMode, "Explicit", StringComparison.OrdinalIgnoreCase)
             ? FtpEncryptionMode.Explicit
             : FtpEncryptionMode.Implicit;
@@ -69,7 +95,11 @@ public class FtpCleanupService
     public async Task TestConnectionAsync(FtpSettings settings, CancellationToken ct = default)
     {
         await using var client = CreateClient(settings);
-        _logger.Info($"Đang kết nối tới {settings.Host}:{settings.Port} ({settings.EncryptionMode} TLS)...");
+        string proxyInfo = (settings.UseProxy && !string.IsNullOrWhiteSpace(settings.ProxyHost))
+            ? $" qua Proxy {settings.ProxyHost}:{settings.ProxyPort}"
+            : string.Empty;
+
+        _logger.Info($"Đang kết nối{proxyInfo} tới {settings.Host}:{settings.Port} ({settings.EncryptionMode} TLS)...");
         await client.AutoConnect(ct);
         _logger.Info("Kết nối FTP thành công!");
     }
