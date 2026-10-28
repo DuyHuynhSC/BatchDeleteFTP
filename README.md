@@ -34,10 +34,10 @@ File `config.json` được tự động khởi tạo và lưu cùng thư mục 
 
 ```json
 {
-  "Host": "ftp.fujinet.net",
+  "Host": "ftp.AAA.XXX",
   "Port": 6021,
   "EncryptionMode": "Implicit",
-  "Username": "UCD-MOROZOFF",
+  "Username": "XXX-XXX",
   "Password": "",
   "UseProxy": true,
   "ProxyHost": "prox2.fujinet.vn",
