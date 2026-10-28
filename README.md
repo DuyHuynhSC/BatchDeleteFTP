@@ -10,7 +10,7 @@ SystemDate.Date > UploadDate.Date + RetentionDays (Mặc định RetentionDays =
 
 ## 1. Tính năng Chính
 
-- **Hỗ trợ chuẩn FTPS & Proxy nội bộ công ty:** Mặc định cấu hình sẵn cho `ftp.XXX.net` (Port `6021`, `Implicit FTP over TLS`, User `XXX-XXXX`), tích hợp hỗ trợ kết nối qua HTTP/HTTPS Proxy công ty (`prox2.XXX.vn:8080`) thông qua đường hầm HTTP 1.1 CONNECT của `FluentFTP`.
+- **Hỗ trợ chuẩn FTPS & Proxy nội bộ công ty:** Mặc định cấu hình sẵn cho `ftp.XXX.net` (Port `6021`, `Implicit FTP over TLS`, User `XXX-XXXX`), tích hợp hỗ trợ kết nối qua HTTP/HTTPS Proxy công ty (`proxy.XXX.vn:8080`) thông qua đường hầm HTTP 1.1 CONNECT của `FluentFTP`.
 - **Chọn Thư mục Từ xa trên FTP (`Remote Folder Picker`):**
   - Cho phép nhập một hoặc nhiều đường dẫn ngăn cách bởi dấu `;` (ví dụ: `/FolderA;/FolderB/Sub1`) hoặc bấm **"Chọn thư mục FTP..."** để mở cây thư mục (`TreeView` lazy-load) trực tiếp từ FTP Server và tích chọn nhiều thư mục cần quét.
   - Tự động chuẩn hóa và khử trùng lặp đường dẫn (nếu chọn cả thư mục cha và thư mục con, ứng dụng tự động gộp để không quét lặp).
@@ -40,7 +40,7 @@ File `config.json` được tự động khởi tạo và lưu cùng thư mục 
   "Username": "XXX-XXX",
   "Password": "",
   "UseProxy": true,
-  "ProxyHost": "prox2.fujinet.vn",
+  "ProxyHost": "proxy2.XXXX.vn",
   "ProxyPort": 8080,
   "ProxyUser": "",
   "ProxyPassword": "",

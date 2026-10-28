@@ -51,17 +51,24 @@
                 <PasswordBox x:Name="TxtPassword" Grid.Row="1" Grid.Column="3" VerticalContentAlignment="Center" Margin="0,4"/>
 
                 <CheckBox x:Name="ChkUseProxy" Grid.Row="2" Grid.Column="0" Content="Sử dụng Proxy" VerticalAlignment="Center" Margin="0,4"/>
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,4">
-                    <TextBox x:Name="TxtProxyHost" Width="220" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBlock Text="Port:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <TextBox x:Name="TxtProxyPort" Width="60" VerticalContentAlignment="Center"/>
-                </StackPanel>
-
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="Proxy User/Pass:" VerticalAlignment="Center" Margin="8,4,0,4"/>
-                <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Horizontal" Margin="0,4">
-                    <TextBox x:Name="TxtProxyUser" Width="95" VerticalContentAlignment="Center" Margin="0,0,6,0" ToolTip="Tên đăng nhập Proxy (nếu có)"/>
-                    <PasswordBox x:Name="TxtProxyPassword" Width="95" VerticalContentAlignment="Center" ToolTip="Mật khẩu Proxy (nếu có)"/>
-                </StackPanel>
+                <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="210"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*" MinWidth="180"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*" MinWidth="180"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="TxtProxyHost" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Địa chỉ Proxy Server"/>
+                    <TextBlock Grid.Column="1" Text="Port:" VerticalAlignment="Center" Margin="10,0,6,0"/>
+                    <TextBox x:Name="TxtProxyPort" Grid.Column="2" VerticalContentAlignment="Center" ToolTip="Cổng Proxy"/>
+                    <TextBlock Grid.Column="3" Text="Proxy User:" VerticalAlignment="Center" Margin="16,0,6,0"/>
+                    <TextBox x:Name="TxtProxyUser" Grid.Column="4" VerticalContentAlignment="Center" ToolTip="Tên đăng nhập Proxy (nếu có)"/>
+                    <TextBlock Grid.Column="5" Text="Pass:" VerticalAlignment="Center" Margin="10,0,6,0"/>
+                    <PasswordBox x:Name="TxtProxyPassword" Grid.Column="6" VerticalContentAlignment="Center" ToolTip="Mật khẩu Proxy (nếu có)"/>
+                </Grid>
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Remote Paths (;):" VerticalAlignment="Center" Margin="0,4"/>
                 <DockPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">

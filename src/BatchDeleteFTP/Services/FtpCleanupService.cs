@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Authentication;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BatchDeleteFTP.Helpers;
@@ -15,6 +17,35 @@ namespace BatchDeleteFTP.Services;
 public class FtpCleanupService
 {
     private readonly AppLogger _logger;
+
+    private sealed class FtpConnectionLogger : IFtpLogger
+    {
+        private readonly AppLogger _appLogger;
+        public bool IsEnabled { get; set; } = true;
+
+        public FtpConnectionLogger(AppLogger appLogger)
+        {
+            _appLogger = appLogger;
+        }
+
+        public void Log(FtpLogEntry entry)
+        {
+            if (!IsEnabled || string.IsNullOrWhiteSpace(entry.Message)) return;
+            string msg = entry.Message.Trim();
+            if (msg.StartsWith(">") ||
+                msg.StartsWith("Command:") ||
+                msg.StartsWith("Response:") ||
+                msg.StartsWith("Status:") ||
+                msg.Contains("CONNECT") ||
+                msg.Contains("TLS") ||
+                msg.Contains("SSL") ||
+                entry.Severity == FtpTraceLevel.Warn ||
+                entry.Severity == FtpTraceLevel.Error)
+            {
+                _appLogger.Info($"[FTP] {msg}");
+            }
+        }
+    }
 
     public FtpCleanupService(AppLogger logger)
     {
@@ -85,11 +116,34 @@ public class FtpCleanupService
         client.Config.EncryptionMode = string.Equals(settings.EncryptionMode, "Explicit", StringComparison.OrdinalIgnoreCase)
             ? FtpEncryptionMode.Explicit
             : FtpEncryptionMode.Implicit;
+        client.Config.SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
         client.Config.ValidateAnyCertificate = true;
-        client.Config.DataConnectionType = FtpDataConnectionType.AutoPassive;
-        client.Config.ConnectTimeout = 10000;
+        client.Config.DataConnectionType = FtpDataConnectionType.PASV;
+        client.Config.RetryAttempts = 1;
+        client.Config.ConnectTimeout = 15000;
         client.Config.ReadTimeout = 20000;
+        client.Encoding = Encoding.UTF8;
         return client;
+    }
+
+    private async Task ConnectOptimizedAsync(AsyncFtpClient client, FtpSettings settings, CancellationToken ct)
+    {
+        var connLogger = new FtpConnectionLogger(_logger);
+        client.Logger = connLogger;
+        try
+        {
+            await client.Connect(ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.Info($"[FTP] Thử lại kết nối với cấu hình TLS 1.2 tiêu chuẩn ({ex.Message})...");
+            client.Config.SslProtocols = SslProtocols.Tls12;
+            await client.Connect(ct);
+        }
+        finally
+        {
+            connLogger.IsEnabled = false;
+        }
     }
 
     public async Task TestConnectionAsync(FtpSettings settings, CancellationToken ct = default)
@@ -100,14 +154,14 @@ public class FtpCleanupService
             : string.Empty;
 
         _logger.Info($"Đang kết nối{proxyInfo} tới {settings.Host}:{settings.Port} ({settings.EncryptionMode} TLS)...");
-        await client.Connect(ct);
+        await ConnectOptimizedAsync(client, settings, ct);
         _logger.Info("Kết nối FTP thành công!");
     }
 
     public async Task<List<FtpFolderNode>> GetSubDirectoriesAsync(FtpSettings settings, string remotePath, CancellationToken ct = default)
     {
         await using var client = CreateClient(settings);
-        await client.Connect(ct);
+        await ConnectOptimizedAsync(client, settings, ct);
 
         var items = await client.GetListing(remotePath, FtpListOption.Auto, ct);
         var folders = new List<FtpFolderNode>();
@@ -138,7 +192,7 @@ public class FtpCleanupService
 
         await using var client = CreateClient(settings);
         _logger.Info($"Đang kết nối tới {settings.Host}:{settings.Port} để quét file...");
-        await client.Connect(ct);
+        await ConnectOptimizedAsync(client, settings, ct);
 
         foreach (string remoteRoot in targetPaths)
         {
@@ -230,7 +284,7 @@ public class FtpCleanupService
 
         await using var client = CreateClient(settings);
         _logger.Info($"Đang kết nối tới {settings.Host}:{settings.Port} để thực thi {(settings.EnableBackup ? "Backup & Xóa" : "Xóa")} {selectedFiles.Count} file...");
-        await client.Connect(ct);
+        await ConnectOptimizedAsync(client, settings, ct);
 
         foreach (var file in selectedFiles)
         {

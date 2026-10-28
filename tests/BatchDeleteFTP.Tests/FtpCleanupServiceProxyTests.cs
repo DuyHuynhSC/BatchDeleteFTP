@@ -1,5 +1,7 @@
 using System;
 using System.Net;
+using System.Security.Authentication;
+using System.Text;
 using BatchDeleteFTP.Models;
 using BatchDeleteFTP.Services;
 using FluentFTP;
@@ -11,7 +13,7 @@ namespace BatchDeleteFTP.Tests;
 public class FtpCleanupServiceProxyTests
 {
     [Fact]
-    public void CreateClient_WhenUseProxyIsTrue_ReturnsHttp11ProxyClient()
+    public void CreateClient_WhenUseProxyIsTrue_ReturnsHttp11ProxyClientWithOptimizedTlsSettings()
     {
         var logger = new AppLogger();
         var service = new FtpCleanupService(logger);
@@ -33,6 +35,10 @@ public class FtpCleanupServiceProxyTests
 
         Assert.IsType<AsyncFtpClientHttp11Proxy>(client);
         Assert.Equal(FtpEncryptionMode.Implicit, client.Config.EncryptionMode);
+        Assert.Equal(SslProtocols.Tls12 | SslProtocols.Tls13, client.Config.SslProtocols);
+        Assert.Equal(FtpDataConnectionType.PASV, client.Config.DataConnectionType);
+        Assert.Equal(1, client.Config.RetryAttempts);
+        Assert.Equal(Encoding.UTF8, client.Encoding);
         Assert.True(client.Config.ValidateAnyCertificate);
     }
 
@@ -55,5 +61,6 @@ public class FtpCleanupServiceProxyTests
 
         Assert.IsNotType<AsyncFtpClientHttp11Proxy>(client);
         Assert.Equal(FtpEncryptionMode.Implicit, client.Config.EncryptionMode);
+        Assert.Equal(SslProtocols.Tls12 | SslProtocols.Tls13, client.Config.SslProtocols);
     }
 }

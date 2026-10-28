@@ -142,19 +142,20 @@ public partial class MainWindow : Window
         try
         {
             var settings = ReadSettingsFromUi();
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             await Task.Run(() => _ftpService.TestConnectionAsync(settings, cts.Token));
             MessageBox.Show("Kết nối tới FTP Server thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (OperationCanceledException)
         {
-            _logger.Error("Kết nối thất bại: Quá thời gian chờ (Timeout 12s). Vui lòng kiểm tra lại Proxy hoặc đường truyền mạng.");
-            MessageBox.Show("Kết nối thất bại: Quá thời gian chờ (Timeout 12s). Vui lòng kiểm tra lại cấu hình Proxy hoặc đường truyền mạng.", "Hết thời gian chờ", MessageBoxButton.OK, MessageBoxImage.Warning);
+            _logger.Error("Kết nối thất bại: Quá thời gian chờ (Timeout 30s). Vui lòng kiểm tra lại Proxy hoặc đường truyền mạng.");
+            MessageBox.Show("Kết nối thất bại: Quá thời gian chờ (Timeout 30s). Vui lòng kiểm tra lại cấu hình Proxy hoặc đường truyền mạng.", "Hết thời gian chờ", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         catch (Exception ex)
         {
-            _logger.Error($"Kết nối thất bại: {ex.Message}");
-            MessageBox.Show($"Kết nối thất bại:\n{ex.Message}", "Lỗi Kết Nối", MessageBoxButton.OK, MessageBoxImage.Error);
+            string details = ex.InnerException != null ? $"{ex.Message}\nChi tiết: {ex.InnerException.Message}" : ex.Message;
+            _logger.Error($"Kết nối thất bại: {details}");
+            MessageBox.Show($"Kết nối thất bại:\n{details}", "Lỗi Kết Nối", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
