@@ -75,7 +75,7 @@ public class ConfigService
     public FtpSiteProfile UpsertProfile(FtpSettings settings, string profileName)
     {
         settings.Profiles ??= new List<FtpSiteProfile>();
-        string cleanName = string.IsNullOrWhiteSpace(profileName) ? "MOROZOFF" : profileName.Trim();
+        string cleanName = string.IsNullOrWhiteSpace(profileName) ? "Default" : profileName.Trim();
         settings.SelectedProfileName = cleanName;
 
         var updated = FtpSiteProfile.FromSettings(cleanName, settings);
@@ -127,7 +127,7 @@ public class ConfigService
         if (settings.Profiles.Count == 0)
         {
             var fallback = new FtpSettings();
-            var defaultProfile = FtpSiteProfile.FromSettings("MOROZOFF", fallback);
+            var defaultProfile = FtpSiteProfile.FromSettings("Default", fallback);
             settings.Profiles.Add(defaultProfile);
         }
 

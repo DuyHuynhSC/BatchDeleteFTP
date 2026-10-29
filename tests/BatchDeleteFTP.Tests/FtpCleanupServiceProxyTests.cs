@@ -20,12 +20,12 @@ public class FtpCleanupServiceProxyTests
 
         var settings = new FtpSettings
         {
-            Host = "ftp.fujinet.net",
+            Host = "ftp.xxx.net",
             Port = 6021,
-            Username = "UCD-MOROZOFF",
+            Username = "XXX-USER",
             Password = "test",
             UseProxy = true,
-            ProxyHost = "prox2.fujinet.vn",
+            ProxyHost = "proxy.xxx.vn",
             ProxyPort = 8080,
             ProxyUser = "user1",
             ProxyPassword = "pass1"
@@ -50,9 +50,9 @@ public class FtpCleanupServiceProxyTests
 
         var settings = new FtpSettings
         {
-            Host = "ftp.fujinet.net",
+            Host = "ftp.xxx.net",
             Port = 6021,
-            Username = "UCD-MOROZOFF",
+            Username = "XXX-USER",
             Password = "test",
             UseProxy = false
         };

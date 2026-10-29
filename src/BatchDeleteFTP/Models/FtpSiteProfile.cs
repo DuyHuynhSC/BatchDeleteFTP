@@ -6,14 +6,14 @@ namespace BatchDeleteFTP.Models;
 
 public class FtpSiteProfile
 {
-    public string Name { get; set; } = "MOROZOFF";
-    public string Host { get; set; } = "ftp.fujinet.net";
+    public string Name { get; set; } = "Default";
+    public string Host { get; set; } = "ftp.xxx.net";
     public int Port { get; set; } = 6021;
     public string EncryptionMode { get; set; } = "Implicit";
-    public string Username { get; set; } = "UCD-MOROZOFF";
+    public string Username { get; set; } = "XXX-USER";
     public string Password { get; set; } = string.Empty;
     public bool UseProxy { get; set; } = true;
-    public string ProxyHost { get; set; } = "prox2.fujinet.vn";
+    public string ProxyHost { get; set; } = "proxy.xxx.vn";
     public int ProxyPort { get; set; } = 8080;
     public string ProxyUser { get; set; } = string.Empty;
     public string ProxyPassword { get; set; } = string.Empty;

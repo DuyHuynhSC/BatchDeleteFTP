@@ -11,11 +11,11 @@ public class BackupPathBuilderTests
     {
         string root = @"C:\Backups";
         string session = "20261028_153000";
-        string remotePath = "/MOROZOFF/Outbound/2026/order_01.csv";
+        string remotePath = "/SITE_A/Outbound/2026/order_01.csv";
 
         string localPath = BackupPathBuilder.BuildLocalBackupFilePath(root, session, remotePath);
 
-        string expected = Path.Combine(@"C:\Backups", "20261028_153000", "MOROZOFF", "Outbound", "2026", "order_01.csv");
+        string expected = Path.Combine(@"C:\Backups", "20261028_153000", "SITE_A", "Outbound", "2026", "order_01.csv");
         Assert.Equal(expected, localPath);
     }
 }
