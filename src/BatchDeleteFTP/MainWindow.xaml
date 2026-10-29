@@ -26,10 +26,24 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Host / Encryption:" VerticalAlignment="Center" Margin="0,4"/>
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,4">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Site / Profile:" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,4"/>
+                <StackPanel Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,4">
+                    <ComboBox x:Name="CboProfiles" Width="260" IsEditable="True" VerticalContentAlignment="Center" Margin="0,0,8,0"
+                              SelectionChanged="CboProfiles_SelectionChanged"
+                              ToolTip="Chọn Site/Profile đã lưu hoặc nhập tên Profile mới"/>
+                    <Button x:Name="BtnNewProfile" Content="➕ Tạo Mới" Width="95" Height="26" Margin="0,0,6,0" Click="BtnNewProfile_Click"
+                            ToolTip="Khởi tạo một Profile mới"/>
+                    <Button x:Name="BtnSaveProfile" Content="💾 Lưu Profile" Width="110" Height="26" Margin="0,0,6,0" FontWeight="SemiBold" Click="BtnSaveProfile_Click"
+                            ToolTip="Lưu thông tin kết nối vào Profile đang chọn/nhập"/>
+                    <Button x:Name="BtnDeleteProfile" Content="🗑 Xóa Profile" Width="105" Height="26" Click="BtnDeleteProfile_Click"
+                            ToolTip="Xóa Profile đang chọn"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Host / Encryption:" VerticalAlignment="Center" Margin="0,4"/>
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,4">
                     <TextBox x:Name="TxtHost" Width="220" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
                     <ComboBox x:Name="CboEncryption" Width="190" SelectedIndex="0" VerticalContentAlignment="Center">
                         <ComboBoxItem Content="Implicit (FTP over TLS)" Tag="Implicit"/>
@@ -37,21 +51,21 @@
                     </ComboBox>
                 </StackPanel>
 
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="Port / Số ngày (+N):" VerticalAlignment="Center" Margin="8,4,0,4"/>
-                <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" Margin="0,4">
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="Port / Số ngày (+N):" VerticalAlignment="Center" Margin="8,4,0,4"/>
+                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" Margin="0,4">
                     <TextBox x:Name="TxtPort" Width="70" VerticalContentAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="Upload +" VerticalAlignment="Center" Margin="0,0,6,0"/>
                     <TextBox x:Name="TxtRetentionDays" Width="50" VerticalContentAlignment="Center"/>
                 </StackPanel>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="User:" VerticalAlignment="Center" Margin="0,4"/>
-                <TextBox x:Name="TxtUser" Grid.Row="1" Grid.Column="1" VerticalContentAlignment="Center" Margin="0,4,12,4"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="User:" VerticalAlignment="Center" Margin="0,4"/>
+                <TextBox x:Name="TxtUser" Grid.Row="2" Grid.Column="1" VerticalContentAlignment="Center" Margin="0,4,12,4"/>
 
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="Password:" VerticalAlignment="Center" Margin="8,4,0,4"/>
-                <PasswordBox x:Name="TxtPassword" Grid.Row="1" Grid.Column="3" VerticalContentAlignment="Center" Margin="0,4"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="Password:" VerticalAlignment="Center" Margin="8,4,0,4"/>
+                <PasswordBox x:Name="TxtPassword" Grid.Row="2" Grid.Column="3" VerticalContentAlignment="Center" Margin="0,4"/>
 
-                <CheckBox x:Name="ChkUseProxy" Grid.Row="2" Grid.Column="0" Content="Sử dụng Proxy" VerticalAlignment="Center" Margin="0,4"/>
-                <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
+                <CheckBox x:Name="ChkUseProxy" Grid.Row="3" Grid.Column="0" Content="Sử dụng Proxy" VerticalAlignment="Center" Margin="0,4"/>
+                <Grid Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="210"/>
                         <ColumnDefinition Width="Auto"/>
@@ -70,14 +84,14 @@
                     <PasswordBox x:Name="TxtProxyPassword" Grid.Column="6" VerticalContentAlignment="Center" ToolTip="Mật khẩu Proxy (nếu có)"/>
                 </Grid>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Remote Paths (;):" VerticalAlignment="Center" Margin="0,4"/>
-                <DockPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Remote Paths (;):" VerticalAlignment="Center" Margin="0,4"/>
+                <DockPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
                     <Button x:Name="BtnBrowseRemote" DockPanel.Dock="Right" Content="Chọn thư mục FTP..." Width="150" Margin="8,0,0,0" Click="BtnBrowseRemote_Click"/>
                     <TextBox x:Name="TxtRemotePaths" VerticalContentAlignment="Center" ToolTip="Nhiều đường dẫn ngăn cách bởi dấu chấm phẩy (;), ví dụ: /FolderA;/FolderB"/>
                 </DockPanel>
 
-                <CheckBox x:Name="ChkEnableBackup" Grid.Row="4" Grid.Column="0" Content="Backup trước xóa" VerticalAlignment="Center" Margin="0,4"/>
-                <DockPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
+                <CheckBox x:Name="ChkEnableBackup" Grid.Row="5" Grid.Column="0" Content="Backup trước xóa" VerticalAlignment="Center" Margin="0,4"/>
+                <DockPanel Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,4">
                     <Button x:Name="BtnBrowseLocalBackup" DockPanel.Dock="Right" Content="Chọn thư mục Local..." Width="150" Margin="8,0,0,0" Click="BtnBrowseLocalBackup_Click"/>
                     <TextBox x:Name="TxtLocalBackupPath" VerticalContentAlignment="Center"/>
                 </DockPanel>

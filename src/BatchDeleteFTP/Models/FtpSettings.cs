@@ -5,6 +5,7 @@ namespace BatchDeleteFTP.Models;
 
 public class FtpSettings
 {
+    public string SelectedProfileName { get; set; } = "MOROZOFF";
     public string Host { get; set; } = "ftp.fujinet.net";
     public int Port { get; set; } = 6021;
     public string EncryptionMode { get; set; } = "Implicit";
@@ -19,4 +20,5 @@ public class FtpSettings
     public int RetentionDays { get; set; } = 1;
     public bool EnableBackup { get; set; } = true;
     public string LocalBackupPath { get; set; } = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Backups");
+    public List<FtpSiteProfile> Profiles { get; set; } = new();
 }

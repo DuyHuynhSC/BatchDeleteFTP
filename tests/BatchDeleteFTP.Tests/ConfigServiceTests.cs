@@ -48,6 +48,59 @@ public class ConfigServiceTests
             Assert.Equal(new[] { "/FolderA", "/FolderB/Sub" }, loaded.RemotePaths);
             Assert.True(loaded.EnableBackup);
             Assert.Equal(@"C:\Temp\FTPBackup", loaded.LocalBackupPath);
+            Assert.NotEmpty(loaded.Profiles);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void UpsertSelectAndDeleteProfiles_ManagesMultipleSiteProfiles()
+    {
+        string tempFile = Path.Combine(Path.GetTempPath(), $"ftp_profiles_{Guid.NewGuid()}.json");
+        try
+        {
+            var service = new ConfigService();
+            var settings = new FtpSettings
+            {
+                SelectedProfileName = "MOROZOFF",
+                Host = "ftp.fujinet.net",
+                Port = 6021,
+                Username = "UCD-MOROZOFF",
+                Password = "pass1"
+            };
+            service.Save(settings, tempFile);
+
+            // Add second profile
+            settings.Host = "ftp2.fujinet.net";
+            settings.Port = 21;
+            settings.EncryptionMode = "Explicit";
+            settings.Username = "KIICHI-USER";
+            settings.Password = "pass2";
+            service.UpsertProfile(settings, "KIICHI");
+            service.Save(settings, tempFile);
+
+            var reloaded = service.Load(tempFile);
+            Assert.Equal(2, reloaded.Profiles.Count);
+            Assert.Equal("KIICHI", reloaded.SelectedProfileName);
+            Assert.Equal("KIICHI-USER", reloaded.Username);
+
+            // Switch back to MOROZOFF
+            bool switched = service.SelectProfile(reloaded, "MOROZOFF");
+            Assert.True(switched);
+            Assert.Equal("MOROZOFF", reloaded.SelectedProfileName);
+            Assert.Equal("ftp.fujinet.net", reloaded.Host);
+            Assert.Equal(6021, reloaded.Port);
+            Assert.Equal("UCD-MOROZOFF", reloaded.Username);
+
+            // Delete MOROZOFF -> falls back to KIICHI
+            bool deleted = service.DeleteProfile(reloaded, "MOROZOFF");
+            Assert.True(deleted);
+            Assert.Single(reloaded.Profiles);
+            Assert.Equal("KIICHI", reloaded.SelectedProfileName);
+            Assert.Equal("KIICHI-USER", reloaded.Username);
         }
         finally
         {

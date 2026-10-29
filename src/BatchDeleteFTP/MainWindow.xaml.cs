@@ -19,6 +19,8 @@ public partial class MainWindow : Window
     private readonly AppLogger _logger;
     private readonly FtpCleanupService _ftpService;
     private readonly ObservableCollection<FtpFileCandidate> _candidates = new();
+    private FtpSettings _currentSettings = new();
+    private bool _suppressProfileSelectionChanged;
 
     public MainWindow() : this(new ConfigService(), new AppLogger())
     {
@@ -47,7 +49,36 @@ public partial class MainWindow : Window
             });
         };
 
-        LoadSettingsToUi(_configService.Load());
+        _currentSettings = _configService.Load();
+        RefreshProfileComboBox(_currentSettings.SelectedProfileName);
+        LoadSettingsToUi(_currentSettings);
+    }
+
+    private void RefreshProfileComboBox(string? selectedProfileName)
+    {
+        _suppressProfileSelectionChanged = true;
+        try
+        {
+            CboProfiles.ItemsSource = null;
+            CboProfiles.ItemsSource = _currentSettings.Profiles;
+            var matched = _currentSettings.Profiles.FirstOrDefault(p =>
+                string.Equals(p.Name, selectedProfileName, StringComparison.OrdinalIgnoreCase))
+                ?? _currentSettings.Profiles.FirstOrDefault();
+
+            if (matched != null)
+            {
+                CboProfiles.SelectedItem = matched;
+                CboProfiles.Text = matched.Name;
+            }
+            else if (!string.IsNullOrWhiteSpace(selectedProfileName))
+            {
+                CboProfiles.Text = selectedProfileName;
+            }
+        }
+        finally
+        {
+            _suppressProfileSelectionChanged = false;
+        }
     }
 
     private void LoadSettingsToUi(FtpSettings s)
@@ -85,8 +116,13 @@ public partial class MainWindow : Window
             .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
 
+        string profileName = string.IsNullOrWhiteSpace(CboProfiles.Text)
+            ? _currentSettings.SelectedProfileName
+            : CboProfiles.Text.Trim();
+
         return new FtpSettings
         {
+            SelectedProfileName = profileName,
             Host = TxtHost.Text.Trim(),
             Port = port,
             EncryptionMode = encTag,
@@ -100,12 +136,98 @@ public partial class MainWindow : Window
             RemotePaths = FtpCleanupService.NormalizeRemotePaths(paths).ToList(),
             RetentionDays = retentionDays,
             EnableBackup = ChkEnableBackup.IsChecked == true,
-            LocalBackupPath = TxtLocalBackupPath.Text.Trim()
+            LocalBackupPath = TxtLocalBackupPath.Text.Trim(),
+            Profiles = _currentSettings.Profiles
         };
+    }
+
+    private void CboProfiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressProfileSelectionChanged) return;
+        if (CboProfiles.SelectedItem is FtpSiteProfile selectedProfile)
+        {
+            selectedProfile.ApplyTo(_currentSettings);
+            LoadSettingsToUi(_currentSettings);
+            _logger.Info($"Đã chuyển sang Profile: '{selectedProfile.Name}' ({selectedProfile.Username}@{selectedProfile.Host}:{selectedProfile.Port}).");
+        }
+    }
+
+    private void BtnNewProfile_Click(object sender, RoutedEventArgs e)
+    {
+        int index = _currentSettings.Profiles.Count + 1;
+        string newName = $"Site_{index}";
+        while (_currentSettings.Profiles.Any(p => string.Equals(p.Name, newName, StringComparison.OrdinalIgnoreCase)))
+        {
+            index++;
+            newName = $"Site_{index}";
+        }
+
+        _suppressProfileSelectionChanged = true;
+        try
+        {
+            CboProfiles.SelectedItem = null;
+            CboProfiles.Text = newName;
+        }
+        finally
+        {
+            _suppressProfileSelectionChanged = false;
+        }
+
+        CboProfiles.Focus();
+        _logger.Info($"Đang tạo Profile mới '{newName}'. Hãy chỉnh sửa thông tin và nhấn '💾 Lưu Profile'.");
+    }
+
+    private void BtnSaveProfile_Click(object sender, RoutedEventArgs e)
+    {
+        string profileName = CboProfiles.Text.Trim();
+        if (string.IsNullOrWhiteSpace(profileName))
+        {
+            MessageBox.Show("Vui lòng nhập tên Profile trước khi lưu.", "Thiếu tên Profile", MessageBoxButton.OK, MessageBoxImage.Warning);
+            CboProfiles.Focus();
+            return;
+        }
+
+        _currentSettings = ReadSettingsFromUi();
+        _configService.UpsertProfile(_currentSettings, profileName);
+        _configService.Save(_currentSettings);
+
+        RefreshProfileComboBox(profileName);
+        TxtRemotePaths.Text = string.Join(";", _currentSettings.RemotePaths);
+        _logger.Info($"Đã lưu Profile '{profileName}' vào '{_configService.DefaultConfigPath}'.");
+        MessageBox.Show($"Đã lưu Profile '{profileName}' thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void BtnDeleteProfile_Click(object sender, RoutedEventArgs e)
+    {
+        string targetName = (CboProfiles.SelectedItem as FtpSiteProfile)?.Name ?? CboProfiles.Text.Trim();
+        if (string.IsNullOrWhiteSpace(targetName))
+        {
+            return;
+        }
+
+        var confirm = MessageBox.Show(
+            $"Bạn có chắc chắn muốn xóa Profile '{targetName}' không?",
+            "Xác nhận xóa Profile",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        if (_configService.DeleteProfile(_currentSettings, targetName))
+        {
+            _configService.Save(_currentSettings);
+            RefreshProfileComboBox(_currentSettings.SelectedProfileName);
+            LoadSettingsToUi(_currentSettings);
+            _logger.Info($"Đã xóa Profile '{targetName}'. Đang chọn: '{_currentSettings.SelectedProfileName}'.");
+        }
     }
 
     private void SetUiBusy(bool isBusy, string? busyText = null)
     {
+        CboProfiles.IsEnabled = !isBusy;
+        BtnNewProfile.IsEnabled = !isBusy;
+        BtnSaveProfile.IsEnabled = !isBusy;
+        BtnDeleteProfile.IsEnabled = !isBusy;
         BtnSaveConfig.IsEnabled = !isBusy;
         BtnTestConnection.IsEnabled = !isBusy;
         BtnPreview.IsEnabled = !isBusy;
@@ -129,11 +251,12 @@ public partial class MainWindow : Window
 
     private void BtnSaveConfig_Click(object sender, RoutedEventArgs e)
     {
-        var settings = ReadSettingsFromUi();
-        _configService.Save(settings);
-        TxtRemotePaths.Text = string.Join(";", settings.RemotePaths);
-        _logger.Info($"Đã lưu cấu hình vào '{_configService.DefaultConfigPath}'.");
-        MessageBox.Show("Đã lưu cấu hình thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+        _currentSettings = ReadSettingsFromUi();
+        _configService.Save(_currentSettings);
+        RefreshProfileComboBox(_currentSettings.SelectedProfileName);
+        TxtRemotePaths.Text = string.Join(";", _currentSettings.RemotePaths);
+        _logger.Info($"Đã lưu cấu hình (Profile '{_currentSettings.SelectedProfileName}') vào '{_configService.DefaultConfigPath}'.");
+        MessageBox.Show($"Đã lưu cấu hình cho Profile '{_currentSettings.SelectedProfileName}' thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private async void BtnTestConnection_Click(object sender, RoutedEventArgs e)
