@@ -68,4 +68,18 @@ public class EmailNotificationServiceTests
         Assert.Contains("2,048", html);
         Assert.DoesNotContain("/Data/Out/ignored.csv", html);
     }
+
+    [Fact]
+    public void ResolveSenderEmail_InfersDomainFromSmtpHostWhenUserHasNoDomain()
+    {
+        var settings = new FtpSettings
+        {
+            SmtpHost = "mail.fujinet.net",
+            SmtpUser = "duy-hd",
+            SenderEmail = ""
+        };
+
+        string resolved = EmailNotificationService.ResolveSenderEmail(settings);
+        Assert.Equal("duy-hd@fujinet.net", resolved);
+    }
 }

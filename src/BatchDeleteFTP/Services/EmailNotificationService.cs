@@ -46,6 +46,38 @@ public class EmailNotificationService
         return result;
     }
 
+    public static string ResolveSenderEmail(FtpSettings settings)
+    {
+        if (!string.IsNullOrWhiteSpace(settings.SenderEmail))
+        {
+            return settings.SenderEmail.Trim();
+        }
+
+        string user = settings.SmtpUser?.Trim() ?? string.Empty;
+        if (user.Contains('@'))
+        {
+            return user;
+        }
+
+        string host = settings.SmtpHost?.Trim() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(host))
+        {
+            string domain = host;
+            foreach (var prefix in new[] { "smtp.", "mail.", "imap.", "pop.", "pop3." })
+            {
+                if (domain.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && domain.Length > prefix.Length)
+                {
+                    domain = domain.Substring(prefix.Length);
+                    break;
+                }
+            }
+
+            return $"{user}@{domain}";
+        }
+
+        return user;
+    }
+
     public string BuildPreviewSubject(FtpSettings settings, int candidateCount, DateTime scanTime)
     {
         string profile = string.IsNullOrWhiteSpace(settings.SelectedProfileName) ? "Default" : settings.SelectedProfileName;
@@ -135,6 +167,13 @@ public class EmailNotificationService
             throw new InvalidOperationException("Chưa cấu hình địa chỉ máy chủ SMTP (SmtpHost). Vui lòng mở 'Cấu hình Email' để thiết lập.");
         }
 
+        if (settings.SmtpPort is 143 or 993 or 110 or 995)
+        {
+            throw new InvalidOperationException(
+                $"Port {settings.SmtpPort} là cổng NHẬN mail (IMAP/POP3), không phải cổng GỬI mail (SMTP).\n\n" +
+                "Vui lòng đổi Port sang 25 (hoặc 587) của Outgoing Server (SMTP) trong Thunderbird!");
+        }
+
         var recipients = settings.RecipientEmails?
             .SelectMany(ParseRecipientEmails)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -145,13 +184,10 @@ public class EmailNotificationService
             throw new InvalidOperationException("Danh sách người nhận (Recipient Emails) đang trống hoặc không hợp lệ. Vui lòng nhập ít nhất 1 địa chỉ email.");
         }
 
-        string fromAddress = !string.IsNullOrWhiteSpace(settings.SenderEmail)
-            ? settings.SenderEmail.Trim()
-            : settings.SmtpUser.Trim();
-
+        string fromAddress = ResolveSenderEmail(settings);
         if (string.IsNullOrWhiteSpace(fromAddress) || !MailAddress.TryCreate(fromAddress, out _))
         {
-            throw new InvalidOperationException("Địa chỉ Email người gửi (Sender Email / SMTP User) chưa hợp lệ.");
+            throw new InvalidOperationException("Địa chỉ Email người gửi (Sender Email) chưa hợp lệ (VD: duy-hd@fujinet.net).");
         }
 
         DateTime now = DateTime.Now;
@@ -159,7 +195,8 @@ public class EmailNotificationService
         string subject = BuildPreviewSubject(settings, selectedCount, now);
         string htmlBody = BuildPreviewHtmlBody(settings, candidates ?? Array.Empty<FtpFileCandidate>(), now);
 
-        _logger.Info($"Đang gửi email kết quả Xem trước ({selectedCount} file) tới {recipients.Count} thành viên ({string.Join(", ", recipients)}) qua {settings.SmtpHost}:{settings.SmtpPort}...");
+        int smtpPort = settings.SmtpPort > 0 ? settings.SmtpPort : 25;
+        _logger.Info($"Đang gửi email kết quả Xem trước ({selectedCount} file) tới {recipients.Count} thành viên ({string.Join(", ", recipients)}) qua {settings.SmtpHost}:{smtpPort}...");
 
         using var message = new MailMessage
         {
@@ -176,7 +213,7 @@ public class EmailNotificationService
             message.To.Add(new MailAddress(email));
         }
 
-        using var client = new SmtpClient(settings.SmtpHost.Trim(), settings.SmtpPort > 0 ? settings.SmtpPort : 587)
+        using var client = new SmtpClient(settings.SmtpHost.Trim(), smtpPort)
         {
             EnableSsl = settings.SmtpEnableSsl,
             DeliveryMethod = SmtpDeliveryMethod.Network,

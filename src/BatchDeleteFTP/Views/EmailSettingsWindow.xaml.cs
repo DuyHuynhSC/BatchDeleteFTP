@@ -29,8 +29,9 @@ public partial class EmailSettingsWindow : Window
 
     private void LoadFromSettings()
     {
-        TxtSmtpHost.Text = string.IsNullOrWhiteSpace(_settings.SmtpHost) ? "smtp.gmail.com" : _settings.SmtpHost;
-        TxtSmtpPort.Text = (_settings.SmtpPort > 0 ? _settings.SmtpPort : 587).ToString();
+        TxtSmtpHost.Text = string.IsNullOrWhiteSpace(_settings.SmtpHost) ? "mail.fujinet.net" : _settings.SmtpHost;
+        int port = _settings.SmtpPort is <= 0 or 143 ? 25 : _settings.SmtpPort;
+        TxtSmtpPort.Text = port.ToString();
         ChkSmtpSsl.IsChecked = _settings.SmtpEnableSsl;
         TxtSmtpUser.Text = _settings.SmtpUser;
         TxtSmtpPassword.Password = _settings.SmtpPassword;
@@ -45,7 +46,7 @@ public partial class EmailSettingsWindow : Window
     public void ApplyToSettings(FtpSettings target)
     {
         int.TryParse(TxtSmtpPort.Text, out int smtpPort);
-        if (smtpPort <= 0) smtpPort = 587;
+        if (smtpPort <= 0) smtpPort = 25;
 
         target.SmtpHost = TxtSmtpHost.Text.Trim();
         target.SmtpPort = smtpPort;

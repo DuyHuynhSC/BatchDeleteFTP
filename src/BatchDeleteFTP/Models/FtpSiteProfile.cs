@@ -23,9 +23,9 @@ public class FtpSiteProfile
     public string LocalBackupPath { get; set; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups");
 
     // Email Notification Settings per Profile
-    public string SmtpHost { get; set; } = "smtp.gmail.com";
-    public int SmtpPort { get; set; } = 587;
-    public bool SmtpEnableSsl { get; set; } = true;
+    public string SmtpHost { get; set; } = "mail.fujinet.net";
+    public int SmtpPort { get; set; } = 25;
+    public bool SmtpEnableSsl { get; set; } = false;
     public string SmtpUser { get; set; } = string.Empty;
     public string SmtpPassword { get; set; } = string.Empty;
     public string SenderEmail { get; set; } = string.Empty;
