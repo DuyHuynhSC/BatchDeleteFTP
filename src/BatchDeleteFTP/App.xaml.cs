@@ -14,6 +14,7 @@ public partial class App : Application
         var configService = new ConfigService();
         var logger = new AppLogger();
         var ftpService = new FtpCleanupService(logger);
+        var emailService = new EmailNotificationService(logger);
         var cliOptions = CliOptions.Parse(e.Args);
 
         if (cliOptions.IsConsoleMode)
@@ -31,6 +32,11 @@ public partial class App : Application
                     foreach (var c in candidates)
                     {
                         logger.Info($"[PREVIEW] Sẽ xóa: {c.FullPath} | Upload: {c.ModifiedDate:yyyy-MM-dd HH:mm:ss} | Size: {c.Size} bytes");
+                    }
+
+                    if (settings.AutoSendEmailOnPreview && settings.RecipientEmails.Count > 0)
+                    {
+                        await emailService.SendPreviewReportAsync(settings, candidates);
                     }
                 }
                 else
@@ -52,7 +58,7 @@ public partial class App : Application
             return;
         }
 
-        var mainWindow = new MainWindow(configService, logger, ftpService);
+        var mainWindow = new MainWindow(configService, logger, ftpService, emailService);
         MainWindow = mainWindow;
         mainWindow.Show();
     }

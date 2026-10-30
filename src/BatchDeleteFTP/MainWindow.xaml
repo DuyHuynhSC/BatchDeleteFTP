@@ -284,16 +284,35 @@
 
                     <Button x:Name="BtnPreview" Style="{StaticResource MaterialDesignRaisedButton}"
                             Background="#1976D2" BorderBrush="#1976D2" Foreground="White"
-                            Height="36" Padding="16,0" Margin="0,0,10,0" Click="BtnPreview_Click">
+                            Height="36" Padding="14,0" Margin="0,0,8,0" Click="BtnPreview_Click">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="FileSearchOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="Xem Trước (Preview)" VerticalAlignment="Center" FontWeight="Bold"/>
                         </StackPanel>
                     </Button>
 
+                    <Button x:Name="BtnSendPreviewEmail" Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="#00897B" BorderBrush="#00897B" Foreground="White"
+                            Height="36" Padding="14,0" Margin="0,0,8,0" Click="BtnSendPreviewEmail_Click"
+                            ToolTip="Gửi kết quả Xem trước qua Email cho danh sách thành viên">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="EmailFastOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Gửi Email Xem Trước" VerticalAlignment="Center" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="BtnEmailSettings" Style="{StaticResource AppOutlinedButtonStyle}"
+                            Height="36" Padding="12,0" Margin="0,0,8,0" Click="BtnEmailSettings_Click"
+                            ToolTip="Cấu hình SMTP và danh sách nhiều địa chỉ Email nhận báo cáo">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="EmailEditOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Cấu Hình Email" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+
                     <Button x:Name="BtnExecuteDelete" Style="{StaticResource MaterialDesignRaisedButton}"
                             Background="#D32F2F" BorderBrush="#D32F2F" Foreground="White"
-                            Height="36" Padding="16,0" Click="BtnExecuteDelete_Click">
+                            Height="36" Padding="14,0" Click="BtnExecuteDelete_Click">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="DeleteSweepOutline" Width="19" Height="19" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="Thực Hiện Backup &amp; Xóa" VerticalAlignment="Center" FontWeight="Bold"/>

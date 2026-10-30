@@ -21,5 +21,16 @@ public class FtpSettings
     public bool EnableBackup { get; set; } = true;
     public string LocalBackupPath { get; set; } = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Backups");
     public bool IsDarkTheme { get; set; } = false;
+
+    // Email Notification Settings
+    public string SmtpHost { get; set; } = "smtp.gmail.com";
+    public int SmtpPort { get; set; } = 587;
+    public bool SmtpEnableSsl { get; set; } = true;
+    public string SmtpUser { get; set; } = string.Empty;
+    public string SmtpPassword { get; set; } = string.Empty;
+    public string SenderEmail { get; set; } = string.Empty;
+    public List<string> RecipientEmails { get; set; } = new();
+    public bool AutoSendEmailOnPreview { get; set; } = false;
+
     public List<FtpSiteProfile> Profiles { get; set; } = new();
 }

@@ -148,6 +148,22 @@ public class ConfigServiceTests
                     new FtpCleanupService(new AppLogger()),
                     new[] { "/" });
                 Assert.NotNull(picker.Background);
+
+                var emailSettings = new FtpSettings
+                {
+                    SmtpHost = "smtp.office365.com",
+                    SmtpPort = 587,
+                    RecipientEmails = new List<string> { "mem1@corp.com", "mem2@corp.com" }
+                };
+                var emailDialog = new BatchDeleteFTP.Views.EmailSettingsWindow(
+                    emailSettings,
+                    new EmailNotificationService(new AppLogger()),
+                    Array.Empty<FtpFileCandidate>());
+                var updatedEmail = new FtpSettings();
+                emailDialog.ApplyToSettings(updatedEmail);
+                Assert.Equal("smtp.office365.com", updatedEmail.SmtpHost);
+                Assert.Equal(587, updatedEmail.SmtpPort);
+                Assert.Equal(new[] { "mem1@corp.com", "mem2@corp.com" }, updatedEmail.RecipientEmails);
             }
             catch (Exception ex)
             {

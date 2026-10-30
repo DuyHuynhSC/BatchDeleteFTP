@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
@@ -19,6 +20,7 @@ public partial class MainWindow : Window
     private readonly ConfigService _configService;
     private readonly AppLogger _logger;
     private readonly FtpCleanupService _ftpService;
+    private readonly EmailNotificationService _emailService;
     private readonly ObservableCollection<FtpFileCandidate> _candidates = new();
     private FtpSettings _currentSettings = new();
     private bool _suppressProfileSelectionChanged;
@@ -29,16 +31,17 @@ public partial class MainWindow : Window
     }
 
     private MainWindow(ConfigService configService, AppLogger logger)
-        : this(configService, logger, new FtpCleanupService(logger))
+        : this(configService, logger, new FtpCleanupService(logger), new EmailNotificationService(logger))
     {
     }
 
-    public MainWindow(ConfigService configService, AppLogger logger, FtpCleanupService ftpService)
+    public MainWindow(ConfigService configService, AppLogger logger, FtpCleanupService ftpService, EmailNotificationService? emailService = null)
     {
         InitializeComponent();
         _configService = configService;
         _logger = logger;
         _ftpService = ftpService;
+        _emailService = emailService ?? new EmailNotificationService(logger);
 
         GridCandidates.ItemsSource = _candidates;
 
@@ -204,6 +207,14 @@ public partial class MainWindow : Window
             EnableBackup = ChkEnableBackup.IsChecked == true,
             LocalBackupPath = TxtLocalBackupPath.Text.Trim(),
             IsDarkTheme = TglDarkTheme.IsChecked == true,
+            SmtpHost = _currentSettings.SmtpHost,
+            SmtpPort = _currentSettings.SmtpPort,
+            SmtpEnableSsl = _currentSettings.SmtpEnableSsl,
+            SmtpUser = _currentSettings.SmtpUser,
+            SmtpPassword = _currentSettings.SmtpPassword,
+            SenderEmail = _currentSettings.SenderEmail,
+            RecipientEmails = new List<string>(_currentSettings.RecipientEmails ?? new List<string>()),
+            AutoSendEmailOnPreview = _currentSettings.AutoSendEmailOnPreview,
             Profiles = _currentSettings.Profiles
         };
     }
@@ -298,6 +309,8 @@ public partial class MainWindow : Window
         BtnSaveConfig.IsEnabled = !isBusy;
         BtnTestConnection.IsEnabled = !isBusy;
         BtnPreview.IsEnabled = !isBusy;
+        BtnSendPreviewEmail.IsEnabled = !isBusy;
+        BtnEmailSettings.IsEnabled = !isBusy;
         BtnExecuteDelete.IsEnabled = !isBusy;
         BtnBrowseRemote.IsEnabled = !isBusy;
         BusyProgressBar.Visibility = isBusy ? Visibility.Visible : Visibility.Collapsed;
@@ -394,11 +407,92 @@ public partial class MainWindow : Window
             {
                 _candidates.Add(item);
             }
+
+            if (settings.AutoSendEmailOnPreview && settings.RecipientEmails.Count > 0)
+            {
+                await _emailService.SendPreviewReportAsync(settings, _candidates);
+            }
         }
         catch (Exception ex)
         {
             _logger.Error($"Lỗi khi Xem Trước: {ex.Message}");
-            MessageBox.Show($"Lỗi khi quét file trên FTP:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Lỗi khi quét file hoặc gửi email Xem Trước:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetUiBusy(false);
+        }
+    }
+
+    private void BtnEmailSettings_Click(object sender, RoutedEventArgs e)
+    {
+        _currentSettings = ReadSettingsFromUi();
+        var dialog = new EmailSettingsWindow(_currentSettings, _emailService, _candidates)
+        {
+            Owner = this
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            _configService.Save(_currentSettings);
+            _logger.Info($"Đã lưu cấu hình Email (SMTP: {_currentSettings.SmtpHost}:{_currentSettings.SmtpPort}, Số email nhận: {_currentSettings.RecipientEmails.Count}).");
+        }
+    }
+
+    private async void BtnSendPreviewEmail_Click(object sender, RoutedEventArgs e)
+    {
+        _currentSettings = ReadSettingsFromUi();
+        _currentSettings.RecipientEmails ??= new List<string>();
+
+        if (_currentSettings.RecipientEmails.Count == 0)
+        {
+            var setupDialog = new EmailSettingsWindow(_currentSettings, _emailService, _candidates)
+            {
+                Owner = this
+            };
+
+            if (setupDialog.ShowDialog() != true || _currentSettings.RecipientEmails.Count == 0)
+            {
+                return;
+            }
+
+            _configService.Save(_currentSettings);
+        }
+
+        SetUiBusy(true);
+        try
+        {
+            if (_candidates.Count == 0)
+            {
+                var confirmScan = MessageBox.Show(
+                    "Danh sách Xem Trước hiện đang trống. Bạn có muốn quét danh sách file trên FTP Server ngay bây giờ rồi gửi Email không?",
+                    "Quét Xem Trước & Gửi Email",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question);
+
+                if (confirmScan == MessageBoxResult.Cancel) return;
+
+                if (confirmScan == MessageBoxResult.Yes)
+                {
+                    var list = await _ftpService.ScanCandidatesAsync(_currentSettings, DateTime.Now);
+                    foreach (var item in list)
+                    {
+                        _candidates.Add(item);
+                    }
+                }
+            }
+
+            await _emailService.SendPreviewReportAsync(_currentSettings, _candidates);
+            MessageBox.Show(
+                $"Đã gửi kết quả Xem Trước ({_candidates.Count(c => c.IsSelected)} file) thành công tới {_currentSettings.RecipientEmails.Count} địa chỉ email:\n- {string.Join("\n- ", _currentSettings.RecipientEmails)}",
+                "Gửi Email Thành Công",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Lỗi khi gửi Email Xem Trước: {ex.Message}");
+            MessageBox.Show($"Gửi Email Xem Trước thất bại:\n{ex.Message}", "Lỗi Gửi Email", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
