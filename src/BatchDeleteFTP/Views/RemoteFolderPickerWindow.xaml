@@ -19,7 +19,9 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <materialDesign:ColorZone Mode="PrimaryMid" Grid.Row="0" Padding="16,12" materialDesign:ElevationAssist.Elevation="Dp2">
+        <Border Grid.Row="0" Background="#283593" Padding="16,12"
+                TextElement.Foreground="White"
+                materialDesign:ElevationAssist.Elevation="Dp2">
             <StackPanel Orientation="Horizontal">
                 <materialDesign:PackIcon Kind="FolderMultipleOutline" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <StackPanel VerticalAlignment="Center">
@@ -28,7 +30,7 @@
                                FontSize="11" Opacity="0.85" TextWrapping="Wrap"/>
                 </StackPanel>
             </StackPanel>
-        </materialDesign:ColorZone>
+        </Border>
 
         <!-- TreeView Card -->
         <materialDesign:Card Grid.Row="1" Margin="14,12,14,8" Padding="8" UniformCornerRadius="8"
@@ -63,14 +65,15 @@
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Style="{StaticResource MaterialDesignOutlinedButton}"
+                <Button Style="{StaticResource AppOutlinedButtonStyle}"
                         Height="34" Padding="16,0" Margin="0,0,10,0" IsCancel="True">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Close" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="Hủy" VerticalAlignment="Center"/>
+                        <TextBlock Text="Hủy" VerticalAlignment="Center" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Button>
                 <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                        Background="#1976D2" BorderBrush="#1976D2" Foreground="White"
                         Height="34" Padding="16,0" Click="BtnConfirm_Click" IsDefault="True">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Check" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>

@@ -9,6 +9,26 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.ObsoleteBrushes.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- High-contrast theme-aware brushes (updated dynamically in ApplyTheme) -->
+            <SolidColorBrush x:Key="AppSectionIconBrush" Color="#3949AB" />
+            <SolidColorBrush x:Key="AppOutlinedButtonForeground" Color="#1A237E" />
+            <SolidColorBrush x:Key="AppOutlinedButtonBorder" Color="#3949AB" />
+            <SolidColorBrush x:Key="AppOutlinedButtonBackground" Color="#0D3949AB" />
+
+            <!-- High-contrast Outlined Button Style for both Light & Dark themes -->
+            <Style x:Key="AppOutlinedButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+                <Setter Property="Foreground" Value="{DynamicResource AppOutlinedButtonForeground}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource AppOutlinedButtonBorder}" />
+                <Setter Property="Background" Value="{DynamicResource AppOutlinedButtonBackground}" />
+                <Setter Property="BorderThickness" Value="1.2" />
+                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="6" />
+            </Style>
+
+            <!-- High-contrast Flat Button Style -->
+            <Style x:Key="AppFlatButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                <Setter Property="Foreground" Value="{DynamicResource AppOutlinedButtonForeground}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

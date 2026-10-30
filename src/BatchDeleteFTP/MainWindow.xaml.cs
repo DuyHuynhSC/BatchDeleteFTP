@@ -71,7 +71,30 @@ public partial class MainWindow : Window
             var paletteHelper = new PaletteHelper();
             Theme theme = paletteHelper.GetTheme();
             theme.SetBaseTheme(isDark ? BaseTheme.Dark : BaseTheme.Light);
+            theme.SetPrimaryColor(isDark
+                ? System.Windows.Media.Color.FromRgb(0x42, 0xA5, 0xF5)
+                : System.Windows.Media.Color.FromRgb(0x39, 0x49, 0xAB));
             paletteHelper.SetTheme(theme);
+
+            HeaderBanner.Background = new System.Windows.Media.SolidColorBrush(isDark
+                ? System.Windows.Media.Color.FromRgb(0x1E, 0x29, 0x3B)
+                : System.Windows.Media.Color.FromRgb(0x28, 0x35, 0x93));
+
+            if (Application.Current != null)
+            {
+                Application.Current.Resources["AppSectionIconBrush"] = new System.Windows.Media.SolidColorBrush(isDark
+                    ? System.Windows.Media.Color.FromRgb(0x64, 0xB5, 0xF6)
+                    : System.Windows.Media.Color.FromRgb(0x39, 0x49, 0xAB));
+                Application.Current.Resources["AppOutlinedButtonForeground"] = new System.Windows.Media.SolidColorBrush(isDark
+                    ? System.Windows.Media.Color.FromRgb(0xE3, 0xF2, 0xFD)
+                    : System.Windows.Media.Color.FromRgb(0x1A, 0x23, 0x7E));
+                Application.Current.Resources["AppOutlinedButtonBorder"] = new System.Windows.Media.SolidColorBrush(isDark
+                    ? System.Windows.Media.Color.FromRgb(0x64, 0xB5, 0xF6)
+                    : System.Windows.Media.Color.FromRgb(0x39, 0x49, 0xAB));
+                Application.Current.Resources["AppOutlinedButtonBackground"] = new System.Windows.Media.SolidColorBrush(isDark
+                    ? System.Windows.Media.Color.FromArgb(0x24, 0x42, 0xA5, 0xF5)
+                    : System.Windows.Media.Color.FromArgb(0x12, 0x39, 0x49, 0xAB));
+            }
         }
         finally
         {
