@@ -20,5 +20,6 @@ public class FtpSettings
     public int RetentionDays { get; set; } = 1;
     public bool EnableBackup { get; set; } = true;
     public string LocalBackupPath { get; set; } = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Backups");
+    public bool IsDarkTheme { get; set; } = false;
     public List<FtpSiteProfile> Profiles { get; set; } = new();
 }

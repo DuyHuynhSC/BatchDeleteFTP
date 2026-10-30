@@ -9,6 +9,7 @@ using System.Windows.Input;
 using BatchDeleteFTP.Models;
 using BatchDeleteFTP.Services;
 using BatchDeleteFTP.Views;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 
 namespace BatchDeleteFTP;
@@ -21,6 +22,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<FtpFileCandidate> _candidates = new();
     private FtpSettings _currentSettings = new();
     private bool _suppressProfileSelectionChanged;
+    private bool _suppressThemeChanged;
 
     public MainWindow() : this(new ConfigService(), new AppLogger())
     {
@@ -52,6 +54,47 @@ public partial class MainWindow : Window
         _currentSettings = _configService.Load();
         RefreshProfileComboBox(_currentSettings.SelectedProfileName);
         LoadSettingsToUi(_currentSettings);
+        ApplyTheme(_currentSettings.IsDarkTheme);
+    }
+
+    public void SetDarkTheme(bool isDark) => TglDarkTheme.IsChecked = isDark;
+
+    private void ApplyTheme(bool isDark)
+    {
+        _suppressThemeChanged = true;
+        try
+        {
+            TglDarkTheme.IsChecked = isDark;
+            IconThemeMode.Kind = isDark ? PackIconKind.WeatherNight : PackIconKind.WeatherSunny;
+            TxtThemeMode.Text = isDark ? "Dark" : "Light";
+
+            var paletteHelper = new PaletteHelper();
+            Theme theme = paletteHelper.GetTheme();
+            theme.SetBaseTheme(isDark ? BaseTheme.Dark : BaseTheme.Light);
+            paletteHelper.SetTheme(theme);
+        }
+        finally
+        {
+            _suppressThemeChanged = false;
+        }
+    }
+
+    private void TglDarkTheme_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_suppressThemeChanged) return;
+
+        bool isDark = TglDarkTheme.IsChecked == true;
+        _currentSettings.IsDarkTheme = isDark;
+        ApplyTheme(isDark);
+
+        try
+        {
+            _configService.Save(_currentSettings);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Không thể lưu cấu hình Theme: {ex.Message}");
+        }
     }
 
     private void RefreshProfileComboBox(string? selectedProfileName)
@@ -137,6 +180,7 @@ public partial class MainWindow : Window
             RetentionDays = retentionDays,
             EnableBackup = ChkEnableBackup.IsChecked == true,
             LocalBackupPath = TxtLocalBackupPath.Text.Trim(),
+            IsDarkTheme = TglDarkTheme.IsChecked == true,
             Profiles = _currentSettings.Profiles
         };
     }
@@ -174,7 +218,7 @@ public partial class MainWindow : Window
         }
 
         CboProfiles.Focus();
-        _logger.Info($"Đang tạo Profile mới '{newName}'. Hãy chỉnh sửa thông tin và nhấn '💾 Lưu Profile'.");
+        _logger.Info($"Đang tạo Profile mới '{newName}'. Hãy chỉnh sửa thông tin và nhấn 'Lưu Profile'.");
     }
 
     private void BtnSaveProfile_Click(object sender, RoutedEventArgs e)
@@ -233,19 +277,20 @@ public partial class MainWindow : Window
         BtnPreview.IsEnabled = !isBusy;
         BtnExecuteDelete.IsEnabled = !isBusy;
         BtnBrowseRemote.IsEnabled = !isBusy;
+        BusyProgressBar.Visibility = isBusy ? Visibility.Visible : Visibility.Collapsed;
 
         if (isBusy)
         {
             Mouse.OverrideCursor = Cursors.Wait;
             if (!string.IsNullOrEmpty(busyText))
             {
-                BtnTestConnection.Content = busyText;
+                TxtTestConnectionLabel.Text = busyText;
             }
         }
         else
         {
             Mouse.OverrideCursor = null;
-            BtnTestConnection.Content = "🔌 Kiểm Tra Kết Nối";
+            TxtTestConnectionLabel.Text = "Kiểm Tra Kết Nối";
         }
     }
 
@@ -261,7 +306,7 @@ public partial class MainWindow : Window
 
     private async void BtnTestConnection_Click(object sender, RoutedEventArgs e)
     {
-        SetUiBusy(true, "⏳ Đang kết nối...");
+        SetUiBusy(true, "Đang kết nối...");
         try
         {
             var settings = ReadSettingsFromUi();
@@ -394,5 +439,10 @@ public partial class MainWindow : Window
     private void BtnUnselectAll_Click(object sender, RoutedEventArgs e)
     {
         foreach (var item in _candidates) item.IsSelected = false;
+    }
+
+    private void BtnClearLog_Click(object sender, RoutedEventArgs e)
+    {
+        TxtLogs.Clear();
     }
 }

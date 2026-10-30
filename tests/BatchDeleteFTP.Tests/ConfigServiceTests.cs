@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Windows;
 using BatchDeleteFTP.Models;
 using BatchDeleteFTP.Services;
+using MaterialDesignThemes.Wpf;
 using Xunit;
 
 namespace BatchDeleteFTP.Tests;
@@ -30,7 +33,8 @@ public class ConfigServiceTests
                 RemotePaths = new List<string> { "/FolderA", "/FolderB/Sub" },
                 RetentionDays = 1,
                 EnableBackup = true,
-                LocalBackupPath = @"C:\Temp\FTPBackup"
+                LocalBackupPath = @"C:\Temp\FTPBackup",
+                IsDarkTheme = true
             };
 
             service.Save(original, tempFile);
@@ -48,6 +52,7 @@ public class ConfigServiceTests
             Assert.Equal(new[] { "/FolderA", "/FolderB/Sub" }, loaded.RemotePaths);
             Assert.True(loaded.EnableBackup);
             Assert.Equal(@"C:\Temp\FTPBackup", loaded.LocalBackupPath);
+            Assert.True(loaded.IsDarkTheme);
             Assert.NotEmpty(loaded.Profiles);
         }
         finally
@@ -106,5 +111,53 @@ public class ConfigServiceTests
         {
             if (File.Exists(tempFile)) File.Delete(tempFile);
         }
+    }
+
+    [Fact]
+    public void MainWindow_InitializesMaterialThemeAndTogglesDarkLightWithoutError()
+    {
+        Exception? threadEx = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                if (Application.Current == null)
+                {
+                    var app = new App();
+                    app.InitializeComponent();
+                }
+
+                var window = new MainWindow();
+                var paletteHelper = new PaletteHelper();
+
+                window.SetDarkTheme(true);
+                Assert.Equal(BaseTheme.Dark, paletteHelper.GetTheme().GetBaseTheme());
+                var darkBg = (window.Background as System.Windows.Media.SolidColorBrush)?.Color;
+
+                window.SetDarkTheme(false);
+                Assert.Equal(BaseTheme.Light, paletteHelper.GetTheme().GetBaseTheme());
+                var lightBg = (window.Background as System.Windows.Media.SolidColorBrush)?.Color;
+
+                Assert.NotNull(darkBg);
+                Assert.NotNull(lightBg);
+                Assert.NotEqual(darkBg, lightBg);
+                Assert.NotNull(Application.Current!.TryFindResource("PrimaryHueMidBrush"));
+
+                var picker = new BatchDeleteFTP.Views.RemoteFolderPickerWindow(
+                    new FtpSettings(),
+                    new FtpCleanupService(new AppLogger()),
+                    new[] { "/" });
+                Assert.NotNull(picker.Background);
+            }
+            catch (Exception ex)
+            {
+                threadEx = ex;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
+        Assert.Null(threadEx);
     }
 }
