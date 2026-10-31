@@ -1,0 +1,57 @@
+<Window x:Class="BatchDeleteFTP.Views.PromptDialogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Nhập Dữ Liệu" Height="220" Width="440"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Icon="pack://application:,,,/BatchDeleteFTP;component/Assets/app.ico"
+        Background="{DynamicResource MaterialDesignPaper}"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        FontFamily="{materialDesign:MaterialDesignFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#283593" Padding="14,10"
+                TextElement.Foreground="White"
+                materialDesign:ElevationAssist.Elevation="Dp2">
+            <StackPanel Orientation="Horizontal">
+                <materialDesign:PackIcon x:Name="IconPrompt" Kind="FolderPlusOutline" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock x:Name="TxtTitle" Text="Tạo Thư Mục Mới" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Body -->
+        <StackPanel Grid.Row="1" Margin="20,16,20,10" VerticalAlignment="Center">
+            <TextBlock x:Name="TxtPromptMessage" Text="Nhập tên thư mục cần tạo trên FTP:"
+                       FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBox x:Name="TxtInput"
+                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                     materialDesign:HintAssist.Hint="Tên thư mục"
+                     FontSize="14"
+                     KeyDown="TxtInput_KeyDown"/>
+        </StackPanel>
+
+        <!-- Footer Buttons -->
+        <Border Grid.Row="2" Background="{DynamicResource MaterialDesignPaper}"
+                BorderBrush="#22888888" BorderThickness="0,1,0,0" Padding="14,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                        Background="#1976D2" BorderBrush="#1976D2" Foreground="White"
+                        Height="32" Padding="16,0" Margin="0,0,8,0" Click="BtnOk_Click">
+                    <TextBlock Text="Đồng ý" FontWeight="SemiBold"/>
+                </Button>
+                <Button Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                        Height="32" Padding="14,0" Click="BtnCancel_Click">
+                    <TextBlock Text="Hủy" FontWeight="SemiBold"/>
+                </Button>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

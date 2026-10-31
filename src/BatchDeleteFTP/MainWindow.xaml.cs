@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,10 @@ public partial class MainWindow : Window
     private readonly FtpCleanupService _ftpService;
     private readonly EmailNotificationService _emailService;
     private readonly ObservableCollection<FtpFileCandidate> _candidates = new();
+    private readonly ObservableCollection<FileManagerEntry> _fmEntries = new();
+    private readonly ObservableCollection<FileManagerEntry> _fmDisplayEntries = new();
+    private string _currentFmRemotePath = "/";
+    private bool _fmLoadedOnce;
     private FtpSettings _currentSettings = new();
     private bool _suppressProfileSelectionChanged;
     private bool _suppressThemeChanged;
@@ -44,6 +49,7 @@ public partial class MainWindow : Window
         _emailService = emailService ?? new EmailNotificationService(logger);
 
         GridCandidates.ItemsSource = _candidates;
+        GridFileManager.ItemsSource = _fmDisplayEntries;
 
         _logger.OnLogMessage += line =>
         {
@@ -557,6 +563,491 @@ public partial class MainWindow : Window
     {
         foreach (var item in _candidates) item.IsSelected = false;
     }
+
+    // =========================================================================
+    // SECTION: FTP FILE MANAGER TAB LOGIC (VIEW, UPLOAD, DOWNLOAD, DELETE, ETC.)
+    // =========================================================================
+
+    private async void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.Source != MainTabControl) return;
+        if (MainTabControl.SelectedItem == TabFileManager && !_fmLoadedOnce)
+        {
+            _fmLoadedOnce = true;
+            string initialPath = "/";
+            var paths = (TxtRemotePaths.Text ?? "")
+                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (paths.Length > 0 && !string.IsNullOrWhiteSpace(paths[0]))
+            {
+                initialPath = paths[0];
+            }
+            TxtFmRemotePath.Text = initialPath;
+            await LoadFileManagerDirectoryAsync(initialPath);
+        }
+    }
+
+    private void SetFmBusy(bool isBusy)
+    {
+        FmProgressBar.Visibility = isBusy ? Visibility.Visible : Visibility.Collapsed;
+        BtnFmGo.IsEnabled = !isBusy;
+        BtnFmUp.IsEnabled = !isBusy;
+        BtnFmHome.IsEnabled = !isBusy;
+        BtnFmRefresh.IsEnabled = !isBusy;
+        BtnFmUploadFile.IsEnabled = !isBusy;
+        BtnFmUploadFolder.IsEnabled = !isBusy;
+        BtnFmDownload.IsEnabled = !isBusy;
+        BtnFmView.IsEnabled = !isBusy;
+        BtnFmNewFolder.IsEnabled = !isBusy;
+        BtnFmDelete.IsEnabled = !isBusy;
+        GridFileManager.IsEnabled = !isBusy;
+
+        Mouse.OverrideCursor = isBusy ? Cursors.Wait : null;
+    }
+
+    private async Task LoadFileManagerDirectoryAsync(string remotePath)
+    {
+        string target = string.IsNullOrWhiteSpace(remotePath) ? "/" : FtpCleanupService.NormalizeSingleRemotePath(remotePath);
+        var settings = ReadSettingsFromUi();
+
+        if (string.IsNullOrWhiteSpace(settings.Host))
+        {
+            MessageBox.Show(this, "Vui lòng nhập địa chỉ FTP Host trước khi duyệt thư mục.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        SetFmBusy(true);
+        try
+        {
+            _logger.Info($"[File Manager] Đang tải danh sách thư mục: '{target}'...");
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            var entries = await _ftpService.GetDirectoryEntriesAsync(settings, target, cts.Token);
+
+            _currentFmRemotePath = target;
+            TxtFmRemotePath.Text = target;
+
+            _fmEntries.Clear();
+            foreach (var entry in entries)
+            {
+                entry.PropertyChanged += (_, propArgs) =>
+                {
+                    if (propArgs.PropertyName == nameof(FileManagerEntry.IsSelected))
+                    {
+                        UpdateFmSummary();
+                    }
+                };
+                _fmEntries.Add(entry);
+            }
+
+            ApplyFmFilter();
+            _logger.Info($"[File Manager] Đã tải xong '{target}' ({entries.Count} mục).");
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.Error($"[File Manager] Hết thời gian chờ (Timeout 30s) khi tải '{target}'.");
+            MessageBox.Show(this, "Quá thời gian chờ khi kết nối hoặc đọc danh sách file trên FTP Server (Timeout 30s).", "Timeout", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        catch (Exception ex)
+        {
+            string msg = ex.InnerException != null ? $"{ex.Message} ({ex.InnerException.Message})" : ex.Message;
+            _logger.Error($"[File Manager] Lỗi khi tải thư mục '{target}': {msg}");
+            MessageBox.Show(this, $"Không thể đọc danh sách file tại '{target}':\n{msg}", "Lỗi FTP", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetFmBusy(false);
+            UpdateFmSummary();
+        }
+    }
+
+    private void ApplyFmFilter()
+    {
+        string filter = TxtFmFilter?.Text?.Trim() ?? string.Empty;
+        _fmDisplayEntries.Clear();
+
+        foreach (var entry in _fmEntries)
+        {
+            if (entry.IsParentEntry)
+            {
+                _fmDisplayEntries.Add(entry);
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(filter) || entry.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+            {
+                _fmDisplayEntries.Add(entry);
+            }
+        }
+        UpdateFmSummary();
+    }
+
+    private void UpdateFmSummary()
+    {
+        if (TxtFmSummary == null) return;
+        var validEntries = _fmDisplayEntries.Where(e => !e.IsParentEntry).ToList();
+        int dirCount = validEntries.Count(e => e.IsDirectory);
+        int fileCount = validEntries.Count(e => !e.IsDirectory);
+        long totalSize = validEntries.Where(e => !e.IsDirectory).Sum(e => e.Size);
+        int selectedCount = validEntries.Count(e => e.IsSelected);
+
+        TxtFmSummary.Text = $"Tổng cộng: {validEntries.Count} mục ({dirCount} thư mục, {fileCount} file - {FileManagerEntry.FormatFileSize(totalSize)}) | Đã chọn: {selectedCount} mục";
+    }
+
+    private async void GridFileManager_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (GridFileManager.SelectedItem is not FileManagerEntry entry) return;
+        if (entry.IsParentEntry || entry.IsDirectory)
+        {
+            await LoadFileManagerDirectoryAsync(entry.FullPath);
+        }
+        else
+        {
+            await ViewRemoteFileAsync(entry);
+        }
+    }
+
+    private async void BtnFmGo_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadFileManagerDirectoryAsync(TxtFmRemotePath.Text.Trim());
+    }
+
+    private async void TxtFmRemotePath_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            await LoadFileManagerDirectoryAsync(TxtFmRemotePath.Text.Trim());
+        }
+    }
+
+    private async void BtnFmUp_Click(object sender, RoutedEventArgs e)
+    {
+        string parent = FtpCleanupService.GetParentRemotePath(_currentFmRemotePath);
+        await LoadFileManagerDirectoryAsync(parent);
+    }
+
+    private async void BtnFmHome_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadFileManagerDirectoryAsync("/");
+    }
+
+    private async void BtnFmRefresh_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadFileManagerDirectoryAsync(_currentFmRemotePath);
+    }
+
+    private void TxtFmFilter_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        ApplyFmFilter();
+    }
+
+    private void BtnFmSelectAll_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (var entry in _fmDisplayEntries)
+        {
+            if (!entry.IsParentEntry) entry.IsSelected = true;
+        }
+    }
+
+    private void BtnFmUnselectAll_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (var entry in _fmDisplayEntries)
+        {
+            entry.IsSelected = false;
+        }
+    }
+
+    private List<FileManagerEntry> GetSelectedOrActiveEntries()
+    {
+        var checkedItems = _fmDisplayEntries.Where(e => e.IsSelected && !e.IsParentEntry).ToList();
+        if (checkedItems.Count > 0) return checkedItems;
+
+        if (GridFileManager.SelectedItem is FileManagerEntry active && !active.IsParentEntry)
+        {
+            return new List<FileManagerEntry> { active };
+        }
+
+        return new List<FileManagerEntry>();
+    }
+
+    private async Task ViewRemoteFileAsync(FileManagerEntry entry)
+    {
+        if (entry.IsParentEntry || entry.IsDirectory)
+        {
+            await LoadFileManagerDirectoryAsync(entry.FullPath);
+            return;
+        }
+
+        var settings = ReadSettingsFromUi();
+        SetFmBusy(true);
+        entry.Status = "Đang tải xem...";
+        try
+        {
+            string tempDir = Path.Combine(Path.GetTempPath(), "BatchDeleteFTP", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string localFile = Path.Combine(tempDir, entry.Name);
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            bool ok = await _ftpService.DownloadSingleFileAsync(settings, entry.FullPath, localFile, cts.Token);
+            if (ok && File.Exists(localFile))
+            {
+                entry.Status = "Đã mở";
+                var viewer = new FilePreviewWindow(entry, localFile)
+                {
+                    Owner = this
+                };
+                viewer.ShowDialog();
+            }
+            else
+            {
+                entry.Status = "Lỗi tải file";
+                MessageBox.Show(this, $"Không thể tải file '{entry.Name}' để xem trước.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            entry.Status = "Lỗi";
+            _logger.Error($"[File Manager] Lỗi khi xem file '{entry.FullPath}': {ex.Message}");
+            MessageBox.Show(this, $"Lỗi khi tải xem file:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetFmBusy(false);
+        }
+    }
+
+    private async void BtnFmView_Click(object sender, RoutedEventArgs e)
+    {
+        var items = GetSelectedOrActiveEntries();
+        if (items.Count == 0)
+        {
+            MessageBox.Show(this, "Vui lòng chọn một file để xem.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        await ViewRemoteFileAsync(items[0]);
+    }
+
+    private void CtxFmView_Click(object sender, RoutedEventArgs e) => BtnFmView_Click(sender, e);
+
+    private async void BtnFmDownload_Click(object sender, RoutedEventArgs e)
+    {
+        var items = GetSelectedOrActiveEntries();
+        if (items.Count == 0)
+        {
+            MessageBox.Show(this, "Vui lòng chọn ít nhất một file hoặc thư mục cần tải về máy tính.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var dlg = new OpenFolderDialog
+        {
+            Title = $"Chọn thư mục lưu {items.Count} mục tải về từ FTP"
+        };
+
+        if (dlg.ShowDialog(this) != true) return;
+        string targetDir = dlg.FolderName;
+
+        var settings = ReadSettingsFromUi();
+        SetFmBusy(true);
+        try
+        {
+            _logger.Info($"[File Manager] Bắt đầu tải {items.Count} mục về '{targetDir}'...");
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+            var (success, failed) = await _ftpService.DownloadItemsAsync(settings, items, targetDir, cts.Token);
+
+            string msg = $"Đã hoàn tất tải về!\n- Thành công: {success} mục\n- Thất bại: {failed} mục\nĐường dẫn: {targetDir}";
+            _logger.Info($"[File Manager] {msg}");
+            MessageBox.Show(this, msg, "Kết quả Tải Về", MessageBoxButton.OK, failed > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"[File Manager] Lỗi khi tải về: {ex.Message}");
+            MessageBox.Show(this, $"Lỗi trong quá trình tải về:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetFmBusy(false);
+        }
+    }
+
+    private void CtxFmDownload_Click(object sender, RoutedEventArgs e) => BtnFmDownload_Click(sender, e);
+
+    private async void BtnFmUploadFile_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFileDialog
+        {
+            Title = $"Chọn các file tải lên FTP ('{_currentFmRemotePath}')",
+            Multiselect = true
+        };
+
+        if (dlg.ShowDialog(this) != true || dlg.FileNames.Length == 0) return;
+
+        var uploadEntries = dlg.FileNames.Select(f => new FileManagerEntry
+        {
+            Name = Path.GetFileName(f),
+            FullPath = f,
+            IsDirectory = false,
+            Size = new FileInfo(f).Length
+        }).ToList();
+
+        var settings = ReadSettingsFromUi();
+        SetFmBusy(true);
+        try
+        {
+            _logger.Info($"[File Manager] Bắt đầu upload {uploadEntries.Count} file lên '{_currentFmRemotePath}'...");
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(15));
+            var (success, failed) = await _ftpService.UploadItemsAsync(settings, uploadEntries, _currentFmRemotePath, cts.Token);
+
+            string msg = $"Hoàn tất tải lên file!\n- Thành công: {success} file\n- Thất bại: {failed} file";
+            _logger.Info($"[File Manager] {msg}");
+            MessageBox.Show(this, msg, "Kết quả Tải Lên", MessageBoxButton.OK, failed > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"[File Manager] Lỗi khi upload: {ex.Message}");
+            MessageBox.Show(this, $"Lỗi trong quá trình tải lên:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetFmBusy(false);
+            await LoadFileManagerDirectoryAsync(_currentFmRemotePath);
+        }
+    }
+
+    private void CtxFmUploadFile_Click(object sender, RoutedEventArgs e) => BtnFmUploadFile_Click(sender, e);
+
+    private async void BtnFmUploadFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFolderDialog
+        {
+            Title = $"Chọn thư mục cần tải lên FTP ('{_currentFmRemotePath}')"
+        };
+
+        if (dlg.ShowDialog(this) != true || string.IsNullOrWhiteSpace(dlg.FolderName)) return;
+
+        string folderPath = dlg.FolderName;
+        string folderName = Path.GetFileName(folderPath);
+        if (string.IsNullOrEmpty(folderName))
+        {
+            folderName = new DirectoryInfo(folderPath).Name;
+        }
+
+        var uploadEntries = new List<FileManagerEntry>
+        {
+            new FileManagerEntry
+            {
+                Name = folderName,
+                FullPath = folderPath,
+                IsDirectory = true
+            }
+        };
+
+        var settings = ReadSettingsFromUi();
+        SetFmBusy(true);
+        try
+        {
+            _logger.Info($"[File Manager] Bắt đầu upload thư mục '{folderPath}' lên '{_currentFmRemotePath}'...");
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(30));
+            var (success, failed) = await _ftpService.UploadItemsAsync(settings, uploadEntries, _currentFmRemotePath, cts.Token);
+
+            string msg = $"Hoàn tất tải lên thư mục!\n- Thành công: {success} thư mục\n- Thất bại: {failed} thư mục";
+            _logger.Info($"[File Manager] {msg}");
+            MessageBox.Show(this, msg, "Kết quả Tải Lên", MessageBoxButton.OK, failed > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"[File Manager] Lỗi khi upload thư mục: {ex.Message}");
+            MessageBox.Show(this, $"Lỗi trong quá trình tải lên thư mục:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetFmBusy(false);
+            await LoadFileManagerDirectoryAsync(_currentFmRemotePath);
+        }
+    }
+
+    private void CtxFmUploadFolder_Click(object sender, RoutedEventArgs e) => BtnFmUploadFolder_Click(sender, e);
+
+    private async void BtnFmNewFolder_Click(object sender, RoutedEventArgs e)
+    {
+        string? folderName = PromptDialogWindow.Show(
+            this,
+            "Tạo Thư Mục Mới",
+            $"Nhập tên thư mục muốn tạo tại '{_currentFmRemotePath}':",
+            "ThuMucMoi",
+            PackIconKind.FolderPlusOutline);
+
+        if (string.IsNullOrWhiteSpace(folderName)) return;
+
+        var settings = ReadSettingsFromUi();
+        string newPath = FtpCleanupService.CombineRemotePath(_currentFmRemotePath, folderName.Trim());
+
+        SetFmBusy(true);
+        try
+        {
+            _logger.Info($"[File Manager] Đang tạo thư mục: '{newPath}'...");
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            await _ftpService.CreateRemoteDirectoryAsync(settings, newPath, cts.Token);
+            _logger.Info($"[File Manager] Tạo thư mục thành công: '{newPath}'");
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"[File Manager] Lỗi khi tạo thư mục '{newPath}': {ex.Message}");
+            MessageBox.Show(this, $"Không thể tạo thư mục:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetFmBusy(false);
+            await LoadFileManagerDirectoryAsync(_currentFmRemotePath);
+        }
+    }
+
+    private void CtxFmNewFolder_Click(object sender, RoutedEventArgs e) => BtnFmNewFolder_Click(sender, e);
+
+    private async void BtnFmDelete_Click(object sender, RoutedEventArgs e)
+    {
+        var items = GetSelectedOrActiveEntries();
+        if (items.Count == 0)
+        {
+            MessageBox.Show(this, "Vui lòng chọn ít nhất một file hoặc thư mục để xóa khỏi FTP.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        string desc = items.Count == 1 ? $"'{items[0].Name}'" : $"{items.Count} mục";
+        var confirm = MessageBox.Show(
+            this,
+            $"Bạn có chắc chắn muốn XÓA VĨNH VIỄN {desc} trên FTP Server không?\r\n\r\nĐường dẫn: {_currentFmRemotePath}\r\nCẢNH BÁO: Thao tác này không thể hoàn tác!",
+            "Xác nhận xóa trên FTP",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        var settings = ReadSettingsFromUi();
+        SetFmBusy(true);
+        try
+        {
+            _logger.Info($"[File Manager] Bắt đầu xóa {items.Count} mục trên FTP...");
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+            var (deleted, failed) = await _ftpService.DeleteRemoteEntriesAsync(settings, items, cts.Token);
+
+            string msg = $"Hoàn tất xóa!\n- Đã xóa: {deleted} mục\n- Lỗi: {failed} mục";
+            _logger.Info($"[File Manager] {msg}");
+            MessageBox.Show(this, msg, "Kết quả Xóa", MessageBoxButton.OK, failed > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"[File Manager] Lỗi khi xóa trên FTP: {ex.Message}");
+            MessageBox.Show(this, $"Lỗi trong quá trình xóa:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetFmBusy(false);
+            await LoadFileManagerDirectoryAsync(_currentFmRemotePath);
+        }
+    }
+
+    private void CtxFmDelete_Click(object sender, RoutedEventArgs e) => BtnFmDelete_Click(sender, e);
+
+    private void CtxFmRefresh_Click(object sender, RoutedEventArgs e) => BtnFmRefresh_Click(sender, e);
 
     private void BtnClearLog_Click(object sender, RoutedEventArgs e)
     {

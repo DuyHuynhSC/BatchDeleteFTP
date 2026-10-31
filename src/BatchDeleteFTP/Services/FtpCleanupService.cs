@@ -334,4 +334,319 @@ public class FtpCleanupService
         _logger.Info($"Hoàn tất! Đã xóa: {deletedCount}, Lỗi: {failedCount}.");
         return (deletedCount, failedCount);
     }
+
+    public static string NormalizeSingleRemotePath(string? remotePath)
+    {
+        if (string.IsNullOrWhiteSpace(remotePath)) return "/";
+        string s = remotePath.Trim().Replace('\\', '/');
+        while (s.Contains("//")) s = s.Replace("//", "/");
+        if (!s.StartsWith('/')) s = "/" + s;
+        if (s.Length > 1) s = s.TrimEnd('/');
+        return s;
+    }
+
+    public static string GetParentRemotePath(string? remotePath)
+    {
+        string normalized = NormalizeSingleRemotePath(remotePath);
+        if (normalized == "/") return "/";
+        int lastSlash = normalized.LastIndexOf('/');
+        return lastSlash <= 0 ? "/" : normalized.Substring(0, lastSlash);
+    }
+
+    public static string CombineRemotePath(string? baseDir, string? childName)
+    {
+        string parent = NormalizeSingleRemotePath(baseDir);
+        string child = (childName ?? string.Empty).Trim().Replace('\\', '/').Trim('/');
+        if (string.IsNullOrEmpty(child)) return parent;
+        return parent == "/" ? "/" + child : parent + "/" + child;
+    }
+
+    public async Task<List<FileManagerEntry>> GetDirectoryEntriesAsync(
+        FtpSettings settings,
+        string remotePath,
+        CancellationToken ct = default)
+    {
+        string targetPath = NormalizeSingleRemotePath(remotePath);
+        await using var client = CreateClient(settings);
+        await ConnectOptimizedAsync(client, settings, ct);
+
+        var items = await client.GetListing(targetPath, FtpListOption.Modify, ct);
+        var entries = new List<FileManagerEntry>();
+
+        if (targetPath != "/")
+        {
+            entries.Add(new FileManagerEntry
+            {
+                Name = "..",
+                FullPath = GetParentRemotePath(targetPath),
+                IsDirectory = true,
+                IsParentEntry = true
+            });
+        }
+
+        foreach (var item in items)
+        {
+            if (item.Name is "." or "..") continue;
+            if (item.Type != FtpObjectType.Directory && item.Type != FtpObjectType.File) continue;
+
+            entries.Add(new FileManagerEntry
+            {
+                Name = item.Name,
+                FullPath = NormalizeSingleRemotePath(item.FullName),
+                IsDirectory = item.Type == FtpObjectType.Directory,
+                Size = item.Size,
+                ModifiedDate = item.Modified,
+                Permissions = item.RawPermissions ?? string.Empty
+            });
+        }
+
+        return entries
+            .OrderByDescending(e => e.IsParentEntry)
+            .ThenByDescending(e => e.IsDirectory)
+            .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public async Task<bool> DownloadSingleFileAsync(
+        FtpSettings settings,
+        string remoteFilePath,
+        string localFilePath,
+        CancellationToken ct = default)
+    {
+        string? localDir = Path.GetDirectoryName(localFilePath);
+        if (!string.IsNullOrEmpty(localDir) && !Directory.Exists(localDir))
+        {
+            Directory.CreateDirectory(localDir);
+        }
+
+        await using var client = CreateClient(settings);
+        _logger.Info($"[Download] Đang kết nối tới {settings.Host}:{settings.Port} để tải '{remoteFilePath}'...");
+        await ConnectOptimizedAsync(client, settings, ct);
+
+        FtpStatus status = await client.DownloadFile(
+            localFilePath,
+            remoteFilePath,
+            FtpLocalExists.Overwrite,
+            FtpVerify.None,
+            progress: null,
+            token: ct);
+
+        bool ok = status == FtpStatus.Success && File.Exists(localFilePath);
+        if (ok)
+        {
+            _logger.Info($"[Download] Tải thành công: '{remoteFilePath}' -> '{localFilePath}'");
+        }
+        else
+        {
+            _logger.Error($"[Download] Tải thất bại: '{remoteFilePath}'");
+        }
+
+        return ok;
+    }
+
+    public async Task<(int SuccessCount, int FailedCount)> DownloadItemsAsync(
+        FtpSettings settings,
+        IEnumerable<FileManagerEntry> remoteEntries,
+        string localTargetDirectory,
+        CancellationToken ct = default)
+    {
+        var list = remoteEntries.Where(e => !e.IsParentEntry).ToList();
+        if (list.Count == 0) return (0, 0);
+
+        if (!Directory.Exists(localTargetDirectory))
+        {
+            Directory.CreateDirectory(localTargetDirectory);
+        }
+
+        int success = 0;
+        int failed = 0;
+
+        await using var client = CreateClient(settings);
+        _logger.Info($"[Download] Đang kết nối tới {settings.Host}:{settings.Port} để tải {list.Count} mục về '{localTargetDirectory}'...");
+        await ConnectOptimizedAsync(client, settings, ct);
+
+        foreach (var entry in list)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                string destPath = Path.Combine(localTargetDirectory, entry.Name);
+                if (entry.IsDirectory)
+                {
+                    var results = await client.DownloadDirectory(
+                        destPath,
+                        entry.FullPath,
+                        FtpFolderSyncMode.Update,
+                        FtpLocalExists.Overwrite,
+                        FtpVerify.None,
+                        rules: null,
+                        progress: null,
+                        token: ct);
+
+                    int dirFail = results.Count(r => r.IsFailed);
+                    if (dirFail == 0)
+                    {
+                        _logger.Info($"[Download] Đã tải thư mục '{entry.FullPath}' -> '{destPath}' ({results.Count} mục)");
+                        success++;
+                    }
+                    else
+                    {
+                        _logger.Error($"[Download] Tải thư mục '{entry.FullPath}' có {dirFail} lỗi.");
+                        failed++;
+                    }
+                }
+                else
+                {
+                    var status = await client.DownloadFile(destPath, entry.FullPath, FtpLocalExists.Overwrite, FtpVerify.None, progress: null, token: ct);
+                    if (status == FtpStatus.Success && File.Exists(destPath))
+                    {
+                        _logger.Info($"[Download] Đã tải file '{entry.FullPath}' -> '{destPath}'");
+                        success++;
+                    }
+                    else
+                    {
+                        _logger.Error($"[Download] Lỗi tải file '{entry.FullPath}'");
+                        failed++;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[Download] Lỗi khi tải '{entry.FullPath}': {ex.Message}");
+                failed++;
+            }
+        }
+
+        return (success, failed);
+    }
+
+    public async Task<(int SuccessCount, int FailedCount)> UploadItemsAsync(
+        FtpSettings settings,
+        IEnumerable<FileManagerEntry> localEntries,
+        string remoteTargetDirectory,
+        CancellationToken ct = default)
+    {
+        var list = localEntries.Where(e => !e.IsParentEntry).ToList();
+        if (list.Count == 0) return (0, 0);
+
+        string normalizedRemoteDir = NormalizeSingleRemotePath(remoteTargetDirectory);
+        int success = 0;
+        int failed = 0;
+
+        await using var client = CreateClient(settings);
+        _logger.Info($"[Upload] Đang kết nối tới {settings.Host}:{settings.Port} để upload {list.Count} mục lên '{normalizedRemoteDir}'...");
+        await ConnectOptimizedAsync(client, settings, ct);
+
+        foreach (var entry in list)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                string targetRemotePath = CombineRemotePath(normalizedRemoteDir, entry.Name);
+                if (entry.IsDirectory)
+                {
+                    var results = await client.UploadDirectory(
+                        entry.FullPath,
+                        targetRemotePath,
+                        FtpFolderSyncMode.Update,
+                        FtpRemoteExists.Overwrite,
+                        FtpVerify.None,
+                        rules: null,
+                        progress: null,
+                        token: ct);
+
+                    int dirFail = results.Count(r => r.IsFailed);
+                    if (dirFail == 0)
+                    {
+                        _logger.Info($"[Upload] Đã upload thư mục '{entry.FullPath}' -> '{targetRemotePath}' ({results.Count} mục)");
+                        success++;
+                    }
+                    else
+                    {
+                        _logger.Error($"[Upload] Upload thư mục '{entry.FullPath}' có {dirFail} lỗi.");
+                        failed++;
+                    }
+                }
+                else
+                {
+                    var status = await client.UploadFile(
+                        entry.FullPath,
+                        targetRemotePath,
+                        FtpRemoteExists.Overwrite,
+                        createRemoteDir: true,
+                        verifyOptions: FtpVerify.None,
+                        progress: null,
+                        token: ct);
+
+                    if (status == FtpStatus.Success)
+                    {
+                        _logger.Info($"[Upload] Đã upload file '{entry.FullPath}' -> '{targetRemotePath}'");
+                        success++;
+                    }
+                    else
+                    {
+                        _logger.Error($"[Upload] Lỗi upload file '{entry.FullPath}'");
+                        failed++;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[Upload] Lỗi khi upload '{entry.FullPath}': {ex.Message}");
+                failed++;
+            }
+        }
+
+        return (success, failed);
+    }
+
+    public async Task CreateRemoteDirectoryAsync(FtpSettings settings, string remoteDirPath, CancellationToken ct = default)
+    {
+        string target = NormalizeSingleRemotePath(remoteDirPath);
+        await using var client = CreateClient(settings);
+        await ConnectOptimizedAsync(client, settings, ct);
+        await client.CreateDirectory(target, true, ct);
+        _logger.Info($"[FTP] Đã tạo thư mục trên FTP: '{target}'");
+    }
+
+    public async Task<(int DeletedCount, int FailedCount)> DeleteRemoteEntriesAsync(
+        FtpSettings settings,
+        IEnumerable<FileManagerEntry> remoteEntries,
+        CancellationToken ct = default)
+    {
+        var list = remoteEntries.Where(e => !e.IsParentEntry).ToList();
+        if (list.Count == 0) return (0, 0);
+
+        int deleted = 0;
+        int failed = 0;
+
+        await using var client = CreateClient(settings);
+        await ConnectOptimizedAsync(client, settings, ct);
+
+        foreach (var entry in list)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                if (entry.IsDirectory)
+                {
+                    await client.DeleteDirectory(entry.FullPath, ct);
+                    _logger.Info($"[FTP] Đã xóa thư mục trên FTP: '{entry.FullPath}'");
+                }
+                else
+                {
+                    await client.DeleteFile(entry.FullPath, ct);
+                    _logger.Info($"[FTP] Đã xóa file trên FTP: '{entry.FullPath}'");
+                }
+                deleted++;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[FTP] Lỗi khi xóa '{entry.FullPath}': {ex.Message}");
+                failed++;
+            }
+        }
+
+        return (deleted, failed);
+    }
 }
