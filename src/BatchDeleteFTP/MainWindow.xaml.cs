@@ -158,71 +158,36 @@ public partial class MainWindow : Window
 
     private void LoadSettingsToUi(FtpSettings s)
     {
-        TxtHost.Text = s.Host;
-        TxtPort.Text = s.Port.ToString();
-        CboEncryption.SelectedIndex = string.Equals(s.EncryptionMode, "Explicit", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
-        TxtUser.Text = s.Username;
-        TxtPassword.Password = s.Password;
-        ChkUseProxy.IsChecked = s.UseProxy;
-        TxtProxyHost.Text = s.ProxyHost;
-        TxtProxyPort.Text = s.ProxyPort.ToString();
-        TxtProxyUser.Text = s.ProxyUser;
-        TxtProxyPassword.Password = s.ProxyPassword;
-        TxtRemotePaths.Text = string.Join(";", s.RemotePaths);
-        TxtRetentionDays.Text = s.RetentionDays.ToString();
-        ChkEnableBackup.IsChecked = s.EnableBackup;
-        TxtLocalBackupPath.Text = s.LocalBackupPath;
+        string hostPort = $"{s.Host}:{s.Port} ({s.EncryptionMode})";
+        TxtSummaryHost.Text = hostPort;
+        TxtSummaryUser.Text = string.IsNullOrWhiteSpace(s.Username) ? "(Chưa đặt)" : s.Username;
+        TxtSummaryProxy.Text = s.UseProxy ? $"{s.ProxyHost}:{s.ProxyPort}" : "Tắt";
+        TxtSummaryRemotePaths.Text = s.RemotePaths != null && s.RemotePaths.Count > 0 ? string.Join(";", s.RemotePaths) : "/";
+        TxtSummaryRetention.Text = $"+{s.RetentionDays} ngày";
+        string backupStatus = s.EnableBackup
+            ? (string.IsNullOrWhiteSpace(s.LocalBackupPath) ? "Bật" : $"Bật ({System.IO.Path.GetFileName(s.LocalBackupPath)})")
+            : "Tắt";
+        TxtSummaryBackup.Text = backupStatus;
     }
 
     private FtpSettings ReadSettingsFromUi()
     {
-        int.TryParse(TxtPort.Text, out int port);
-        if (port <= 0) port = 6021;
+        return _currentSettings;
+    }
 
-        int.TryParse(TxtProxyPort.Text, out int proxyPort);
-        if (proxyPort <= 0) proxyPort = 8080;
-
-        int.TryParse(TxtRetentionDays.Text, out int retentionDays);
-        if (retentionDays < 0) retentionDays = 1;
-
-        string encTag = (CboEncryption.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Implicit";
-
-        var paths = (TxtRemotePaths.Text ?? "/")
-            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
-
-        string profileName = string.IsNullOrWhiteSpace(CboProfiles.Text)
-            ? _currentSettings.SelectedProfileName
-            : CboProfiles.Text.Trim();
-
-        return new FtpSettings
+    private void BtnOpenConnectionSettings_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Views.ConnectionSettingsWindow(_currentSettings, _configService, _ftpService, _logger)
         {
-            SelectedProfileName = profileName,
-            Host = TxtHost.Text.Trim(),
-            Port = port,
-            EncryptionMode = encTag,
-            Username = TxtUser.Text.Trim(),
-            Password = TxtPassword.Password,
-            UseProxy = ChkUseProxy.IsChecked == true,
-            ProxyHost = TxtProxyHost.Text.Trim(),
-            ProxyPort = proxyPort,
-            ProxyUser = TxtProxyUser.Text.Trim(),
-            ProxyPassword = TxtProxyPassword.Password,
-            RemotePaths = FtpCleanupService.NormalizeRemotePaths(paths).ToList(),
-            RetentionDays = retentionDays,
-            EnableBackup = ChkEnableBackup.IsChecked == true,
-            LocalBackupPath = TxtLocalBackupPath.Text.Trim(),
-            IsDarkTheme = TglDarkTheme.IsChecked == true,
-            SmtpHost = _currentSettings.SmtpHost,
-            SmtpPort = _currentSettings.SmtpPort,
-            SmtpEnableSsl = _currentSettings.SmtpEnableSsl,
-            SmtpUser = _currentSettings.SmtpUser,
-            SmtpPassword = _currentSettings.SmtpPassword,
-            SenderEmail = _currentSettings.SenderEmail,
-            RecipientEmails = new List<string>(_currentSettings.RecipientEmails ?? new List<string>()),
-            AutoSendEmailOnPreview = _currentSettings.AutoSendEmailOnPreview,
-            Profiles = _currentSettings.Profiles
+            Owner = this
         };
+
+        if (dialog.ShowDialog() == true)
+        {
+            RefreshProfileComboBox(_currentSettings.SelectedProfileName);
+            LoadSettingsToUi(_currentSettings);
+            _logger.Info($"Đã cập nhật và áp dụng cấu hình Profile '{_currentSettings.SelectedProfileName}'.");
+        }
     }
 
     private void CboProfiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -271,12 +236,11 @@ public partial class MainWindow : Window
             return;
         }
 
-        _currentSettings = ReadSettingsFromUi();
         _configService.UpsertProfile(_currentSettings, profileName);
         _configService.Save(_currentSettings);
 
         RefreshProfileComboBox(profileName);
-        TxtRemotePaths.Text = string.Join(";", _currentSettings.RemotePaths);
+        LoadSettingsToUi(_currentSettings);
         _logger.Info($"Đã lưu Profile '{profileName}' vào '{_configService.DefaultConfigPath}'.");
         MessageBox.Show($"Đã lưu Profile '{profileName}' thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
     }
@@ -312,13 +276,13 @@ public partial class MainWindow : Window
         BtnNewProfile.IsEnabled = !isBusy;
         BtnSaveProfile.IsEnabled = !isBusy;
         BtnDeleteProfile.IsEnabled = !isBusy;
-        BtnSaveConfig.IsEnabled = !isBusy;
+        BtnOpenConnectionSettings.IsEnabled = !isBusy;
+        BtnQuickTestConnection.IsEnabled = !isBusy;
         BtnTestConnection.IsEnabled = !isBusy;
         BtnPreview.IsEnabled = !isBusy;
         BtnSendPreviewEmail.IsEnabled = !isBusy;
         BtnEmailSettings.IsEnabled = !isBusy;
         BtnExecuteDelete.IsEnabled = !isBusy;
-        BtnBrowseRemote.IsEnabled = !isBusy;
         BusyProgressBar.Visibility = isBusy ? Visibility.Visible : Visibility.Collapsed;
 
         if (isBusy)
@@ -327,21 +291,22 @@ public partial class MainWindow : Window
             if (!string.IsNullOrEmpty(busyText))
             {
                 TxtTestConnectionLabel.Text = busyText;
+                TxtQuickTestConnectionLabel.Text = busyText;
             }
         }
         else
         {
             Mouse.OverrideCursor = null;
             TxtTestConnectionLabel.Text = "Kiểm Tra Kết Nối";
+            TxtQuickTestConnectionLabel.Text = "Kiểm Tra Kết Nối";
         }
     }
 
     private void BtnSaveConfig_Click(object sender, RoutedEventArgs e)
     {
-        _currentSettings = ReadSettingsFromUi();
         _configService.Save(_currentSettings);
         RefreshProfileComboBox(_currentSettings.SelectedProfileName);
-        TxtRemotePaths.Text = string.Join(";", _currentSettings.RemotePaths);
+        LoadSettingsToUi(_currentSettings);
         _logger.Info($"Đã lưu cấu hình (Profile '{_currentSettings.SelectedProfileName}') vào '{_configService.DefaultConfigPath}'.");
         MessageBox.Show($"Đã lưu cấu hình cho Profile '{_currentSettings.SelectedProfileName}' thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
     }
@@ -373,33 +338,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void BtnBrowseRemote_Click(object sender, RoutedEventArgs e)
-    {
-        var settings = ReadSettingsFromUi();
-        var picker = new RemoteFolderPickerWindow(settings, _ftpService, settings.RemotePaths)
-        {
-            Owner = this
-        };
 
-        if (picker.ShowDialog() == true)
-        {
-            TxtRemotePaths.Text = string.Join(";", picker.SelectedPaths);
-            _logger.Info($"Đã chọn Remote Paths: {TxtRemotePaths.Text}");
-        }
-    }
-
-    private void BtnBrowseLocalBackup_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new OpenFolderDialog
-        {
-            Title = "Chọn thư mục lưu file Backup trên máy tính"
-        };
-
-        if (dialog.ShowDialog(this) == true)
-        {
-            TxtLocalBackupPath.Text = dialog.FolderName;
-        }
-    }
 
     private async void BtnPreview_Click(object sender, RoutedEventArgs e)
     {
@@ -574,13 +513,8 @@ public partial class MainWindow : Window
         if (MainTabControl.SelectedItem == TabFileManager && !_fmLoadedOnce)
         {
             _fmLoadedOnce = true;
-            string initialPath = "/";
-            var paths = (TxtRemotePaths.Text ?? "")
-                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if (paths.Length > 0 && !string.IsNullOrWhiteSpace(paths[0]))
-            {
-                initialPath = paths[0];
-            }
+            string initialPath = _currentSettings.RemotePaths?.FirstOrDefault() ?? "/";
+            if (string.IsNullOrWhiteSpace(initialPath)) initialPath = "/";
             TxtFmRemotePath.Text = initialPath;
             await LoadFileManagerDirectoryAsync(initialPath);
         }

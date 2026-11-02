@@ -99,161 +99,66 @@
             </DockPanel>
         </Border>
 
-        <!-- SECTION 1: CONFIGURATION CARD -->
-        <materialDesign:Card Grid.Row="1" Margin="14,10,14,8" Padding="16,10" UniformCornerRadius="8"
+        <!-- SECTION 1: CONNECTION SUMMARY & SETTINGS BAR -->
+        <materialDesign:Card Grid.Row="1" Margin="14,8,14,8" Padding="14,8" UniformCornerRadius="8"
                              materialDesign:ElevationAssist.Elevation="Dp2">
-            <StackPanel>
-                <!-- Card Header -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <materialDesign:PackIcon Kind="TuneVariant" Width="20" Height="20" VerticalAlignment="Center"
-                                             Foreground="{DynamicResource AppSectionIconBrush}" Margin="0,0,8,0"/>
-                    <TextBlock Text="1. Cấu hình Kết nối FTP, Proxy &amp; Backup" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+            <DockPanel LastChildFill="True">
+                <!-- Action Buttons (Right) -->
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <Button x:Name="BtnOpenConnectionSettings" Style="{StaticResource MaterialDesignRaisedButton}"
+                            Height="32" Padding="12,0" Margin="0,0,8,0" Click="BtnOpenConnectionSettings_Click"
+                            ToolTip="Mở cửa sổ Cấu hình Chi tiết Kết nối FTP, Proxy &amp; Sao lưu">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="TuneVariant" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Cấu Hình FTP &amp; Backup" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="BtnQuickTestConnection" Style="{StaticResource AppOutlinedButtonStyle}"
+                            Height="32" Padding="12,0" Click="BtnTestConnection_Click"
+                            ToolTip="Kiểm tra kết nối trực tiếp tới máy chủ FTP với cấu hình hiện tại">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="LanConnect" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <TextBlock x:Name="TxtQuickTestConnectionLabel" Text="Kiểm Tra Kết Nối" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
 
-                <!-- Row A: FTP Server, Port, Encryption, User, Password, Retention Days -->
-                <Grid Margin="0,0,0,8">
+                <!-- Connection Summary (Left / Middle) -->
+                <Grid VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="95"/>
-                        <ColumnDefinition Width="1.6*"/>
-                        <ColumnDefinition Width="1.4*"/>
-                        <ColumnDefinition Width="1.4*"/>
-                        <ColumnDefinition Width="135"/>
-                    </Grid.ColumnDefinitions>
-
-                    <TextBox x:Name="TxtHost" Grid.Column="0" Margin="0,0,12,0"
-                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                             materialDesign:HintAssist.Hint="FTP Host (VD: ftp.xxx.net)"
-                             VerticalContentAlignment="Center"/>
-
-                    <TextBox x:Name="TxtPort" Grid.Column="1" Margin="0,0,12,0"
-                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                             materialDesign:HintAssist.Hint="Port (6021)"
-                             VerticalContentAlignment="Center"/>
-
-                    <ComboBox x:Name="CboEncryption" Grid.Column="2" Margin="0,0,12,0" SelectedIndex="0"
-                              Style="{StaticResource MaterialDesignFloatingHintComboBox}"
-                              materialDesign:HintAssist.Hint="Phương thức Mã hóa (TLS)"
-                              VerticalContentAlignment="Center">
-                        <ComboBoxItem Content="Implicit (FTP over TLS)" Tag="Implicit"/>
-                        <ComboBoxItem Content="Explicit (FTP over TLS)" Tag="Explicit"/>
-                    </ComboBox>
-
-                    <TextBox x:Name="TxtUser" Grid.Column="3" Margin="0,0,12,0"
-                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                             materialDesign:HintAssist.Hint="FTP Username"
-                             VerticalContentAlignment="Center"/>
-
-                    <PasswordBox x:Name="TxtPassword" Grid.Column="4" Margin="0,0,12,0"
-                                 Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
-                                 materialDesign:HintAssist.Hint="FTP Password"
-                                 VerticalContentAlignment="Center"/>
-
-                    <TextBox x:Name="TxtRetentionDays" Grid.Column="5"
-                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                             materialDesign:HintAssist.Hint="Giữ lại (+N ngày)"
-                             ToolTip="Xóa các file có SystemDate.Date &gt; UploadDate.Date + N"
-                             VerticalContentAlignment="Center"/>
-                </Grid>
-
-                <Separator Opacity="0.2" Margin="0,0,0,6"/>
-
-                <!-- Row B: Proxy Configuration -->
-                <Grid Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="155"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <CheckBox x:Name="ChkUseProxy" Grid.Column="0" Content="Sử dụng Proxy"
-                              VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    <materialDesign:PackIcon Grid.Column="0" Kind="ServerNetwork" Width="22" Height="22"
+                                             Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
 
-                    <Grid Grid.Column="1" IsEnabled="{Binding ElementName=ChkUseProxy, Path=IsChecked}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*"/>
-                            <ColumnDefinition Width="95"/>
-                            <ColumnDefinition Width="1.5*"/>
-                            <ColumnDefinition Width="1.5*"/>
-                        </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Máy chủ FTP:" FontWeight="Bold" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="TxtSummaryHost" Text="ftp.xxx.net:6021 (Implicit)" FontWeight="SemiBold" Foreground="#1976D2" FontSize="12" Margin="0,0,14,0"/>
 
-                        <TextBox x:Name="TxtProxyHost" Grid.Column="0" Margin="0,0,12,0"
-                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                 materialDesign:HintAssist.Hint="Địa chỉ Proxy Server"
-                                 ToolTip="Địa chỉ Proxy Server"/>
+                            <TextBlock Text="Tài khoản:" FontWeight="Bold" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="TxtSummaryUser" Text="XXX-USER" FontSize="12" Margin="0,0,14,0"/>
 
-                        <TextBox x:Name="TxtProxyPort" Grid.Column="1" Margin="0,0,12,0"
-                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                 materialDesign:HintAssist.Hint="Proxy Port"
-                                 ToolTip="Cổng Proxy"/>
+                            <TextBlock Text="Proxy:" FontWeight="Bold" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="TxtSummaryProxy" Text="proxy.xxx.vn:8080" FontSize="12"/>
+                        </StackPanel>
 
-                        <TextBox x:Name="TxtProxyUser" Grid.Column="2" Margin="0,0,12,0"
-                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                 materialDesign:HintAssist.Hint="Proxy User (nếu có)"
-                                 ToolTip="Tên đăng nhập Proxy (nếu có)"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                            <TextBlock Text="Thư mục FTP:" FontWeight="Bold" FontSize="11" Opacity="0.8" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="TxtSummaryRemotePaths" Text="/" FontSize="11" Opacity="0.9" TextTrimming="CharacterEllipsis" MaxWidth="380" Margin="0,0,14,0"/>
 
-                        <PasswordBox x:Name="TxtProxyPassword" Grid.Column="3"
-                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
-                                     materialDesign:HintAssist.Hint="Proxy Password"
-                                     ToolTip="Mật khẩu Proxy (nếu có)"/>
-                    </Grid>
-                </Grid>
+                            <TextBlock Text="Giữ lại:" FontWeight="Bold" FontSize="11" Opacity="0.8" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="TxtSummaryRetention" Text="+1 ngày" FontSize="11" Opacity="0.9" Margin="0,0,14,0"/>
 
-                <Separator Opacity="0.2" Margin="0,0,0,6"/>
-
-                <!-- Row C: Remote Paths & Local Backup -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="155"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="24"/>
-                        <ColumnDefinition Width="155"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="FolderNetworkOutline" Width="18" Height="18" VerticalAlignment="Center"
-                                                 Foreground="{DynamicResource AppSectionIconBrush}" Margin="0,0,6,0"/>
-                        <TextBlock Text="Remote Paths (;):" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="Sao lưu:" FontWeight="Bold" FontSize="11" Opacity="0.8" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="TxtSummaryBackup" Text="Bật" FontSize="11" Opacity="0.9"/>
+                        </StackPanel>
                     </StackPanel>
-
-                    <DockPanel Grid.Column="1" VerticalAlignment="Center">
-                        <Button x:Name="BtnBrowseRemote" DockPanel.Dock="Right"
-                                Style="{StaticResource AppOutlinedButtonStyle}"
-                                Height="32" Padding="10,0" Margin="8,0,0,0"
-                                Click="BtnBrowseRemote_Click"
-                                ToolTip="Duyệt cây thư mục trực tiếp trên FTP Server">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="FolderSearchOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="Chọn FTP..." VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </Button>
-                        <TextBox x:Name="TxtRemotePaths"
-                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                 materialDesign:HintAssist.Hint="Nhiều thư mục cách nhau bởi dấu ; (VD: /FolderA;/FolderB)"
-                                 ToolTip="Nhiều đường dẫn ngăn cách bởi dấu chấm phẩy (;), ví dụ: /FolderA;/FolderB"/>
-                    </DockPanel>
-
-                    <CheckBox x:Name="ChkEnableBackup" Grid.Column="3" Content="Backup trước xóa"
-                              VerticalAlignment="Center" FontWeight="SemiBold"/>
-
-                    <DockPanel Grid.Column="4" VerticalAlignment="Center"
-                                IsEnabled="{Binding ElementName=ChkEnableBackup, Path=IsChecked}">
-                        <Button x:Name="BtnBrowseLocalBackup" DockPanel.Dock="Right"
-                                Style="{StaticResource AppOutlinedButtonStyle}"
-                                Height="32" Padding="10,0" Margin="8,0,0,0"
-                                Click="BtnBrowseLocalBackup_Click"
-                                ToolTip="Chọn thư mục lưu bản sao lưu trên máy tính">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="FolderOpenOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="Chọn Local..." VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </Button>
-                        <TextBox x:Name="TxtLocalBackupPath"
-                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                 materialDesign:HintAssist.Hint="Thư mục lưu Backup trên máy tính"/>
-                    </DockPanel>
                 </Grid>
-            </StackPanel>
+            </DockPanel>
         </materialDesign:Card>
 
         <!-- MAIN AREA: TAB CONTROL (Batch Cleanup & File Manager) -->
@@ -284,11 +189,12 @@
 
                             <DockPanel Grid.Row="0">
                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                                    <Button x:Name="BtnSaveConfig" Style="{StaticResource AppOutlinedButtonStyle}"
-                                            Height="34" Padding="12,0" Margin="0,0,8,0" Click="BtnSaveConfig_Click">
+                                    <Button x:Name="BtnConnectionSettingsTab" Style="{StaticResource AppOutlinedButtonStyle}"
+                                            Height="34" Padding="12,0" Margin="0,0,8,0" Click="BtnOpenConnectionSettings_Click"
+                                            ToolTip="Mở cửa sổ Cấu hình Kết nối FTP, Proxy &amp; Backup">
                                         <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="ContentSaveCheckOutline" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Lưu Cấu Hình" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <materialDesign:PackIcon Kind="TuneVariant" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                            <TextBlock Text="Cấu Hình FTP" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                         </StackPanel>
                                     </Button>
 

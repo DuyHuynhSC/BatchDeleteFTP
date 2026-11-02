@@ -164,6 +164,24 @@ public class ConfigServiceTests
                 Assert.Equal("smtp.office365.com", updatedEmail.SmtpHost);
                 Assert.Equal(587, updatedEmail.SmtpPort);
                 Assert.Equal(new[] { "mem1@corp.com", "mem2@corp.com" }, updatedEmail.RecipientEmails);
+
+                var connSettings = new FtpSettings
+                {
+                    Host = "ftp.custom-test.net",
+                    Port = 2121,
+                    Username = "test-user",
+                    RetentionDays = 5
+                };
+                var connDialog = new BatchDeleteFTP.Views.ConnectionSettingsWindow(
+                    connSettings,
+                    new ConfigService(),
+                    new FtpCleanupService(new AppLogger()),
+                    new AppLogger());
+                var readConn = connDialog.ReadSettingsFromUi();
+                Assert.Equal("ftp.custom-test.net", readConn.Host);
+                Assert.Equal(2121, readConn.Port);
+                Assert.Equal("test-user", readConn.Username);
+                Assert.Equal(5, readConn.RetentionDays);
             }
             catch (Exception ex)
             {
