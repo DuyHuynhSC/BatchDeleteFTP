@@ -15,6 +15,7 @@ public class FtpFileCandidate : INotifyPropertyChanged
         set { _isSelected = value; OnPropertyChanged(); }
     }
 
+    public string ProfileName { get; set; } = string.Empty;
     public string FullPath { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public long Size { get; set; }

@@ -86,5 +86,17 @@ public class FtpSiteProfile
         s.AutoSendEmailOnPreview = AutoSendEmailOnPreview;
     }
 
+    public FtpSettings ToSettings(FtpSettings? baseSettings = null)
+    {
+        var s = new FtpSettings();
+        if (baseSettings != null)
+        {
+            s.IsDarkTheme = baseSettings.IsDarkTheme;
+            s.Profiles = new List<FtpSiteProfile>(baseSettings.Profiles);
+        }
+        ApplyTo(s);
+        return s;
+    }
+
     public override string ToString() => Name;
 }
