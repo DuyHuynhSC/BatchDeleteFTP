@@ -1,7 +1,8 @@
 # BatchDeleteFTP
 
-Ứng dụng C# WPF kết hợp chế độ dòng lệnh (Console / CMD Hybrid) hỗ trợ kết nối tới **FTP over TLS (Implicit / Explicit)**, quản lý nhiều cấu hình kết nối (**Site / Profile Manager**), duyệt và chọn các thư mục từ xa (`Remote Path`), **Xem trước (Preview)** danh sách các file thỏa điều kiện xóa, **Backup** file về máy tính giữ nguyên cấu trúc thư mục con trước khi xóa, và tự động dọn dẹp các file cũ theo công thức:
+Ứng dụng C# .NET WPF kết hợp chế độ dòng lệnh (Console / CMD Hybrid) hỗ trợ kết nối tới **FTP over TLS (Implicit / Explicit)**, quản lý nhiều cấu hình kết nối (**Site / Profile Manager**), quét đồng thời nhiều Profile (**Multi-Profile Batch Scan & Delete**), duyệt và chọn các thư mục từ xa (`Remote Path`), **Xem trước (Preview)** danh sách các file thỏa điều kiện xóa, **Gửi email báo cáo kết quả xem trước** qua giao thức SMTP, **Backup** file về máy tính giữ nguyên cấu trúc thư mục con trước khi xóa, tích hợp đầy đủ trình quản lý file FTP (**FTP File Manager**) và hỗ trợ giao diện **Sáng / Tối (Dark / Light Theme)** theo chuẩn Material Design.
 
+Công thức dọn dẹp file tự động:
 ```text
 SystemDate.Date > UploadDate.Date + RetentionDays (Mặc định RetentionDays = 1)
 ```
@@ -10,33 +11,63 @@ SystemDate.Date > UploadDate.Date + RetentionDays (Mặc định RetentionDays =
 
 ## 1. Tính năng Chính
 
-- **Quản lý nhiều Profile kết nối (`Site / Profile Manager`):**
-  - Cho phép lưu trữ và chuyển đổi nhanh giữa nhiều máy chủ / tài khoản FTP khác nhau (tương tự *Site Manager* của FileZilla).
-  - Hỗ trợ các thao tác **➕ Tạo Mới**, **💾 Lưu Profile**, **🗑 Xóa Profile** ngay trên giao diện chính.
-- **Hỗ trợ chuẩn FTPS (TLS 1.2 / 1.3) & Proxy nội bộ công ty:**
-  - Hỗ trợ cả 2 chế độ mã hóa `Implicit FTP over TLS` (Port `6021` / `990`) và `Explicit FTP over TLS` (Port `21`).
-  - Tích hợp kết nối qua HTTP/HTTPS Proxy (`proxy.xxx.vn:8080`) kèm xác thực `Proxy User / Pass` thông qua đường hầm HTTP 1.1 CONNECT của `FluentFTP`.
-  - Tối ưu hóa bắt tay TLS 1.2/1.3 trực tiếp với chế độ `PASV` và hiển thị nhật ký tiến trình kết nối theo thời gian thực.
-- **Chọn Thư mục Từ xa trên FTP (`Remote Folder Picker`):**
-  - Cho phép nhập một hoặc nhiều đường dẫn ngăn cách bởi dấu `;` (ví dụ: `/FolderA;/FolderB/Sub1`) hoặc bấm **"Chọn thư mục FTP..."** để mở cây thư mục (`TreeView` lazy-load) trực tiếp từ FTP Server và tích chọn nhiều thư mục cần quét.
-  - Tự động chuẩn hóa và khử trùng lặp đường dẫn (nếu chọn cả thư mục cha và thư mục con, ứng dụng tự động gộp để không quét lặp).
-- **Xem Trước (`Preview`):**
-  - Quét đệ quy toàn bộ thư mục và sub-folder được chọn, lọc các file có `CurrentSystemDate.Date > FileModifiedDate.Date.AddDays(RetentionDays)` và hiển thị lên bảng `DataGrid` mà không xóa file.
-  - Hỗ trợ tích chọn / bỏ chọn từng file cụ thể hoặc **Chọn tất cả / Bỏ chọn tất cả** trước khi thực thi.
-- **Backup An toàn Trước Khi Xóa (`Fail-safe Backup`):**
-  - Khi bật tùy chọn **Backup trước xóa**, ứng dụng tải từng file về thư mục Local theo cấu trúc:
+### 1.1. Tự Động Quét & Xóa File (Batch Clean & Backup)
+- **Quét đồng thời nhiều Profile (`Multi-Profile Scan`):**
+  - Cho phép người dùng linh hoạt chọn quét trên **Profile hiện tại**, **Tất cả các Profile**, hoặc **Tùy chọn danh sách Profile cụ thể**.
+  - Kết quả quét tổng hợp hiển thị rõ cột **Site Profile**, đường dẫn remote, ngày upload, kích thước và trạng thái.
+  - Quá trình quét được cách ly độc lập theo từng profile: nếu một máy chủ gặp sự cố kết nối hoặc quá thời gian chờ, hệ thống vẫn tiếp tục quét các profile còn lại và cảnh báo chi tiết.
+- **Thực thi Backup & Xóa đa máy chủ FTP (`Fail-safe Multi-Server Execution`):**
+  - Tự động gom nhóm các file được chọn theo từng Site Profile tương ứng.
+  - Kết nối tuần tự tới từng máy chủ FTP với các cấu hình riêng biệt (Proxy, cổng, TLS, thông tin xác thực).
+  - **Cơ chế bảo vệ dữ liệu:** Nếu bật Backup, ứng dụng sẽ tải file về máy tính trước theo cấu trúc:
     `<LocalBackupPath>\<yyyyMMdd_HHmmss>\<RelativeSubFolder>\<FileName>`
-  - **Cơ chế bảo vệ dữ liệu:** Chỉ khi file được tải về máy thành công và tồn tại đầy đủ trên ổ cứng thì ứng dụng mới gửi lệnh xóa file đó trên FTP Server. Nếu tải backup lỗi, file trên FTP được giữ nguyên.
+    Chỉ khi file được sao lưu thành công và tồn tại trọn vẹn trên ổ cứng cục bộ thì ứng dụng mới gửi lệnh xóa file đó trên FTP Server.
   - Chỉ xóa file, giữ nguyên toàn bộ cấu trúc thư mục trên FTP Server.
-- **Chế độ Kép (WPF GUI & Console CMD):**
-  - Chạy trực tiếp file `.exe` để mở giao diện đồ họa WPF.
-  - Truyền tham số `--auto`, `--console` hoặc `--preview` để chạy tự động trong CMD / Windows Task Scheduler.
+
+### 1.2. Quản Lý Nhiều Cấu Hình Kết Nối (Site / Profile Manager)
+- Cho phép lưu trữ và chuyển đổi nhanh giữa nhiều máy chủ / tài khoản FTP khác nhau (tương tự *Site Manager* của FileZilla).
+- Hỗ trợ các thao tác **➕ Tạo Mới**, **💾 Lưu Profile**, **🗑 Xóa Profile** trực quan ngay trên thanh tiêu đề ứng dụng.
+- Cửa sổ **Cấu hình FTP & Backup** chi tiết hỗ trợ kiểm tra kết nối trực tiếp, chọn thư mục backup cục bộ và thiết lập proxy riêng.
+
+### 1.3. Hỗ Trợ Chuẩn FTPS (TLS 1.2 / 1.3) & Proxy Doanh Nghiệp
+- Hỗ trợ cả 2 chế độ mã hóa: `Implicit FTP over TLS` (Port `6021` / `990`) và `Explicit FTP over TLS` (Port `21`).
+- Hỗ trợ kết nối qua HTTP/HTTPS Proxy (ví dụ `proxy.xxx.vn:8080`) kèm xác thực `Proxy User / Password` thông qua đường hầm HTTP 1.1 CONNECT của `FluentFTP`.
+- Tối ưu hóa bắt tay TLS 1.2 / TLS 1.3 với chế độ truyền dữ liệu thụ động `PASV` và ghi log chi tiết thời gian thực.
+
+### 1.4. Chọn Thư Mục Từ Xa Trên FTP (Remote Folder Picker)
+- Hỗ trợ nhập thủ công danh sách đường dẫn cách nhau bởi dấu `;` (ví dụ: `/FolderA;/FolderB/Sub1`).
+- Nút **"Chọn thư mục FTP..."** mở cửa sổ cây thư mục (`TreeView` lazy-load) trực tiếp từ FTP Server, hỗ trợ mở rộng từng cấp và tích chọn nhiều thư mục cần dọn dẹp.
+- Tự động chuẩn hóa và khử trùng lặp đường dẫn (nếu chọn cả thư mục cha và thư mục con, ứng dụng tự động gộp để tránh quét trùng lặp).
+
+### 1.5. Gửi Email Báo Cáo Xem Trước (Email Notification Service)
+- Thiết lập thông số máy chủ gửi thư Outgoing Mail Server (SMTP - Port 25 / 587) có hoặc không có SSL/TLS.
+- Tự động phân tích và suy luận địa chỉ người gửi theo cấu trúc `username@domain` dựa trên tên máy chủ SMTP (ví dụ: `duy-hd` + `mail.fujinet.net` -> `duy-hd@fujinet.net`).
+- Hỗ trợ nhập danh sách nhiều email nhận (ngăn cách bởi dấu chấm phẩy `;`, dấu phẩy `,` hoặc xuống dòng), tự động khử trùng lặp và xác thực cú pháp email.
+- Tạo báo cáo định dạng HTML chuyên nghiệp: tóm tắt thông số cấu hình, phạm vi các profile đã quét, tổng số file, dung lượng ước tính và bảng chi tiết từng file.
+- Tùy chọn **Tự động gửi email sau khi Preview** (`AutoSendEmailOnPreview`).
+
+### 1.6. Quản Lý File FTP Trực Quan (Tab File Manager)
+- **Thanh điều hướng Remote Path:** Gõ trực tiếp đường dẫn thư mục FTP và nhấn Enter hoặc bấm **Đến**. Hỗ trợ các nút tắt: **Lên 1 Cấp**, **Về Gốc (/)**, và **Làm Mới**.
+- **Xem file (`Xem File`):** Tích hợp trình xem trước hỗ trợ xem trực tiếp các định dạng text, log, code (`.txt`, `.log`, `.csv`, `.json`, `.xml`, `.cs`, `.py`...), hiển thị hình ảnh (`.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.ico`) hoặc mở bằng ứng dụng mặc định của Windows.
+- **Tải lên (`Upload`):** Hỗ trợ **Tải Lên File** (chọn một hoặc nhiều file) và **Tải Lên Thư Mục** (giữ nguyên cấu trúc thư mục con).
+- **Tải về (`Download`):** Tải các file hoặc thư mục được chọn từ FTP về thư mục lưu trữ trên máy tính.
+- **Tạo thư mục mới:** Tạo nhanh folder mới ngay tại đường dẫn remote hiện tại.
+- **Xóa mục trên FTP:** Hỗ trợ chọn nhiều file / thư mục và xóa trực tiếp với hộp thoại xác nhận an toàn.
+- **Lọc nhanh file:** Ô tìm kiếm tức thì trên thanh công cụ hỗ trợ lọc nhanh theo tên file trong danh sách hiển thị.
+
+### 1.7. Giao Diện Material Design & Chuyển Đổi Dark/Light Theme
+- Giao diện người dùng hiện đại, đồng bộ màu sắc thương hiệu và icon theo chuẩn Google Material Design.
+- Nút gạt chuyển đổi giao diện **Sáng / Tối (Light / Dark Theme)** góc trên bên phải, tự động lưu và áp dụng cho toàn bộ các cửa sổ của chương trình.
+
+### 1.8. Chế Độ Kép (GUI & Chạy Tự Động Qua Command Line)
+- Chạy trực tiếp `BatchDeleteFTP.exe` để mở giao diện đồ họa WPF.
+- Hỗ trợ các tham số dòng lệnh `--auto`, `--console`, `--preview` phục vụ tích hợp với **Windows Task Scheduler** hoặc batch script để tự động hóa hàng ngày.
 
 ---
 
-## 2. Cấu hình (`config.json`)
+## 2. Cấu Trúc File Cấu Hình (`config.json`)
 
-File `config.json` được tự động khởi tạo và lưu cùng thư mục với file thực thi `BatchDeleteFTP.exe`:
+File `config.json` tự động được khởi tạo và lưu trữ cùng thư mục với file thực thi `BatchDeleteFTP.exe`:
 
 ```json
 {
@@ -57,6 +88,18 @@ File `config.json` được tự động khởi tạo và lưu cùng thư mục 
   "RetentionDays": 1,
   "EnableBackup": true,
   "LocalBackupPath": "C:\\SourceCode\\BatchDeleteFTP\\Backups",
+  "SmtpHost": "mail.fujinet.net",
+  "SmtpPort": 25,
+  "SmtpEnableSsl": false,
+  "SmtpUser": "duy-hd",
+  "SmtpPassword": "",
+  "SenderEmail": "duy-hd@fujinet.net",
+  "RecipientEmails": [
+    "admin@fujinet.net",
+    "monitor@fujinet.net"
+  ],
+  "AutoSendEmailOnPreview": false,
+  "IsDarkTheme": false,
   "Profiles": [
     {
       "Name": "SITE_A",
@@ -75,7 +118,17 @@ File `config.json` được tự động khởi tạo và lưu cùng thư mục 
       ],
       "RetentionDays": 1,
       "EnableBackup": true,
-      "LocalBackupPath": "C:\\SourceCode\\BatchDeleteFTP\\Backups"
+      "LocalBackupPath": "C:\\SourceCode\\BatchDeleteFTP\\Backups",
+      "SmtpHost": "mail.fujinet.net",
+      "SmtpPort": 25,
+      "SmtpEnableSsl": false,
+      "SmtpUser": "duy-hd",
+      "SmtpPassword": "",
+      "SenderEmail": "duy-hd@fujinet.net",
+      "RecipientEmails": [
+        "admin@fujinet.net"
+      ],
+      "AutoSendEmailOnPreview": false
     }
   ]
 }
@@ -83,44 +136,60 @@ File `config.json` được tự động khởi tạo và lưu cùng thư mục 
 
 ---
 
-## 3. Hướng dẫn Sử dụng
+## 3. Hướng Dẫn Sử Dụng
 
-### 3.1. Chế độ Giao diện (WPF GUI)
-Chạy trực tiếp `BatchDeleteFTP.exe` (không truyền tham số):
-1. Chọn **Site / Profile** có sẵn hoặc bấm **➕ Tạo Mới**, nhập tên Profile, thông số kết nối (`Host`, `Port`, `Encryption`, `User`, `Password`, `Proxy`) và bấm **💾 Lưu Profile**.
-2. Bấm **🔌 Kiểm Tra Kết Nối** để xác nhận kết nối FTPS thành công.
-3. Bấm **Chọn thư mục FTP...** để duyệt cây thư mục trên FTP và tích chọn các thư mục cần dọn dẹp.
-4. Cấu hình thư mục **Backup Local** và bấm **💾 Lưu Cấu Hình**.
-5. Bấm **🔍 Xem Trước (Preview)** để kiểm tra danh sách các file sẽ bị xóa.
-6. Bấm **🗑 Thực Hiện Backup & Xóa** để tiến hành sao lưu và xóa file.
+### 3.1. Chế Độ Giao Diện (WPF GUI)
+Khởi chạy trực tiếp `BatchDeleteFTP.exe`:
 
-### 3.2. Chế độ Dòng lệnh (Console / CMD / Windows Task Scheduler)
+1. **Thiết lập & Quản lý Profile:**
+   - Chọn Profile có sẵn ở danh sách thả xuống trên thanh tiêu đề hoặc bấm **Tạo Mới** để thêm một cấu hình máy chủ mới.
+   - Nhập thông số kết nối và bấm **Lưu Profile**.
+   - Bấm **Cấu Hình FTP & Backup** để tùy chỉnh chi tiết: cổng, TLS, Proxy, thư mục Remote Path và đường dẫn lưu trữ Backup.
+   - Bấm **Kiểm Tra Kết Nối** để xác nhận thông số FTPS hoạt động chính xác.
 
-- **Chạy Xem Trước trên CMD (chỉ liệt kê file sẽ xóa, không xóa thật):**
+2. **Quét & Xóa File Đa Profile (Tab 1: Tự Động Quét & Xóa):**
+   - Bấm **Profiles Quét: ...** để mở hộp thoại lựa chọn các Site Profile bạn muốn quét cùng lúc (mặc định là Profile đang active).
+   - Bấm **Xem Trước (Preview)** để hệ thống quét các thư mục đã chọn trên tất cả các Profile đã đánh dấu.
+   - Kiểm tra danh sách file thỏa điều kiện xóa hiển thị trên bảng `DataGrid` (phân loại rõ cột `Site Profile`). Bạn có thể tích chọn / bỏ chọn từng file hoặc dùng nút **Chọn tất cả** / **Bỏ chọn tất cả**.
+   - Bấm **Thực Hiện Backup & Xóa** để tiến hành sao lưu về máy và dọn dẹp file trên các máy chủ FTP tương ứng.
+
+3. **Gửi Email Báo Cáo:**
+   - Bấm **Cấu Hình Email** để thiết lập máy chủ SMTP và danh sách địa chỉ nhận thông báo.
+   - Bấm **Gửi Email Xem Trước** để gửi kết quả danh sách các file cần dọn dẹp tới email các thành viên liên quan.
+
+4. **Quản Lý File Trực Tiếp Trên FTP (Tab 2: File Manager):**
+   - Chuyển sang Tab **2. Quản Lý File FTP**.
+   - Nhập đường dẫn thư mục remote hoặc điều hướng trực tiếp bằng các nút trên thanh công cụ.
+   - Thực hiện các thao tác: **Xem File**, **Tải Lên File / Thư Mục**, **Tải Về Máy**, **Tạo Thư Mục**, hoặc **Xóa**.
+
+### 3.2. Chế Độ Dòng Lệnh (Console / CMD / Windows Task Scheduler)
+
+- **Xem trước danh sách file sẽ xóa trên console (không xóa thật):**
   ```cmd
   BatchDeleteFTP.exe --preview
   ```
-- **Chạy Tự động Backup & Xóa theo Profile đang chọn (dùng cho Windows Task Scheduler):**
+- **Chạy tự động Backup & Xóa theo Profile đang active (dùng cho Task Scheduler định kỳ):**
   ```cmd
   BatchDeleteFTP.exe --auto
   ```
   *(Hoặc `BatchDeleteFTP.exe --console`)*
 
-> **Mã thoát (Exit Code):**
-> - `0`: Quá trình chạy hoàn tất thành công, không có lỗi.
-> - `1`: Có lỗi kết nối hoặc có ít nhất 1 file gặp lỗi khi Backup/Xóa.
+> **Mã Thoát (Exit Code):**
+> - `0`: Tiến trình kết thúc thành công hoàn toàn, không có lỗi.
+> - `1`: Xảy ra lỗi kết nối mạng hoặc có ít nhất 1 file thất bại trong quá trình Backup / Xóa.
 
-### 3.3. Nhật ký Hoạt động (Logs)
-Toàn bộ lịch sử kết nối, danh sách file quét được, đường dẫn file đã Backup và kết quả xóa đều được ghi tự động vào thư mục:
+### 3.3. Nhật Ký Hoạt Động (Logs)
+Toàn bộ lịch sử kết nối, chi tiết lệnh FTP, danh sách file quét được, đường dẫn file đã Backup và kết quả xóa được ghi tự động vào:
 ```text
 logs/BatchDeleteFTP_yyyyMMdd.log
 ```
 
 ---
 
-## 4. Hướng dẫn Build & Kiểm thử (Development)
+## 4. Hướng Dẫn Biên Dịch & Kiểm Thử (Developer Guide)
 
-- **Biên dịch dự án (Release):**
+- **Yêu cầu môi trường:** .NET 9.0 SDK hoặc .NET 10.0 SDK trên hệ điều hành Windows.
+- **Biên dịch mã nguồn bản Release:**
   ```powershell
   dotnet build -c Release
   ```
