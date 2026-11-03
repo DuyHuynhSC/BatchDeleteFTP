@@ -6,7 +6,10 @@ public enum AppThemeKind
     MaterialDark,
     Skeuomorphism,
     Neumorphism,
-    FrutigerAero
+    FrutigerAero,
+    Claymorphism,
+    Glassmorphism,
+    Y2KDigital
 }
 
 public sealed record AppThemeOption(

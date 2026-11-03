@@ -150,7 +150,7 @@ public class ConfigService
         {
             var resolved = ThemeService.ParseTheme(settings.ThemeName, settings.IsDarkTheme);
             settings.ThemeName = resolved.ToString();
-            settings.IsDarkTheme = resolved == AppThemeKind.MaterialDark;
+            settings.IsDarkTheme = ThemeService.GetThemeOption(resolved).IsDarkBase;
         }
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -10,6 +10,7 @@ using Xunit;
 
 namespace BatchDeleteFTP.Tests;
 
+[Collection("WpfApp")]
 public class ConfigServiceTests
 {
     [Fact]

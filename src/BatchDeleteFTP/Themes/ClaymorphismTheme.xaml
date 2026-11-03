@@ -1,0 +1,108 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <!-- 6. CLAYMORPHISM THEME PALETTE & EFFECTS (3D Inflated Soft Clay, Pillowy Double-Drop Shadows, Pastel Soft Surface) -->
+
+    <!-- Soft Pastel Marshmallow Surface -->
+    <LinearGradientBrush x:Key="AppWindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#E6EBF5" Offset="0.0" />
+        <GradientStop Color="#EDE8F7" Offset="0.5" />
+        <GradientStop Color="#E2EDF8" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Inflated 3D Clay Card Surface -->
+    <LinearGradientBrush x:Key="AppCardBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFF" Offset="0.0" />
+        <GradientStop Color="#F3F6FD" Offset="0.6" />
+        <GradientStop Color="#E9EEFA" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Subtle Inset/Rim Highlight Border for Clay 3D Edge -->
+    <LinearGradientBrush x:Key="AppCardBorderBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFFFF" Offset="0.0" />
+        <GradientStop Color="#E0E6F4" Offset="0.5" />
+        <GradientStop Color="#CBD4E8" Offset="1.0" />
+    </LinearGradientBrush>
+    <Thickness x:Key="AppCardBorderThickness">2</Thickness>
+    <CornerRadius x:Key="AppCardCornerRadius">18</CornerRadius>
+
+    <!-- Deep Fluffy Pillowy Shadow -->
+    <DropShadowEffect x:Key="AppCardShadowEffect"
+                      BlurRadius="22" ShadowDepth="8" Direction="310"
+                      Color="#9AA8C7" Opacity="0.52" />
+
+    <!-- Header Banner: Soft Clay Grape-Lavender Pill -->
+    <LinearGradientBrush x:Key="AppHeaderBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#5B67A5" Offset="0.0" />
+        <GradientStop Color="#4A5694" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppHeaderBorderBrush" Color="#7A87C7" />
+    <Thickness x:Key="AppHeaderBorderThickness">0,0,0,2</Thickness>
+    <SolidColorBrush x:Key="AppHeaderForegroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="AppHeaderPillBackgroundBrush" Color="#30FFFFFF" />
+    <SolidColorBrush x:Key="AppHeaderPillBorderBrush" Color="#60FFFFFF" />
+
+    <!-- Typography & Icon Accents -->
+    <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#2A334E" />
+    <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#667294" />
+    <SolidColorBrush x:Key="AppSectionIconBrush" Color="#5A67D8" />
+    <SolidColorBrush x:Key="AppAccentHighlightBrush" Color="#4C51BF" />
+
+    <!-- Subtle Containers (Soft Clay Depressed Inset) -->
+    <LinearGradientBrush x:Key="AppSubtlePanelBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#D8DFEE" Offset="0.0" />
+        <GradientStop Color="#EBF0FA" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppSubtlePanelBorderBrush" Color="#BAC6DD" />
+    <SolidColorBrush x:Key="AppDialogFooterBackgroundBrush" Color="#E5EAF5" />
+
+    <!-- Terminal / Activity Log Box: Deep Clay Indigo Pot -->
+    <SolidColorBrush x:Key="AppTerminalBackgroundBrush" Color="#1C2337" />
+    <SolidColorBrush x:Key="AppTerminalForegroundBrush" Color="#A5F3FC" />
+    <SolidColorBrush x:Key="AppTerminalBorderBrush" Color="#93A2C4" />
+
+    <!-- Outlined & Inflated Clay Buttons -->
+    <SolidColorBrush x:Key="AppOutlinedButtonForeground" Color="#3C486B" />
+    <LinearGradientBrush x:Key="AppOutlinedButtonBorder" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFF" Offset="0.0" />
+        <GradientStop Color="#B4C0D8" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="AppOutlinedButtonBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFF" Offset="0.0" />
+        <GradientStop Color="#E6EDFA" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Action Button Brushes (Clay Inflated Color Blocks) -->
+    <LinearGradientBrush x:Key="AppPrimaryButtonBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#667EEA" Offset="0.0" />
+        <GradientStop Color="#4F67D8" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppPrimaryButtonBorder" Color="#879BF2" />
+    <SolidColorBrush x:Key="AppPrimaryButtonForeground" Color="#FFFFFF" />
+
+    <LinearGradientBrush x:Key="AppTealButtonBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#38B2AC" Offset="0.0" />
+        <GradientStop Color="#2C9690" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppTealButtonBorder" Color="#6ED1CC" />
+    <SolidColorBrush x:Key="AppTealButtonForeground" Color="#FFFFFF" />
+
+    <LinearGradientBrush x:Key="AppSuccessButtonBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#48BB78" Offset="0.0" />
+        <GradientStop Color="#38A169" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppSuccessButtonBorder" Color="#81E6D9" />
+    <SolidColorBrush x:Key="AppSuccessButtonForeground" Color="#FFFFFF" />
+
+    <LinearGradientBrush x:Key="AppDangerButtonBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#F56565" Offset="0.0" />
+        <GradientStop Color="#E53E3E" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppDangerButtonBorder" Color="#FEB2B2" />
+    <SolidColorBrush x:Key="AppDangerButtonForeground" Color="#FFFFFF" />
+
+    <!-- Soft matte sheen for clay -->
+    <sys:Double xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="AppGlossyOverlayOpacity">0.12</sys:Double>
+
+</ResourceDictionary>

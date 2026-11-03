@@ -48,7 +48,28 @@ public static class ThemeService
             "Frutiger Aero",
             "Kính trong suốt Aero Glass, nút bấm Glossy Gel & sắc xanh đại dương",
             "WaterOutline",
-            IsDarkBase: false)
+            IsDarkBase: false),
+        new(
+            AppThemeKind.Claymorphism,
+            nameof(AppThemeKind.Claymorphism),
+            "Claymorphism",
+            "Đất sét 3D phồng mềm, góc bo tròn lớn & bóng đổ marshmallow sâu",
+            "Shapes",
+            IsDarkBase: false),
+        new(
+            AppThemeKind.Glassmorphism,
+            nameof(AppThemeKind.Glassmorphism),
+            "Glassmorphism",
+            "Kính mờ bán trong suốt đa tầng, phản quang trên nền vũ trụ sâu",
+            "Blur",
+            IsDarkBase: true),
+        new(
+            AppThemeKind.Y2KDigital,
+            nameof(AppThemeKind.Y2KDigital),
+            "Y2K Digital",
+            "Cyberpunk thập niên 2000, ánh kim loại bạc, viền Neon Cyan & Magenta",
+            "CreationOutline",
+            IsDarkBase: true)
     };
 
     public static AppThemeOption GetThemeOption(AppThemeKind kind) =>
@@ -74,6 +95,22 @@ public static class ThemeService
             {
                 return AppThemeKind.MaterialLight;
             }
+
+            if (string.Equals(normalized, "Clay", StringComparison.OrdinalIgnoreCase))
+            {
+                return AppThemeKind.Claymorphism;
+            }
+
+            if (string.Equals(normalized, "Glass", StringComparison.OrdinalIgnoreCase))
+            {
+                return AppThemeKind.Glassmorphism;
+            }
+
+            if (string.Equals(normalized, "Y2K", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalized, "Y2KDigitalAesthetic", StringComparison.OrdinalIgnoreCase))
+            {
+                return AppThemeKind.Y2KDigital;
+            }
         }
 
         return fallbackIsDark ? AppThemeKind.MaterialDark : AppThemeKind.MaterialLight;
@@ -85,6 +122,9 @@ public static class ThemeService
         AppThemeKind.Skeuomorphism => "pack://application:,,,/BatchDeleteFTP;component/Themes/SkeuomorphismTheme.xaml",
         AppThemeKind.Neumorphism => "pack://application:,,,/BatchDeleteFTP;component/Themes/NeumorphismTheme.xaml",
         AppThemeKind.FrutigerAero => "pack://application:,,,/BatchDeleteFTP;component/Themes/FrutigerAeroTheme.xaml",
+        AppThemeKind.Claymorphism => "pack://application:,,,/BatchDeleteFTP;component/Themes/ClaymorphismTheme.xaml",
+        AppThemeKind.Glassmorphism => "pack://application:,,,/BatchDeleteFTP;component/Themes/GlassmorphismTheme.xaml",
+        AppThemeKind.Y2KDigital => "pack://application:,,,/BatchDeleteFTP;component/Themes/Y2KDigitalTheme.xaml",
         _ => "pack://application:,,,/BatchDeleteFTP;component/Themes/MaterialLightTheme.xaml"
     };
 
@@ -117,6 +157,24 @@ public static class ThemeService
                 materialTheme.SetBaseTheme(BaseTheme.Light);
                 materialTheme.SetPrimaryColor(Color.FromRgb(0x00, 0x78, 0xD4));
                 materialTheme.SetSecondaryColor(Color.FromRgb(0x00, 0xBF, 0xA5));
+                break;
+
+            case AppThemeKind.Claymorphism:
+                materialTheme.SetBaseTheme(BaseTheme.Light);
+                materialTheme.SetPrimaryColor(Color.FromRgb(0x5A, 0x67, 0xD8));
+                materialTheme.SetSecondaryColor(Color.FromRgb(0x38, 0xB2, 0xAC));
+                break;
+
+            case AppThemeKind.Glassmorphism:
+                materialTheme.SetBaseTheme(BaseTheme.Dark);
+                materialTheme.SetPrimaryColor(Color.FromRgb(0x38, 0xBD, 0xF8));
+                materialTheme.SetSecondaryColor(Color.FromRgb(0x2D, 0xD4, 0xBF));
+                break;
+
+            case AppThemeKind.Y2KDigital:
+                materialTheme.SetBaseTheme(BaseTheme.Dark);
+                materialTheme.SetPrimaryColor(Color.FromRgb(0x00, 0xF0, 0xFF));
+                materialTheme.SetSecondaryColor(Color.FromRgb(0xFF, 0x00, 0x7F));
                 break;
 
             case AppThemeKind.MaterialLight:

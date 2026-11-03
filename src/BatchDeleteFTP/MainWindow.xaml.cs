@@ -44,6 +44,7 @@ public partial class MainWindow : Window
     public MainWindow(ConfigService configService, AppLogger logger, FtpCleanupService ftpService, EmailNotificationService? emailService = null)
     {
         InitializeComponent();
+        this.WindowState = System.Windows.WindowState.Maximized;
         _configService = configService;
         _logger = logger;
         _ftpService = ftpService;
@@ -71,7 +72,7 @@ public partial class MainWindow : Window
         LoadSettingsToUi(_currentSettings);
         UpdateScanProfilesButtonLabel();
         var initialTheme = ThemeService.ParseTheme(_currentSettings.ThemeName, _currentSettings.IsDarkTheme);
-        ApplyTheme(initialTheme);
+        ApplyTheme(initialTheme);        
     }
 
     public void SetDarkTheme(bool isDark) =>
@@ -80,7 +81,7 @@ public partial class MainWindow : Window
     public void SetTheme(AppThemeKind kind)
     {
         _currentSettings.ThemeName = kind.ToString();
-        _currentSettings.IsDarkTheme = kind == AppThemeKind.MaterialDark;
+        _currentSettings.IsDarkTheme = ThemeService.GetThemeOption(kind).IsDarkBase;
         ApplyTheme(kind);
     }
 
@@ -110,7 +111,7 @@ public partial class MainWindow : Window
         if (CboThemes.SelectedItem is not AppThemeOption selectedTheme) return;
 
         _currentSettings.ThemeName = selectedTheme.Kind.ToString();
-        _currentSettings.IsDarkTheme = selectedTheme.Kind == AppThemeKind.MaterialDark;
+        _currentSettings.IsDarkTheme = selectedTheme.IsDarkBase;
         ApplyTheme(selectedTheme.Kind);
 
         try

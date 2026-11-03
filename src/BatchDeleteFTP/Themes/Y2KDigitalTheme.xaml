@@ -1,0 +1,106 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <!-- 8. Y2K DIGITAL AESTHETIC THEME (Late 90s/Early 00s Cyber Silver, Electric Cyan & Hot Magenta Neon Glow) -->
+
+    <!-- Cyberpunk Midnight Chrome Surface -->
+    <LinearGradientBrush x:Key="AppWindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#0D0917" Offset="0.0" />
+        <GradientStop Color="#140D26" Offset="0.5" />
+        <GradientStop Color="#091421" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Metallic Cyber Slate Card -->
+    <LinearGradientBrush x:Key="AppCardBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#241E38" Offset="0.0" />
+        <GradientStop Color="#1A152E" Offset="0.6" />
+        <GradientStop Color="#141124" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Holographic Neon Edge: Electric Cyan to Hot Magenta -->
+    <LinearGradientBrush x:Key="AppCardBorderBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00F0FF" Offset="0.0" />
+        <GradientStop Color="#A855F7" Offset="0.5" />
+        <GradientStop Color="#FF007F" Offset="1.0" />
+    </LinearGradientBrush>
+    <Thickness x:Key="AppCardBorderThickness">1.5</Thickness>
+    <CornerRadius x:Key="AppCardCornerRadius">6</CornerRadius>
+
+    <!-- Cyber Neon Glow Aura -->
+    <DropShadowEffect x:Key="AppCardShadowEffect"
+                      BlurRadius="14" ShadowDepth="2" Direction="270"
+                      Color="#00F0FF" Opacity="0.32" />
+
+    <!-- Header Banner: Y2K Chrome Hologram with Hot Pink Laser Border -->
+    <LinearGradientBrush x:Key="AppHeaderBackgroundBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#3B0764" Offset="0.0" />
+        <GradientStop Color="#1E1B4B" Offset="0.5" />
+        <GradientStop Color="#083344" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppHeaderBorderBrush" Color="#FF007F" />
+    <Thickness x:Key="AppHeaderBorderThickness">0,0,0,2</Thickness>
+    <SolidColorBrush x:Key="AppHeaderForegroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="AppHeaderPillBackgroundBrush" Color="#30FF007F" />
+    <SolidColorBrush x:Key="AppHeaderPillBorderBrush" Color="#8000F0FF" />
+
+    <!-- Typography & Icon Accents -->
+    <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#FDF4FF" />
+    <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#C084FC" />
+    <SolidColorBrush x:Key="AppSectionIconBrush" Color="#00F0FF" />
+    <SolidColorBrush x:Key="AppAccentHighlightBrush" Color="#F43F5E" />
+
+    <!-- Subtle Containers (Digital Cyber Console Bar) -->
+    <LinearGradientBrush x:Key="AppSubtlePanelBackgroundBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#1F1635" Offset="0.0" />
+        <GradientStop Color="#152238" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppSubtlePanelBorderBrush" Color="#581C87" />
+    <SolidColorBrush x:Key="AppDialogFooterBackgroundBrush" Color="#161226" />
+
+    <!-- Terminal / Activity Log Box: Pure Cyberpunk CRT Terminal -->
+    <SolidColorBrush x:Key="AppTerminalBackgroundBrush" Color="#06040A" />
+    <SolidColorBrush x:Key="AppTerminalForegroundBrush" Color="#00FFA3" />
+    <SolidColorBrush x:Key="AppTerminalBorderBrush" Color="#00F0FF" />
+
+    <!-- Outlined & Metallic Chrome Buttons -->
+    <SolidColorBrush x:Key="AppOutlinedButtonForeground" Color="#00F0FF" />
+    <SolidColorBrush x:Key="AppOutlinedButtonBorder" Color="#00F0FF" />
+    <LinearGradientBrush x:Key="AppOutlinedButtonBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#2A2445" Offset="0.0" />
+        <GradientStop Color="#18132B" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Action Button Brushes (High-Saturation Y2K Neon Bullets) -->
+    <LinearGradientBrush x:Key="AppPrimaryButtonBackground" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00C4FF" Offset="0.0" />
+        <GradientStop Color="#0077FE" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppPrimaryButtonBorder" Color="#00F0FF" />
+    <SolidColorBrush x:Key="AppPrimaryButtonForeground" Color="#030712" />
+
+    <LinearGradientBrush x:Key="AppTealButtonBackground" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00FFA3" Offset="0.0" />
+        <GradientStop Color="#059669" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppTealButtonBorder" Color="#34D399" />
+    <SolidColorBrush x:Key="AppTealButtonForeground" Color="#030712" />
+
+    <LinearGradientBrush x:Key="AppSuccessButtonBackground" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#A3E635" Offset="0.0" />
+        <GradientStop Color="#65A30D" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppSuccessButtonBorder" Color="#BEF264" />
+    <SolidColorBrush x:Key="AppSuccessButtonForeground" Color="#030712" />
+
+    <LinearGradientBrush x:Key="AppDangerButtonBackground" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#FF007F" Offset="0.0" />
+        <GradientStop Color="#E11D48" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppDangerButtonBorder" Color="#FB7185" />
+    <SolidColorBrush x:Key="AppDangerButtonForeground" Color="#FFFFFF" />
+
+    <!-- Cyber metallic chrome sheen -->
+    <sys:Double xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="AppGlossyOverlayOpacity">0.30</sys:Double>
+
+</ResourceDictionary>
