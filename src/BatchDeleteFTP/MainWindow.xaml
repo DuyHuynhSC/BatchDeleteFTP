@@ -54,7 +54,7 @@
                     <Border Background="{DynamicResource AppCardBackgroundBrush}"
                             TextElement.Foreground="{DynamicResource AppPrimaryTextBrush}"
                             BorderBrush="{DynamicResource AppHeaderPillBorderBrush}" BorderThickness="1"
-                            CornerRadius="6" Padding="10,3" Margin="0,0,8,0">
+                            CornerRadius="6" Padding="10,3">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <materialDesign:PackIcon Kind="ServerNetwork" Width="18" Height="18" VerticalAlignment="Center"
                                                      Foreground="{DynamicResource AppSectionIconBrush}" Margin="0,0,8,0"/>
@@ -67,32 +67,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Button x:Name="BtnNewProfile" Style="{StaticResource AppTealButtonStyle}"
-                            Height="32" Padding="10,0" Margin="0,0,6,0" Click="BtnNewProfile_Click"
-                            ToolTip="Khởi tạo một Profile mới">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="PlusCircleOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                            <TextBlock Text="Tạo Mới" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
-                        </StackPanel>
-                    </Button>
 
-                    <Button x:Name="BtnSaveProfile" Style="{StaticResource AppTealButtonStyle}"
-                            Height="32" Padding="10,0" Margin="0,0,6,0" Click="BtnSaveProfile_Click"
-                            ToolTip="Lưu thông tin kết nối vào Profile đang chọn/nhập">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="ContentSaveOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                            <TextBlock Text="Lưu Profile" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
-                        </StackPanel>
-                    </Button>
-
-                    <Button x:Name="BtnDeleteProfile" Style="{StaticResource AppDangerButtonStyle}"
-                            Height="32" Padding="10,0" Click="BtnDeleteProfile_Click"
-                            ToolTip="Xóa Profile đang chọn">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="DeleteOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                            <TextBlock Text="Xóa" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
-                        </StackPanel>
-                    </Button>
                 </StackPanel>
             </DockPanel>
         </Border>

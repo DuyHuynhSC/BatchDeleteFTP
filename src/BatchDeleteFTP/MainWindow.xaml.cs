@@ -209,74 +209,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void BtnNewProfile_Click(object sender, RoutedEventArgs e)
-    {
-        int index = _currentSettings.Profiles.Count + 1;
-        string newName = $"Site_{index}";
-        while (_currentSettings.Profiles.Any(p => string.Equals(p.Name, newName, StringComparison.OrdinalIgnoreCase)))
-        {
-            index++;
-            newName = $"Site_{index}";
-        }
-
-        _suppressProfileSelectionChanged = true;
-        try
-        {
-            CboProfiles.SelectedItem = null;
-            CboProfiles.Text = newName;
-        }
-        finally
-        {
-            _suppressProfileSelectionChanged = false;
-        }
-
-        CboProfiles.Focus();
-        _logger.Info($"Đang tạo Profile mới '{newName}'. Hãy chỉnh sửa thông tin và nhấn 'Lưu Profile'.");
-    }
-
-    private void BtnSaveProfile_Click(object sender, RoutedEventArgs e)
-    {
-        string profileName = CboProfiles.Text.Trim();
-        if (string.IsNullOrWhiteSpace(profileName))
-        {
-            MessageBox.Show("Vui lòng nhập tên Profile trước khi lưu.", "Thiếu tên Profile", MessageBoxButton.OK, MessageBoxImage.Warning);
-            CboProfiles.Focus();
-            return;
-        }
-
-        _configService.UpsertProfile(_currentSettings, profileName);
-        _configService.Save(_currentSettings);
-
-        RefreshProfileComboBox(profileName);
-        LoadSettingsToUi(_currentSettings);
-        _logger.Info($"Đã lưu Profile '{profileName}' vào '{_configService.DefaultConfigPath}'.");
-        MessageBox.Show($"Đã lưu Profile '{profileName}' thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
-    }
-
-    private void BtnDeleteProfile_Click(object sender, RoutedEventArgs e)
-    {
-        string targetName = (CboProfiles.SelectedItem as FtpSiteProfile)?.Name ?? CboProfiles.Text.Trim();
-        if (string.IsNullOrWhiteSpace(targetName))
-        {
-            return;
-        }
-
-        var confirm = MessageBox.Show(
-            $"Bạn có chắc chắn muốn xóa Profile '{targetName}' không?",
-            "Xác nhận xóa Profile",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-
-        if (confirm != MessageBoxResult.Yes) return;
-
-        if (_configService.DeleteProfile(_currentSettings, targetName))
-        {
-            _configService.Save(_currentSettings);
-            RefreshProfileComboBox(_currentSettings.SelectedProfileName);
-            LoadSettingsToUi(_currentSettings);
-            _logger.Info($"Đã xóa Profile '{targetName}'. Đang chọn: '{_currentSettings.SelectedProfileName}'.");
-        }
-    }
 
     private void UpdateScanProfilesButtonLabel()
     {
@@ -349,9 +281,6 @@ public partial class MainWindow : Window
     private void SetUiBusy(bool isBusy, string? busyText = null)
     {
         CboProfiles.IsEnabled = !isBusy;
-        BtnNewProfile.IsEnabled = !isBusy;
-        BtnSaveProfile.IsEnabled = !isBusy;
-        BtnDeleteProfile.IsEnabled = !isBusy;
         BtnOpenConnectionSettings.IsEnabled = !isBusy;
         BtnSelectScanProfiles.IsEnabled = !isBusy;
         BtnQuickTestConnection.IsEnabled = !isBusy;
