@@ -195,4 +195,74 @@ public class ConfigServiceTests
 
         Assert.Null(threadEx);
     }
+    [Fact]
+    public void EmailSettings_AreGlobalAndAppliedAcrossAllProfiles()
+    {
+        string tempFile = Path.Combine(Path.GetTempPath(), $"ftp_email_global_{Guid.NewGuid()}.json");
+        try
+        {
+            var service = new ConfigService();
+            var settings = new FtpSettings
+            {
+                SelectedProfileName = "SITE_A",
+                Host = "ftp-a.example.com",
+                Username = "userA",
+                SmtpHost = "smtp.corp.com",
+                SmtpPort = 587,
+                SmtpEnableSsl = true,
+                SmtpUser = "notification@corp.com",
+                SenderEmail = "no-reply@corp.com",
+                RecipientEmails = new List<string> { "team@corp.com", "admin@corp.com" },
+                AutoSendEmailOnPreview = true
+            };
+
+            service.Save(settings, tempFile);
+
+            // Add second profile SITE_B
+            settings.Host = "ftp-b.example.com";
+            settings.Username = "userB";
+            service.UpsertProfile(settings, "SITE_B");
+            service.Save(settings, tempFile);
+
+            var loaded = service.Load(tempFile);
+            Assert.Equal(2, loaded.Profiles.Count);
+
+            foreach (var prof in loaded.Profiles)
+            {
+                Assert.Equal("smtp.corp.com", prof.SmtpHost);
+                Assert.Equal(587, prof.SmtpPort);
+                Assert.True(prof.SmtpEnableSsl);
+                Assert.Equal(new[] { "team@corp.com", "admin@corp.com" }, prof.RecipientEmails);
+                Assert.True(prof.AutoSendEmailOnPreview);
+            }
+
+            // Switch to SITE_A -> global email settings preserved
+            bool switched = service.SelectProfile(loaded, "SITE_A");
+            Assert.True(switched);
+            Assert.Equal("SITE_A", loaded.SelectedProfileName);
+            Assert.Equal("smtp.corp.com", loaded.SmtpHost);
+            Assert.Equal(new[] { "team@corp.com", "admin@corp.com" }, loaded.RecipientEmails);
+
+            // Update email settings globally and save
+            loaded.SmtpHost = "mail.new-domain.com";
+            loaded.RecipientEmails = new List<string> { "updated@corp.com" };
+            service.Save(loaded, tempFile);
+
+            var reloaded = service.Load(tempFile);
+            Assert.Equal("mail.new-domain.com", reloaded.SmtpHost);
+            Assert.Equal(new[] { "updated@corp.com" }, reloaded.RecipientEmails);
+
+            var profB = System.Linq.Enumerable.First(reloaded.Profiles, p => p.Name == "SITE_B");
+            Assert.Equal("mail.new-domain.com", profB.SmtpHost);
+            Assert.Equal(new[] { "updated@corp.com" }, profB.RecipientEmails);
+
+            var converted = profB.ToSettings(reloaded);
+            Assert.Equal("mail.new-domain.com", converted.SmtpHost);
+            Assert.Equal(new[] { "updated@corp.com" }, converted.RecipientEmails);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
 }

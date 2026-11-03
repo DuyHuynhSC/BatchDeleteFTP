@@ -418,7 +418,7 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() == true)
         {
             _configService.Save(_currentSettings);
-            _logger.Info($"Đã lưu cấu hình Email (SMTP: {_currentSettings.SmtpHost}:{_currentSettings.SmtpPort}, Số email nhận: {_currentSettings.RecipientEmails.Count}).");
+            _logger.Info($"Đã lưu cấu hình Email chung cho tất cả Profile (SMTP: {_currentSettings.SmtpHost}:{_currentSettings.SmtpPort}, Số email nhận: {_currentSettings.RecipientEmails.Count}).");
         }
     }
 

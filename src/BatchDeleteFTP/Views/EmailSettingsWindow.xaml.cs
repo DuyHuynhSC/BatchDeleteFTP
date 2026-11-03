@@ -56,6 +56,7 @@ public partial class EmailSettingsWindow : Window
         target.SenderEmail = TxtSenderEmail.Text.Trim();
         target.RecipientEmails = EmailNotificationService.ParseRecipientEmails(TxtRecipientEmails.Text);
         target.AutoSendEmailOnPreview = ChkAutoSendOnPreview.IsChecked == true;
+        ConfigService.SyncEmailSettingsAcrossAllProfiles(target);
     }
 
     private void TxtRecipientEmails_TextChanged(object sender, TextChangedEventArgs e)

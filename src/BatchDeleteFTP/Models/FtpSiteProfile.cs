@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -22,7 +22,7 @@ public class FtpSiteProfile
     public bool EnableBackup { get; set; } = true;
     public string LocalBackupPath { get; set; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups");
 
-    // Email Notification Settings per Profile
+    // Email Notification Settings (synchronized across all profiles for backward-compatibility)
     public string SmtpHost { get; set; } = "mail.fujinet.net";
     public int SmtpPort { get; set; } = 25;
     public bool SmtpEnableSsl { get; set; } = false;
@@ -76,14 +76,19 @@ public class FtpSiteProfile
         s.RetentionDays = RetentionDays;
         s.EnableBackup = EnableBackup;
         s.LocalBackupPath = LocalBackupPath;
-        s.SmtpHost = SmtpHost;
-        s.SmtpPort = SmtpPort;
-        s.SmtpEnableSsl = SmtpEnableSsl;
-        s.SmtpUser = SmtpUser;
-        s.SmtpPassword = SmtpPassword;
-        s.SenderEmail = SenderEmail;
-        s.RecipientEmails = new List<string>(RecipientEmails ?? new List<string>());
-        s.AutoSendEmailOnPreview = AutoSendEmailOnPreview;
+        // Do not override global email settings on profile switch
+    }
+
+    public void SyncEmailSettings(FtpSettings s)
+    {
+        SmtpHost = s.SmtpHost;
+        SmtpPort = s.SmtpPort;
+        SmtpEnableSsl = s.SmtpEnableSsl;
+        SmtpUser = s.SmtpUser;
+        SmtpPassword = s.SmtpPassword;
+        SenderEmail = s.SenderEmail;
+        RecipientEmails = new List<string>(s.RecipientEmails ?? new List<string>());
+        AutoSendEmailOnPreview = s.AutoSendEmailOnPreview;
     }
 
     public FtpSettings ToSettings(FtpSettings? baseSettings = null)
@@ -92,7 +97,27 @@ public class FtpSiteProfile
         if (baseSettings != null)
         {
             s.IsDarkTheme = baseSettings.IsDarkTheme;
+            s.ThemeName = baseSettings.ThemeName;
+            s.SmtpHost = baseSettings.SmtpHost;
+            s.SmtpPort = baseSettings.SmtpPort;
+            s.SmtpEnableSsl = baseSettings.SmtpEnableSsl;
+            s.SmtpUser = baseSettings.SmtpUser;
+            s.SmtpPassword = baseSettings.SmtpPassword;
+            s.SenderEmail = baseSettings.SenderEmail;
+            s.RecipientEmails = new List<string>(baseSettings.RecipientEmails ?? new List<string>());
+            s.AutoSendEmailOnPreview = baseSettings.AutoSendEmailOnPreview;
             s.Profiles = new List<FtpSiteProfile>(baseSettings.Profiles);
+        }
+        else
+        {
+            s.SmtpHost = SmtpHost;
+            s.SmtpPort = SmtpPort;
+            s.SmtpEnableSsl = SmtpEnableSsl;
+            s.SmtpUser = SmtpUser;
+            s.SmtpPassword = SmtpPassword;
+            s.SenderEmail = SenderEmail;
+            s.RecipientEmails = new List<string>(RecipientEmails ?? new List<string>());
+            s.AutoSendEmailOnPreview = AutoSendEmailOnPreview;
         }
         ApplyTo(s);
         return s;
