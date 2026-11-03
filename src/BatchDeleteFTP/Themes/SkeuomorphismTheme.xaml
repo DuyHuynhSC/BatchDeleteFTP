@@ -1,0 +1,117 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <!-- 3. SKEUOMORPHISM THEME PALETTE & EFFECTS (Brushed Metal, Rich Leather/Bronze Header, Tactile 3D Bevels, CRT Green Terminal) -->
+
+    <!-- Brushed Aluminum Window Surface -->
+    <LinearGradientBrush x:Key="AppWindowBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#DCDAD5" Offset="0.0" />
+        <GradientStop Color="#CECBC4" Offset="0.5" />
+        <GradientStop Color="#C2BEB6" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Tactile Metallic / Cream Panel Card -->
+    <LinearGradientBrush x:Key="AppCardBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#F7F5F0" Offset="0.0" />
+        <GradientStop Color="#EAE6DF" Offset="0.5" />
+        <GradientStop Color="#DFDBD2" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- 3D Bevel Card Border -->
+    <LinearGradientBrush x:Key="AppCardBorderBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFFFFF" Offset="0.0" />
+        <GradientStop Color="#B0ABA0" Offset="0.45" />
+        <GradientStop Color="#7C776D" Offset="1.0" />
+    </LinearGradientBrush>
+    <Thickness x:Key="AppCardBorderThickness">1.5</Thickness>
+    <CornerRadius x:Key="AppCardCornerRadius">6</CornerRadius>
+
+    <DropShadowEffect x:Key="AppCardShadowEffect"
+                      BlurRadius="8" ShadowDepth="3" Direction="270"
+                      Color="#3E3A35" Opacity="0.38" />
+
+    <!-- Header Banner: Rich Dark Leather / Gunmetal with Brass Trim -->
+    <LinearGradientBrush x:Key="AppHeaderBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#433D38" Offset="0.0" />
+        <GradientStop Color="#2C2824" Offset="0.5" />
+        <GradientStop Color="#1F1C19" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppHeaderBorderBrush" Color="#C59B27" />
+    <Thickness x:Key="AppHeaderBorderThickness">0,0,0,2</Thickness>
+    <SolidColorBrush x:Key="AppHeaderForegroundBrush" Color="#F5EEDB" />
+    <SolidColorBrush x:Key="AppHeaderPillBackgroundBrush" Color="#44000000" />
+    <SolidColorBrush x:Key="AppHeaderPillBorderBrush" Color="#99C59B27" />
+
+    <!-- Typography & Icon Accents -->
+    <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#26221E" />
+    <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#5C554C" />
+    <SolidColorBrush x:Key="AppSectionIconBrush" Color="#8C5828" />
+    <SolidColorBrush x:Key="AppAccentHighlightBrush" Color="#1F4E79" />
+
+    <!-- Subtle Containers (Recessed Groove) -->
+    <LinearGradientBrush x:Key="AppSubtlePanelBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#D2CEC6" Offset="0.0" />
+        <GradientStop Color="#E3E0D8" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppSubtlePanelBorderBrush" Color="#9A9488" />
+    <LinearGradientBrush x:Key="AppDialogFooterBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#DEDAD0" Offset="0.0" />
+        <GradientStop Color="#CAC5B9" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Terminal / Activity Log Box: Retro Phosphor CRT Monitor -->
+    <LinearGradientBrush x:Key="AppTerminalBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#0D1912" Offset="0.0" />
+        <GradientStop Color="#12241A" Offset="0.5" />
+        <GradientStop Color="#0A140E" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppTerminalForegroundBrush" Color="#66FF99" />
+    <SolidColorBrush x:Key="AppTerminalBorderBrush" Color="#5A554C" />
+
+    <!-- Outlined & Tactile Silver Buttons -->
+    <SolidColorBrush x:Key="AppOutlinedButtonForeground" Color="#2B2622" />
+    <SolidColorBrush x:Key="AppOutlinedButtonBorder" Color="#8A8377" />
+    <LinearGradientBrush x:Key="AppOutlinedButtonBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FCFBF9" Offset="0.0" />
+        <GradientStop Color="#E8E4DC" Offset="0.5" />
+        <GradientStop Color="#D4CFC5" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Action Button Brushes (3D Tactile Convex Gradients) -->
+    <LinearGradientBrush x:Key="AppPrimaryButtonBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#3B73B9" Offset="0.0" />
+        <GradientStop Color="#23538F" Offset="0.5" />
+        <GradientStop Color="#183C69" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppPrimaryButtonBorder" Color="#0F2A4A" />
+    <SolidColorBrush x:Key="AppPrimaryButtonForeground" Color="#FFFFFF" />
+
+    <LinearGradientBrush x:Key="AppTealButtonBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#2D8C7F" Offset="0.0" />
+        <GradientStop Color="#1D6A5F" Offset="0.5" />
+        <GradientStop Color="#134B43" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppTealButtonBorder" Color="#0C352F" />
+    <SolidColorBrush x:Key="AppTealButtonForeground" Color="#FFFFFF" />
+
+    <LinearGradientBrush x:Key="AppSuccessButtonBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#538D3F" Offset="0.0" />
+        <GradientStop Color="#3A6B29" Offset="0.5" />
+        <GradientStop Color="#274D1A" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppSuccessButtonBorder" Color="#1B3811" />
+    <SolidColorBrush x:Key="AppSuccessButtonForeground" Color="#FFFFFF" />
+
+    <LinearGradientBrush x:Key="AppDangerButtonBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#C94A38" Offset="0.0" />
+        <GradientStop Color="#A12E1F" Offset="0.5" />
+        <GradientStop Color="#781E12" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppDangerButtonBorder" Color="#521209" />
+    <SolidColorBrush x:Key="AppDangerButtonForeground" Color="#FFFFFF" />
+
+    <!-- Subtle top highlight bevel for Skeuomorphic buttons -->
+    <sys:Double xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="AppGlossyOverlayOpacity">0.22</sys:Double>
+
+</ResourceDictionary>

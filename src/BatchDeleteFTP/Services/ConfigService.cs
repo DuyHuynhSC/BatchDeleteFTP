@@ -43,6 +43,7 @@ public class ConfigService
         }
 
         UpsertProfile(settings, settings.SelectedProfileName);
+        NormalizeThemeSettings(settings);
 
         string json = JsonSerializer.Serialize(settings, JsonOptions);
         File.WriteAllText(targetPath, json);
@@ -50,6 +51,8 @@ public class ConfigService
 
     public void EnsureProfilesInitialized(FtpSettings settings)
     {
+        NormalizeThemeSettings(settings);
+
         if (settings.RemotePaths == null || settings.RemotePaths.Count == 0)
         {
             settings.RemotePaths = new List<string> { "/" };
@@ -133,5 +136,21 @@ public class ConfigService
 
         settings.Profiles[0].ApplyTo(settings);
         return true;
+    }
+
+    public static void NormalizeThemeSettings(FtpSettings settings)
+    {
+        if (string.IsNullOrWhiteSpace(settings.ThemeName))
+        {
+            settings.ThemeName = settings.IsDarkTheme
+                ? AppThemeKind.MaterialDark.ToString()
+                : AppThemeKind.MaterialLight.ToString();
+        }
+        else
+        {
+            var resolved = ThemeService.ParseTheme(settings.ThemeName, settings.IsDarkTheme);
+            settings.ThemeName = resolved.ToString();
+            settings.IsDarkTheme = resolved == AppThemeKind.MaterialDark;
+        }
     }
 }

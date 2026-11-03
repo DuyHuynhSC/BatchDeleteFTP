@@ -6,11 +6,7 @@
         MinHeight="450" MinWidth="600"
         Icon="pack://application:,,,/BatchDeleteFTP;component/Assets/app.ico"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-        TextElement.FontWeight="Regular"
-        TextElement.FontSize="13"
-        FontFamily="{materialDesign:MaterialDesignFont}">
+        Style="{StaticResource AppWindowStyle}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -20,9 +16,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#283593" Padding="16,10"
-                TextElement.Foreground="White"
-                materialDesign:ElevationAssist.Elevation="Dp2">
+        <Border Grid.Row="0" Style="{StaticResource AppHeaderBannerStyle}" Padding="16,10">
             <DockPanel>
                 <materialDesign:PackIcon x:Name="IconFile" Kind="FileDocumentOutline" Width="28" Height="28"
                                          VerticalAlignment="Center" Margin="0,0,12,0" DockPanel.Dock="Left"/>
@@ -34,7 +28,7 @@
         </Border>
 
         <!-- Meta Bar -->
-        <Border Grid.Row="1" Background="#0A000000" Padding="14,6" BorderThickness="0,0,0,1" BorderBrush="#22888888">
+        <Border Grid.Row="1" Background="{DynamicResource AppSubtlePanelBackgroundBrush}" Padding="14,6" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}">
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Text="Kích thước: " FontWeight="SemiBold" FontSize="12" Opacity="0.75"/>
@@ -58,10 +52,10 @@
         <!-- Content Area -->
         <Grid Grid.Row="2" Margin="12,8">
             <!-- Text Preview -->
-            <Border x:Name="TextContainer" Background="#1E1E1E" CornerRadius="6" Padding="8" Visibility="Visible">
+            <Border x:Name="TextContainer" Style="{StaticResource AppTerminalBorderStyle}" Padding="8" Visibility="Visible">
                 <TextBox x:Name="TxtContent" IsReadOnly="True"
                          FontFamily="Consolas" FontSize="13"
-                         Background="Transparent" Foreground="#D4D4D4"
+                         Background="Transparent" Foreground="{DynamicResource AppTerminalForegroundBrush}"
                          BorderThickness="0"
                          TextWrapping="Wrap"
                          VerticalScrollBarVisibility="Auto"
@@ -70,7 +64,7 @@
 
             <!-- Image Preview -->
             <ScrollViewer x:Name="ImageContainer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
-                <Border Background="#12000000" CornerRadius="6" Padding="10">
+                <Border Style="{StaticResource AppSubtleToolbarBorderStyle}" Padding="10">
                     <Image x:Name="ImgPreview" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
             </ScrollViewer>
@@ -82,8 +76,7 @@
                            FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,6"/>
                 <TextBlock Text="Bạn có thể mở bằng ứng dụng mặc định trên Windows hoặc tải về máy."
                            FontSize="12" Opacity="0.7" HorizontalAlignment="Center" Margin="0,0,0,16"/>
-                <Button Style="{StaticResource MaterialDesignRaisedButton}"
-                        Background="#1976D2" BorderBrush="#1976D2" Foreground="White"
+                <Button Style="{StaticResource AppPrimaryButtonStyle}"
                         HorizontalAlignment="Center" Padding="16,0" Height="36"
                         Click="BtnOpenDefault_Click">
                     <StackPanel Orientation="Horizontal">
@@ -95,12 +88,10 @@
         </Grid>
 
         <!-- Footer -->
-        <Border Grid.Row="3" Background="{DynamicResource MaterialDesignPaper}"
-                BorderBrush="#22888888" BorderThickness="0,1,0,0" Padding="14,10">
+        <Border Grid.Row="3" Style="{StaticResource AppDialogFooterBorderStyle}" Padding="14,10">
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <Button Style="{StaticResource MaterialDesignRaisedButton}"
-                            Background="#1976D2" BorderBrush="#1976D2" Foreground="White"
+                    <Button Style="{StaticResource AppPrimaryButtonStyle}"
                             Height="34" Padding="14,0" Margin="0,0,8,0" Click="BtnOpenDefault_Click"
                             ToolTip="Mở tập tin bằng ứng dụng mặc định của hệ thống Windows">
                         <StackPanel Orientation="Horizontal">
@@ -120,7 +111,7 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-                    <Button Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                    <Button Style="{StaticResource AppOutlinedButtonStyle}"
                             Height="34" Padding="16,0" Click="BtnClose_Click">
                         <TextBlock Text="Đóng" FontWeight="SemiBold"/>
                     </Button>

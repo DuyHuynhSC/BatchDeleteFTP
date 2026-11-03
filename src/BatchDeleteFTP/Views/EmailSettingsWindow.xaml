@@ -6,11 +6,7 @@
         MinHeight="520" MinWidth="580"
         Icon="pack://application:,,,/BatchDeleteFTP;component/Assets/app.ico"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-        TextElement.FontWeight="Regular"
-        TextElement.FontSize="13"
-        FontFamily="{materialDesign:MaterialDesignFont}">
+        Style="{StaticResource AppWindowStyle}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -19,9 +15,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#283593" Padding="16,12"
-                TextElement.Foreground="White"
-                materialDesign:ElevationAssist.Elevation="Dp2">
+        <Border Grid.Row="0" Style="{StaticResource AppHeaderBannerStyle}" Padding="16,12">
             <StackPanel Orientation="Horizontal">
                 <materialDesign:PackIcon Kind="EmailFastOutline" Width="26" Height="26" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <StackPanel VerticalAlignment="Center">
@@ -36,8 +30,7 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="14,12,14,4">
             <StackPanel>
                 <!-- Card 1: SMTP Server -->
-                <materialDesign:Card Padding="16,12" Margin="0,0,0,12" UniformCornerRadius="8"
-                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                <materialDesign:Card Padding="16,12" Margin="0,0,0,12">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <materialDesign:PackIcon Kind="ServerSecurity" Width="19" Height="19"
@@ -88,8 +81,7 @@
                 </materialDesign:Card>
 
                 <!-- Card 2: Recipient Emails -->
-                <materialDesign:Card Padding="16,12" UniformCornerRadius="8"
-                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                <materialDesign:Card Padding="16,12">
                     <StackPanel>
                         <DockPanel Margin="0,0,0,10">
                             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
@@ -140,8 +132,7 @@
                         <TextBlock Text="Hủy" VerticalAlignment="Center" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="BtnSaveEmailSettings" Style="{StaticResource MaterialDesignRaisedButton}"
-                        Background="#1976D2" BorderBrush="#1976D2" Foreground="White"
+                <Button x:Name="BtnSaveEmailSettings" Style="{StaticResource AppPrimaryButtonStyle}"
                         Height="34" Padding="16,0" Click="BtnSaveEmailSettings_Click" IsDefault="True">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="ContentSaveCheckOutline" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,6,0"/>

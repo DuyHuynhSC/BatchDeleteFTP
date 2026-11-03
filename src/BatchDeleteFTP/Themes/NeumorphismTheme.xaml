@@ -1,0 +1,103 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <!-- 4. NEUMORPHISM THEME PALETTE & EFFECTS (Soft UI Extruded Matte Surface, Dual Light/Dark Rim & Soft Shadows) -->
+
+    <!-- Soft Monochromatic Cool-Grey Surface -->
+    <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#E0E5EC" />
+
+    <!-- Extruded Soft Card Surface -->
+    <LinearGradientBrush x:Key="AppCardBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#EBF0F7" Offset="0.0" />
+        <GradientStop Color="#E0E5EC" Offset="0.55" />
+        <GradientStop Color="#D7DDE6" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Top-Left White Rim to Bottom-Right Cool Shadow Rim -->
+    <LinearGradientBrush x:Key="AppCardBorderBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFF" Offset="0.0" />
+        <GradientStop Color="#E0E5EC" Offset="0.5" />
+        <GradientStop Color="#B8C2D1" Offset="1.0" />
+    </LinearGradientBrush>
+    <Thickness x:Key="AppCardBorderThickness">1.5</Thickness>
+    <CornerRadius x:Key="AppCardCornerRadius">14</CornerRadius>
+
+    <DropShadowEffect x:Key="AppCardShadowEffect"
+                      BlurRadius="16" ShadowDepth="5" Direction="315"
+                      Color="#9AA6B8" Opacity="0.55" />
+
+    <!-- Header Banner: Soft UI Extruded Slate-Blue Pill -->
+    <LinearGradientBrush x:Key="AppHeaderBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#3B4C66" Offset="0.0" />
+        <GradientStop Color="#2D3A4F" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppHeaderBorderBrush" Color="#566B8A" />
+    <Thickness x:Key="AppHeaderBorderThickness">0,0,0,1.5</Thickness>
+    <SolidColorBrush x:Key="AppHeaderForegroundBrush" Color="#F0F4F8" />
+    <SolidColorBrush x:Key="AppHeaderPillBackgroundBrush" Color="#24FFFFFF" />
+    <SolidColorBrush x:Key="AppHeaderPillBorderBrush" Color="#44FFFFFF" />
+
+    <!-- Typography & Icon Accents -->
+    <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#2D3748" />
+    <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#64748B" />
+    <SolidColorBrush x:Key="AppSectionIconBrush" Color="#4A69BD" />
+    <SolidColorBrush x:Key="AppAccentHighlightBrush" Color="#3867D6" />
+
+    <!-- Subtle Containers (Recessed / Pressed-in Soft Groove) -->
+    <LinearGradientBrush x:Key="AppSubtlePanelBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#CED6E2" Offset="0.0" />
+        <GradientStop Color="#E6EBF2" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppSubtlePanelBorderBrush" Color="#BDC7D6" />
+    <SolidColorBrush x:Key="AppDialogFooterBackgroundBrush" Color="#D8DFE8" />
+
+    <!-- Terminal / Activity Log Box: Soft Deep Slate Inset -->
+    <SolidColorBrush x:Key="AppTerminalBackgroundBrush" Color="#232B38" />
+    <SolidColorBrush x:Key="AppTerminalForegroundBrush" Color="#CBD5E1" />
+    <SolidColorBrush x:Key="AppTerminalBorderBrush" Color="#B0BCCB" />
+
+    <!-- Outlined & Extruded Soft Buttons -->
+    <SolidColorBrush x:Key="AppOutlinedButtonForeground" Color="#334155" />
+    <LinearGradientBrush x:Key="AppOutlinedButtonBorder" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFF" Offset="0.0" />
+        <GradientStop Color="#B2BDCD" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="AppOutlinedButtonBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#F0F4FA" Offset="0.0" />
+        <GradientStop Color="#DCE2EB" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Action Button Brushes (Soft Matte Gradients) -->
+    <LinearGradientBrush x:Key="AppPrimaryButtonBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#5A7BEF" Offset="0.0" />
+        <GradientStop Color="#3B5BDB" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppPrimaryButtonBorder" Color="#748FFC" />
+    <SolidColorBrush x:Key="AppPrimaryButtonForeground" Color="#FFFFFF" />
+
+    <LinearGradientBrush x:Key="AppTealButtonBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#20C997" Offset="0.0" />
+        <GradientStop Color="#0CA678" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppTealButtonBorder" Color="#63E6BE" />
+    <SolidColorBrush x:Key="AppTealButtonForeground" Color="#FFFFFF" />
+
+    <LinearGradientBrush x:Key="AppSuccessButtonBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#40C057" Offset="0.0" />
+        <GradientStop Color="#2B8A3E" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppSuccessButtonBorder" Color="#69DB7C" />
+    <SolidColorBrush x:Key="AppSuccessButtonForeground" Color="#FFFFFF" />
+
+    <LinearGradientBrush x:Key="AppDangerButtonBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FA5252" Offset="0.0" />
+        <GradientStop Color="#E03131" Offset="1.0" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AppDangerButtonBorder" Color="#FF8787" />
+    <SolidColorBrush x:Key="AppDangerButtonForeground" Color="#FFFFFF" />
+
+    <!-- Matte Soft UI (No sharp glossy reflection) -->
+    <sys:Double xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="AppGlossyOverlayOpacity">0.08</sys:Double>
+
+</ResourceDictionary>

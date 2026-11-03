@@ -6,11 +6,7 @@
         MinHeight="600" MinWidth="720"
         Icon="pack://application:,,,/BatchDeleteFTP;component/Assets/app.ico"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-        TextElement.FontWeight="Regular"
-        TextElement.FontSize="13"
-        FontFamily="{materialDesign:MaterialDesignFont}">
+        Style="{StaticResource AppWindowStyle}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -19,9 +15,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#283593" Padding="16,12"
-                TextElement.Foreground="White"
-                materialDesign:ElevationAssist.Elevation="Dp4">
+        <Border Grid.Row="0" Style="{StaticResource AppHeaderBannerStyle}" Padding="16,12">
             <DockPanel>
                 <materialDesign:PackIcon Kind="TuneVariant" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <StackPanel VerticalAlignment="Center">
@@ -36,8 +30,7 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16,14,16,6">
             <StackPanel>
                 <!-- SECTION 0: SITE PROFILE MANAGEMENT -->
-                <materialDesign:Card Margin="0,0,0,12" Padding="14,10" UniformCornerRadius="8"
-                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                <materialDesign:Card Margin="0,0,0,12" Padding="14,10">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -58,7 +51,7 @@
                                   ToolTip="Chọn Profile đã lưu hoặc nhập tên Profile mới để lưu"/>
 
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button x:Name="BtnNewProfile" Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                            <Button x:Name="BtnNewProfile" Style="{StaticResource AppTealButtonStyle}"
                                     Height="30" Padding="10,0" Margin="0,0,6,0" Click="BtnNewProfile_Click"
                                     ToolTip="Khởi tạo một Profile mới">
                                 <StackPanel Orientation="Horizontal">
@@ -67,7 +60,7 @@
                                 </StackPanel>
                             </Button>
 
-                            <Button x:Name="BtnSaveProfile" Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                            <Button x:Name="BtnSaveProfile" Style="{StaticResource AppTealButtonStyle}"
                                     Height="30" Padding="10,0" Margin="0,0,6,0" Click="BtnSaveProfile_Click"
                                     ToolTip="Lưu thông tin đang nhập vào Profile này">
                                 <StackPanel Orientation="Horizontal">
@@ -76,8 +69,7 @@
                                 </StackPanel>
                             </Button>
 
-                            <Button x:Name="BtnDeleteProfile" Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Background="#D32F2F" BorderBrush="#D32F2F" Foreground="White"
+                            <Button x:Name="BtnDeleteProfile" Style="{StaticResource AppDangerButtonStyle}"
                                     Height="30" Padding="10,0" Click="BtnDeleteProfile_Click"
                                     ToolTip="Xóa Profile đang chọn">
                                 <StackPanel Orientation="Horizontal">
@@ -90,8 +82,7 @@
                 </materialDesign:Card>
 
                 <!-- SECTION 1: FTP CONNECTION CARD -->
-                <materialDesign:Card Margin="0,0,0,12" Padding="16,12" UniformCornerRadius="8"
-                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                <materialDesign:Card Margin="0,0,0,12" Padding="16,12">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <materialDesign:PackIcon Kind="ServerSecurity" Width="20" Height="20" VerticalAlignment="Center"
@@ -154,8 +145,7 @@
                 </materialDesign:Card>
 
                 <!-- SECTION 2: PROXY SETTINGS CARD -->
-                <materialDesign:Card Margin="0,0,0,12" Padding="16,12" UniformCornerRadius="8"
-                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                <materialDesign:Card Margin="0,0,0,12" Padding="16,12">
                     <StackPanel>
                         <DockPanel Margin="0,0,0,10">
                             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
@@ -200,8 +190,7 @@
                 </materialDesign:Card>
 
                 <!-- SECTION 3: REMOTE PATHS & BACKUP CARD -->
-                <materialDesign:Card Margin="0,0,0,4" Padding="16,12" UniformCornerRadius="8"
-                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                <materialDesign:Card Margin="0,0,0,4" Padding="16,12">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <materialDesign:PackIcon Kind="FolderSyncOutline" Width="20" Height="20" VerticalAlignment="Center"
@@ -276,8 +265,7 @@
         </ScrollViewer>
 
         <!-- Footer / Action Buttons -->
-        <Border Grid.Row="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                Padding="16,10" BorderBrush="#22000000" BorderThickness="0,1,0,0">
+        <Border Grid.Row="2" Style="{StaticResource AppDialogFooterBorderStyle}" Padding="16,10">
             <DockPanel>
                 <!-- Test Connection Button (Left) -->
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
@@ -299,8 +287,7 @@
                         <TextBlock Text="Đóng" VerticalAlignment="Center" FontWeight="SemiBold"/>
                     </Button>
 
-                    <Button x:Name="BtnSaveAndApply" Style="{StaticResource MaterialDesignRaisedButton}"
-                            Background="#283593" BorderBrush="#283593" Foreground="White"
+                    <Button x:Name="BtnSaveAndApply" Style="{StaticResource AppPrimaryButtonStyle}"
                             Height="34" Padding="18,0" Click="BtnSaveAndApply_Click">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="ContentSaveCheckOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>

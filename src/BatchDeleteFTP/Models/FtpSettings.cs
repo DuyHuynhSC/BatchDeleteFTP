@@ -21,6 +21,7 @@ public class FtpSettings
     public bool EnableBackup { get; set; } = true;
     public string LocalBackupPath { get; set; } = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Backups");
     public bool IsDarkTheme { get; set; } = false;
+    public string ThemeName { get; set; } = string.Empty;
 
     // Email Notification Settings
     public string SmtpHost { get; set; } = "mail.fujinet.net";

@@ -6,11 +6,7 @@
         MinHeight="400" MinWidth="600"
         Icon="pack://application:,,,/BatchDeleteFTP;component/Assets/app.ico"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-        TextElement.FontWeight="Regular"
-        TextElement.FontSize="13"
-        FontFamily="{materialDesign:MaterialDesignFont}">
+        Style="{StaticResource AppWindowStyle}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -20,9 +16,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#283593" Padding="16,12"
-                TextElement.Foreground="White"
-                materialDesign:ElevationAssist.Elevation="Dp2">
+        <Border Grid.Row="0" Style="{StaticResource AppHeaderBannerStyle}" Padding="16,12">
             <StackPanel Orientation="Horizontal">
                 <materialDesign:PackIcon Kind="ServerNetwork" Width="26" Height="26" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <StackPanel VerticalAlignment="Center">
@@ -55,14 +49,13 @@
         </DockPanel>
 
         <!-- Profile Grid -->
-        <materialDesign:Card Grid.Row="2" Margin="14,0,14,10" Padding="8" UniformCornerRadius="8"
-                             materialDesign:ElevationAssist.Elevation="Dp2">
+        <materialDesign:Card Grid.Row="2" Margin="14,0,14,10" Padding="8">
             <DataGrid x:Name="GridProfiles" AutoGenerateColumns="False" CanUserAddRows="False"
                       HeadersVisibility="Column" SelectionUnit="FullRow"
                       GridLinesVisibility="Horizontal"
                       materialDesign:DataGridAssist.CellPadding="8,6"
                       materialDesign:DataGridAssist.ColumnHeaderPadding="8,6"
-                      BorderThickness="1" BorderBrush="#33888888">
+                      BorderThickness="1" BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}">
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn Header="Chọn" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="70"/>
                     <DataGridTextColumn Header="Tên Profile" Binding="{Binding Name}" Width="150" FontWeight="Bold" IsReadOnly="True"/>
@@ -84,8 +77,7 @@
                         <TextBlock Text="Hủy" VerticalAlignment="Center" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="BtnConfirm" Style="{StaticResource MaterialDesignRaisedButton}"
-                        Background="#1976D2" BorderBrush="#1976D2" Foreground="White"
+                <Button x:Name="BtnConfirm" Style="{StaticResource AppPrimaryButtonStyle}"
                         Height="34" Padding="16,0" Click="BtnConfirm_Click" IsDefault="True">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="CheckBold" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
