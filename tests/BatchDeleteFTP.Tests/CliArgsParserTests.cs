@@ -31,4 +31,29 @@ public class CliArgsParserTests
         Assert.True(opts.IsConsoleMode);
         Assert.True(opts.IsPreviewOnly);
     }
+    [Theory]
+    [InlineData("--all")]
+    [InlineData("--all-profiles")]
+    [InlineData("/all")]
+    [InlineData("/all-profiles")]
+    public void Parse_AllProfilesFlag_EnablesIsAllProfiles(string arg)
+    {
+        var opts = CliOptions.Parse(new[] { "--preview", arg });
+        Assert.True(opts.IsConsoleMode);
+        Assert.True(opts.IsPreviewOnly);
+        Assert.True(opts.IsAllProfiles);
+    }
+
+    [Theory]
+    [InlineData("--send-email")]
+    [InlineData("--email")]
+    [InlineData("/send-email")]
+    public void Parse_SendEmailFlag_EnablesSendEmailIfCandidatesFound(string arg)
+    {
+        var opts = CliOptions.Parse(new[] { "--preview", "--all", arg });
+        Assert.True(opts.IsConsoleMode);
+        Assert.True(opts.IsPreviewOnly);
+        Assert.True(opts.IsAllProfiles);
+        Assert.True(opts.SendEmailIfCandidatesFound);
+    }
 }

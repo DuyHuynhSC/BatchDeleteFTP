@@ -10,12 +10,20 @@ public class CliOptions
 {
     public bool IsConsoleMode { get; init; }
     public bool IsPreviewOnly { get; init; }
+    public bool IsAllProfiles { get; init; }
+    public bool SendEmailIfCandidatesFound { get; init; }
 
     public static CliOptions Parse(string[] args)
     {
         if (args == null || args.Length == 0)
         {
-            return new CliOptions { IsConsoleMode = false, IsPreviewOnly = false };
+            return new CliOptions
+            {
+                IsConsoleMode = false,
+                IsPreviewOnly = false,
+                IsAllProfiles = false,
+                SendEmailIfCandidatesFound = false
+            };
         }
 
         bool isPreview = args.Any(a =>
@@ -28,10 +36,24 @@ public class CliOptions
             a.Equals("/auto", StringComparison.OrdinalIgnoreCase) ||
             a.Equals("/console", StringComparison.OrdinalIgnoreCase));
 
+        bool isAll = args.Any(a =>
+            a.Equals("--all", StringComparison.OrdinalIgnoreCase) ||
+            a.Equals("--all-profiles", StringComparison.OrdinalIgnoreCase) ||
+            a.Equals("/all", StringComparison.OrdinalIgnoreCase) ||
+            a.Equals("/all-profiles", StringComparison.OrdinalIgnoreCase));
+
+        bool sendEmail = args.Any(a =>
+            a.Equals("--send-email", StringComparison.OrdinalIgnoreCase) ||
+            a.Equals("--email", StringComparison.OrdinalIgnoreCase) ||
+            a.Equals("/send-email", StringComparison.OrdinalIgnoreCase) ||
+            a.Equals("/email", StringComparison.OrdinalIgnoreCase));
+
         return new CliOptions
         {
             IsConsoleMode = isAuto || isPreview,
-            IsPreviewOnly = isPreview
+            IsPreviewOnly = isPreview,
+            IsAllProfiles = isAll,
+            SendEmailIfCandidatesFound = sendEmail
         };
     }
 }

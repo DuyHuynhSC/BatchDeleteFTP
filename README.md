@@ -164,21 +164,113 @@ Khởi chạy trực tiếp `BatchDeleteFTP.exe`:
 
 ### 3.2. Chế Độ Dòng Lệnh (Console / CMD / Windows Task Scheduler)
 
-- **Xem trước danh sách file sẽ xóa trên console (không xóa thật):**
-  ```cmd
-  BatchDeleteFTP.exe --preview
-  ```
-- **Chạy tự động Backup & Xóa theo Profile đang active (dùng cho Task Scheduler định kỳ):**
-  ```cmd
-  BatchDeleteFTP.exe --auto
-  ```
-  *(Hoặc `BatchDeleteFTP.exe --console`)*
+Hỗ trợ chạy ngầm hoặc tự động hóa hoàn toàn với các tham số dòng lệnh linh hoạt:
+
+| Tham số | Ý nghĩa |
+| :--- | :--- |
+| `--preview` hoặc `/preview` | Chạy chế độ **Xem trước (Preview)**: chỉ quét và liệt kê danh sách file thỏa điều kiện xóa ra console/log, **không xóa thật** trên FTP. |
+| `--auto` hoặc `--console` | Chạy chế độ **Tự Động Thực Thi**: tự động sao lưu về máy và dọn dẹp file trên FTP. |
+| `--all` hoặc `--all-profiles` | Áp dụng cho **TẤT CẢ các Site Profile** đã cấu hình trong `config.json` (thay vì chỉ quét Profile đang active). |
+| `--send-email` hoặc `--email` | **Tự động gửi email báo cáo** nếu phát hiện có ít nhất 1 file thỏa điều kiện cần xóa (nếu không có file cần xóa sẽ tự động bỏ qua để tránh spam email). |
+
+#### Các câu lệnh thường dùng:
+
+1. **Quét kiểm tra tất cả Profile và gửi mail nếu có file cần xóa (Khuyên dùng cho Task Scheduler mỗi sáng):**
+   ```cmd
+   BatchDeleteFTP.exe --preview --all --send-email
+   ```
+2. **Quét xem trước tất cả Profile trên màn hình console (không gửi mail, không xóa):**
+   ```cmd
+   BatchDeleteFTP.exe --preview --all
+   ```
+3. **Quét xem trước chỉ trên Profile mặc định hiện tại:**
+   ```cmd
+   BatchDeleteFTP.exe --preview
+   ```
+4. **Tự động Backup & Xóa trên TẤT CẢ Profile:**
+   ```cmd
+   BatchDeleteFTP.exe --auto --all
+   ```
 
 > **Mã Thoát (Exit Code):**
 > - `0`: Tiến trình kết thúc thành công hoàn toàn, không có lỗi.
-> - `1`: Xảy ra lỗi kết nối mạng hoặc có ít nhất 1 file thất bại trong quá trình Backup / Xóa.
+> - `1`: Xảy ra lỗi kết nối mạng hoặc có ít nhất 1 file thất bại trong quá trình kết nối / Backup / Xóa.
 
-### 3.3. Nhật Ký Hoạt Động (Logs)
+---
+
+### 3.3. Hướng Dẫn Cấu Hình Windows Task Scheduler Chạy Tự Động Mỗi Sáng
+
+Để ứng dụng tự động chạy ở chế độ **Console, Preview, kiểm tra tất cả các Profile và gửi mail nếu có file cần xóa** mỗi khi bạn khởi động máy tính vào buổi sáng, bạn có thể thiết lập theo 1 trong 2 cách sau:
+
+#### Cách 1: Thiết lập tự động bằng PowerShell (Nhanh nhất - 1 lệnh duy nhất)
+
+Mở **PowerShell với quyền Administrator** (`Run as Administrator`) và chạy đoạn lệnh sau (thay đổi `$appPath` nếu file exe nằm ở thư mục khác):
+
+```powershell
+$exePath = "C:\SourceCode\BatchDeleteFTP\src\BatchDeleteFTP\bin\Release\net9.0-windows\BatchDeleteFTP.exe"
+$workingDir = [System.IO.Path]::GetDirectoryName($exePath)
+
+$action = New-ScheduledTaskAction -Execute $exePath -Argument "--preview --all --send-email" -WorkingDirectory $workingDir
+$trigger = New-ScheduledTaskTrigger -AtLogOn
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+
+# Đặt delay 1 phút sau khi đăng nhập để đảm bảo card mạng và kết nối Internet/VPN đã sẵn sàng
+$trigger.Delay = "PT1M"
+
+Register-ScheduledTask -TaskName "BatchDeleteFTP_MorningPreview" `
+    -Action $action `
+    -Trigger $trigger `
+    -Settings $settings `
+    -Description "Quét kiểm tra tất cả FTP Profile và gửi mail báo cáo nếu có file cần xóa mỗi sáng khi mở máy." `
+    -RunLevel Highest -Force
+
+Write-Host "Đã tạo Task thành công! Chạy thử nghiệm ngay:" -ForegroundColor Green
+Start-ScheduledTask -TaskName "BatchDeleteFTP_MorningPreview"
+```
+
+---
+
+#### Cách 2: Thiết lập thủ công qua giao diện Windows Task Scheduler (GUI)
+
+1. Nhấn tổ hợp phím **Win + R**, gõ **`taskschd.msc`** và nhấn **Enter** để mở trình quản lý *Task Scheduler*.
+2. Ở khung bên phải, chọn **Create Task...** (không chọn *Create Basic Task* để có đầy đủ cấu hình nâng cao).
+3. **Tab General (Thông tin chung):**
+   - **Name:** Điền `BatchDeleteFTP_MorningPreview`.
+   - **Description:** `Tự động kiểm tra file quá hạn trên tất cả Profile FTP và gửi email báo cáo mỗi sáng.`
+   - Chọn **Run only when user is logged on** (nếu muốn cửa sổ console hiện ra để theo dõi) hoặc **Run whether user is logged on or not** (chạy ngầm hoàn toàn).
+   - Tích chọn **Run with highest privileges** (chạy với quyền quản trị để không bị UAC chặn).
+4. **Tab Triggers (Thời điểm kích hoạt):**
+   - Nhấn **New...**
+   - **Begin the task:** Chọn **At log on** (Mỗi khi đăng nhập vào Windows) hoặc **At startup** (Mỗi khi khởi động máy).
+   - Trong mục *Advanced settings*, tích chọn **Delay task for:** và chọn **1 minute** (hoặc **2 minutes**).
+     > *Lưu ý quan trọng:* Bước Delay giúp máy tính có đủ thời gian kết nối mạng LAN / Wifi / Proxy doanh nghiệp trước khi chương trình kết nối tới FTP Server.
+   - Nhấn **OK**.
+5. **Tab Actions (Hành động thực thi):**
+   - Nhấn **New...**
+   - **Action:** Chọn `Start a program`.
+   - **Program/script:** Nhấn *Browse...* và chọn tới file `BatchDeleteFTP.exe` (ví dụ: `C:\SourceCode\BatchDeleteFTP\src\BatchDeleteFTP\bin\Release\net9.0-windows\BatchDeleteFTP.exe`).
+   - **Add arguments (optional):** Điền chính xác:
+     ```text
+     --preview --all --send-email
+     ```
+   - **Start in (optional):** Điền đường dẫn thư mục chứa file exe (ví dụ: `C:\SourceCode\BatchDeleteFTP\src\BatchDeleteFTP\bin\Release\net9.0-windows`).
+     > *Rất quan trọng:* Không được để trống ô này, chương trình cần đường dẫn gốc để nạp file cấu hình `config.json`.
+   - Nhấn **OK**.
+6. **Tab Conditions (Điều kiện mạng):**
+   - Tích chọn **Start only if the following network connection is available:** và chọn **Any connection** (đảm bảo chỉ chạy khi máy đã có mạng).
+7. **Tab Settings:**
+   - Tích chọn **Allow task to be run on demand** (để có thể bấm chuột phải chọn *Run* kiểm tra bất cứ lúc nào).
+   - Tích chọn **If the running task does not end when requested, force it to stop**.
+8. Nhấn **OK** để hoàn tất việc lưu Task.
+
+#### Kiểm tra thử nghiệm Task vừa tạo:
+- Trong danh sách *Task Scheduler Library*, tìm task `BatchDeleteFTP_MorningPreview`.
+- Nhấn chuột phải -> chọn **Run**.
+- Kiểm tra file log tại `logs/BatchDeleteFTP_yyyyMMdd.log` và kiểm tra hòm thư nhận email để xác nhận kết quả.
+
+---
+
+### 3.4. Nhật Ký Hoạt Động (Logs)
 Toàn bộ lịch sử kết nối, chi tiết lệnh FTP, danh sách file quét được, đường dẫn file đã Backup và kết quả xóa được ghi tự động vào:
 ```text
 logs/BatchDeleteFTP_yyyyMMdd.log
