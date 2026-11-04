@@ -150,6 +150,15 @@ public class ConfigServiceTests
                     new[] { "/" });
                 Assert.NotNull(picker.Background);
 
+                // Test: Khi tick chọn thư mục con, thư mục gốc ("/") phải tự động bị bỏ chọn
+                var root = picker.RootNodes[0];
+                Assert.True(root.IsSelected);
+                var child = new FtpFolderNode { Name = "FolderA", FullPath = "/FolderA" };
+                root.Children.Add(child);
+                child.IsSelected = true;
+                Assert.False(root.IsSelected);
+                Assert.True(child.IsSelected);
+
                 var emailSettings = new FtpSettings
                 {
                     SmtpHost = "smtp.office365.com",

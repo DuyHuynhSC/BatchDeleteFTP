@@ -20,7 +20,7 @@
                 <materialDesign:PackIcon Kind="FolderMultipleOutline" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="Chọn Thư Mục Trên FTP Server" FontWeight="Bold" FontSize="15"/>
-                    <TextBlock Text="Mở rộng (▶) để tải thư mục con và tích chọn [x] một hoặc nhiều thư mục cần quét xóa"
+                    <TextBlock Text="Mở rộng (▶) để tải thư mục con, click hoặc tích chọn [x] thư mục cần quét xóa"
                                FontSize="11" Opacity="0.85" TextWrapping="Wrap"/>
                 </StackPanel>
             </StackPanel>
@@ -29,16 +29,19 @@
         <!-- TreeView Card -->
         <materialDesign:Card Grid.Row="1" Margin="14,12,14,8" Padding="8">
             <TreeView x:Name="FolderTreeView" BorderThickness="0"
-                      TreeViewItem.Expanded="FolderTreeViewItem_Expanded">
+                      TreeViewItem.Expanded="FolderTreeViewItem_Expanded"
+                      SelectedItemChanged="FolderTreeView_SelectedItemChanged">
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="TreeViewItem" BasedOn="{StaticResource MaterialDesignTreeViewItem}">
                         <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                         <Setter Property="Padding" Value="4,3"/>
+                        <EventSetter Event="MouseDoubleClick" Handler="TreeViewItem_MouseDoubleClick"/>
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                        <StackPanel Orientation="Horizontal" Margin="2">
+                        <StackPanel Orientation="Horizontal" Margin="2" Background="Transparent"
+                                    MouseLeftButtonDown="FolderRow_MouseLeftButtonDown">
                             <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <materialDesign:PackIcon Kind="Folder" Width="18" Height="18"
                                                      Foreground="#FFA000" VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -54,7 +57,7 @@
         <DockPanel Grid.Row="2" Margin="14,4,14,14">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
                 <materialDesign:PackIcon Kind="InformationOutline" Width="16" Height="16" Opacity="0.65" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <TextBlock x:Name="StatusText" VerticalAlignment="Center" Opacity="0.75" FontSize="12"/>
+                <TextBlock x:Name="StatusText" VerticalAlignment="Center" Opacity="0.85" FontSize="12" FontWeight="SemiBold"/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
