@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -98,6 +98,18 @@ public class ConfigService
             settings.SelectedProfileName = settings.Profiles[0].Name;
         }
 
+        settings.SelectedScanProfileNames ??= new List<string>();
+        var validProfileNames = new HashSet<string>(settings.Profiles.Select(p => p.Name), StringComparer.OrdinalIgnoreCase);
+        settings.SelectedScanProfileNames = settings.SelectedScanProfileNames
+            .Where(name => !string.IsNullOrWhiteSpace(name) && validProfileNames.Contains(name.Trim()))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (settings.SelectedScanProfileNames.Count == 0 && !string.IsNullOrWhiteSpace(settings.SelectedProfileName))
+        {
+            settings.SelectedScanProfileNames.Add(settings.SelectedProfileName);
+        }
+
         SyncEmailSettingsAcrossAllProfiles(settings);
     }
 
@@ -180,6 +192,16 @@ public class ConfigService
         }
 
         settings.Profiles[0].ApplyTo(settings);
+
+        if (settings.SelectedScanProfileNames != null)
+        {
+            settings.SelectedScanProfileNames.RemoveAll(p => string.Equals(p, profileName.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (settings.SelectedScanProfileNames.Count == 0 && !string.IsNullOrWhiteSpace(settings.SelectedProfileName))
+            {
+                settings.SelectedScanProfileNames.Add(settings.SelectedProfileName);
+            }
+        }
+
         return true;
     }
 

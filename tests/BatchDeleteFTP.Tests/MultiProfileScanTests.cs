@@ -111,4 +111,34 @@ public class MultiProfileScanTests
         Assert.Contains(groups["Server1"], c => c.FullPath == "/d.log");
         Assert.DoesNotContain(groups["Server1"], c => c.FullPath == "/c.log");
     }
+
+    [Fact]
+    public void ConfigService_EnsuresAndPersists_SelectedScanProfileNames()
+    {
+        var configService = new ConfigService();
+        var settings = new FtpSettings
+        {
+            SelectedProfileName = "Site_1",
+            Profiles = new List<FtpSiteProfile>
+            {
+                new() { Name = "Site_1" },
+                new() { Name = "Site_2" },
+                new() { Name = "Site_3" }
+            },
+            SelectedScanProfileNames = new List<string> { "Site_1", "Site_3", "NonExistentSite" }
+        };
+
+        configService.EnsureProfilesInitialized(settings);
+
+        // NonExistentSite should be filtered out
+        Assert.Equal(2, settings.SelectedScanProfileNames.Count);
+        Assert.Contains("Site_1", settings.SelectedScanProfileNames);
+        Assert.Contains("Site_3", settings.SelectedScanProfileNames);
+        Assert.DoesNotContain("NonExistentSite", settings.SelectedScanProfileNames);
+
+        // Delete Site_3
+        configService.DeleteProfile(settings, "Site_3");
+        Assert.Single(settings.SelectedScanProfileNames);
+        Assert.Equal("Site_1", settings.SelectedScanProfileNames[0]);
+    }
 }

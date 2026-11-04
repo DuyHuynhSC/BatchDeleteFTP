@@ -6,6 +6,7 @@ namespace BatchDeleteFTP.Models;
 public class FtpSettings
 {
     public string SelectedProfileName { get; set; } = "Default";
+    public List<string> SelectedScanProfileNames { get; set; } = new();
     public string Host { get; set; } = "ftp.xxx.net";
     public int Port { get; set; } = 6021;
     public string EncryptionMode { get; set; } = "Implicit";

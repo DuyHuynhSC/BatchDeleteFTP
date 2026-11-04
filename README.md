@@ -72,6 +72,9 @@ File `config.json` tự động được khởi tạo và lưu trữ cùng thư 
 ```json
 {
   "SelectedProfileName": "SITE_A",
+  "SelectedScanProfileNames": [
+    "SITE_A"
+  ],
   "Host": "ftp.xxx.net",
   "Port": 6021,
   "EncryptionMode": "Implicit",
