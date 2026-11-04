@@ -27,7 +27,7 @@
                 </StackPanel>
 
                 <!-- Actions & Settings (Right) -->
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <!-- Configuration Group: FTP & Email Settings -->
                     <Button x:Name="BtnOpenConnectionSettings" Style="{StaticResource AppPrimaryButtonStyle}"
                             Height="32" Padding="12,0" Margin="0,0,8,0" Click="BtnOpenConnectionSettings_Click"
@@ -38,7 +38,7 @@
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="BtnEmailSettings" Style="{StaticResource AppOutlinedButtonStyle}"
+                    <Button x:Name="BtnEmailSettings" Style="{StaticResource AppPrimaryButtonStyle}"
                             Height="32" Padding="12,0" Margin="0,0,12,0" Click="BtnEmailSettings_Click"
                             ToolTip="Cấu hình SMTP và danh sách nhiều địa chỉ Email nhận báo cáo">
                         <StackPanel Orientation="Horizontal">
