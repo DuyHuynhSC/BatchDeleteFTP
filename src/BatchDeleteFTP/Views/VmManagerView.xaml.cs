@@ -70,6 +70,38 @@ public partial class VmManagerView : UserControl
         }
 
         TxtSummary.Text = $"Tổng cộng: {_allEntries.Count} máy ảo (Đang hiển thị: {_displayEntries.Count})";
+        Dispatcher.BeginInvoke(new Action(AutoFitColumns), System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    public void AutoFitColumns()
+    {
+        if (GridVms == null || GridVms.Columns.Count == 0) return;
+
+        foreach (var col in GridVms.Columns)
+        {
+            string header = col.Header?.ToString() ?? string.Empty;
+            if (header == "Play")
+            {
+                col.Width = new DataGridLength(85);
+            }
+            else if (header == "STT")
+            {
+                col.Width = new DataGridLength(55);
+            }
+            else if (header == "Thao Tác")
+            {
+                col.Width = new DataGridLength(85);
+            }
+            else
+            {
+                col.Width = new DataGridLength(1.0, DataGridLengthUnitType.Auto);
+            }
+        }
+    }
+
+    private void BtnAutoFitColumns_Click(object sender, RoutedEventArgs e)
+    {
+        AutoFitColumns();
     }
 
     private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
