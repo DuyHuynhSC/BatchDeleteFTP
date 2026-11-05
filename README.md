@@ -1,4 +1,4 @@
-# BatchDeleteFTP
+﻿# WorkManagement
 
 Ứng dụng C# .NET WPF kết hợp chế độ dòng lệnh (Console / CMD Hybrid) hỗ trợ kết nối tới **FTP over TLS (Implicit / Explicit)**, quản lý nhiều cấu hình kết nối (**Site / Profile Manager**), quét đồng thời nhiều Profile (**Multi-Profile Batch Scan & Delete**), duyệt và chọn các thư mục từ xa (`Remote Path`), **Xem trước (Preview)** danh sách các file thỏa điều kiện xóa, **Gửi email báo cáo kết quả xem trước** qua giao thức SMTP, **Backup** file về máy tính giữ nguyên cấu trúc thư mục con trước khi xóa, tích hợp đầy đủ trình quản lý file FTP (**FTP File Manager**) và hỗ trợ giao diện **Sáng / Tối (Dark / Light Theme)** theo chuẩn Material Design.
 
@@ -60,14 +60,14 @@ SystemDate.Date > UploadDate.Date + RetentionDays (Mặc định RetentionDays =
 - Nút gạt chuyển đổi giao diện **Sáng / Tối (Light / Dark Theme)** góc trên bên phải, tự động lưu và áp dụng cho toàn bộ các cửa sổ của chương trình.
 
 ### 1.8. Chế Độ Kép (GUI & Chạy Tự Động Qua Command Line)
-- Chạy trực tiếp `BatchDeleteFTP.exe` để mở giao diện đồ họa WPF.
+- Chạy trực tiếp `WorkManagement.exe` để mở giao diện đồ họa WPF.
 - Hỗ trợ các tham số dòng lệnh `--auto`, `--console`, `--preview` phục vụ tích hợp với **Windows Task Scheduler** hoặc batch script để tự động hóa hàng ngày.
 
 ---
 
 ## 2. Cấu Trúc File Cấu Hình (`config.json`)
 
-File `config.json` tự động được khởi tạo và lưu trữ cùng thư mục với file thực thi `BatchDeleteFTP.exe`:
+File `config.json` tự động được khởi tạo và lưu trữ cùng thư mục với file thực thi `WorkManagement.exe`:
 
 ```json
 {
@@ -90,7 +90,7 @@ File `config.json` tự động được khởi tạo và lưu trữ cùng thư 
   ],
   "RetentionDays": 1,
   "EnableBackup": true,
-  "LocalBackupPath": "C:\\SourceCode\\BatchDeleteFTP\\Backups",
+  "LocalBackupPath": "C:\\SourceCode\\WorkManagement\\Backups",
   "SmtpHost": "mail.fujinet.net",
   "SmtpPort": 25,
   "SmtpEnableSsl": false,
@@ -121,7 +121,7 @@ File `config.json` tự động được khởi tạo và lưu trữ cùng thư 
       ],
       "RetentionDays": 1,
       "EnableBackup": true,
-      "LocalBackupPath": "C:\\SourceCode\\BatchDeleteFTP\\Backups",
+      "LocalBackupPath": "C:\\SourceCode\\WorkManagement\\Backups",
       "SmtpHost": "mail.fujinet.net",
       "SmtpPort": 25,
       "SmtpEnableSsl": false,
@@ -142,7 +142,7 @@ File `config.json` tự động được khởi tạo và lưu trữ cùng thư 
 ## 3. Hướng Dẫn Sử Dụng
 
 ### 3.1. Chế Độ Giao Diện (WPF GUI)
-Khởi chạy trực tiếp `BatchDeleteFTP.exe`:
+Khởi chạy trực tiếp `WorkManagement.exe`:
 
 1. **Thiết lập & Quản lý Profile:**
    - Chọn Profile có sẵn ở danh sách thả xuống trên thanh tiêu đề hoặc bấm **Tạo Mới** để thêm một cấu hình máy chủ mới.
@@ -180,19 +180,19 @@ Hỗ trợ chạy ngầm hoặc tự động hóa hoàn toàn với các tham s�
 
 1. **Quét kiểm tra tất cả Profile và gửi mail nếu có file cần xóa (Khuyên dùng cho Task Scheduler mỗi sáng):**
    ```cmd
-   BatchDeleteFTP.exe --preview --all --send-email
+   WorkManagement.exe --preview --all --send-email
    ```
 2. **Quét xem trước tất cả Profile trên màn hình console (không gửi mail, không xóa):**
    ```cmd
-   BatchDeleteFTP.exe --preview --all
+   WorkManagement.exe --preview --all
    ```
 3. **Quét xem trước chỉ trên Profile mặc định hiện tại:**
    ```cmd
-   BatchDeleteFTP.exe --preview
+   WorkManagement.exe --preview
    ```
 4. **Tự động Backup & Xóa trên TẤT CẢ Profile:**
    ```cmd
-   BatchDeleteFTP.exe --auto --all
+   WorkManagement.exe --auto --all
    ```
 
 > **Mã Thoát (Exit Code):**
@@ -210,7 +210,7 @@ Hỗ trợ chạy ngầm hoặc tự động hóa hoàn toàn với các tham s�
 Mở **PowerShell với quyền Administrator** (`Run as Administrator`) và chạy đoạn lệnh sau (thay đổi `$appPath` nếu file exe nằm ở thư mục khác):
 
 ```powershell
-$exePath = "C:\SourceCode\BatchDeleteFTP\src\BatchDeleteFTP\bin\Release\net9.0-windows\BatchDeleteFTP.exe"
+$exePath = "C:\SourceCode\WorkManagement\src\WorkManagement\bin\Release\net9.0-windows\WorkManagement.exe"
 $workingDir = [System.IO.Path]::GetDirectoryName($exePath)
 
 $action = New-ScheduledTaskAction -Execute $exePath -Argument "--preview --all --send-email" -WorkingDirectory $workingDir
@@ -220,7 +220,7 @@ $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoi
 # Đặt delay 1 phút sau khi đăng nhập để đảm bảo card mạng và kết nối Internet/VPN đã sẵn sàng
 $trigger.Delay = "PT1M"
 
-Register-ScheduledTask -TaskName "BatchDeleteFTP_MorningPreview" `
+Register-ScheduledTask -TaskName "WorkManagement_MorningPreview" `
     -Action $action `
     -Trigger $trigger `
     -Settings $settings `
@@ -228,7 +228,7 @@ Register-ScheduledTask -TaskName "BatchDeleteFTP_MorningPreview" `
     -RunLevel Highest -Force
 
 Write-Host "Đã tạo Task thành công! Chạy thử nghiệm ngay:" -ForegroundColor Green
-Start-ScheduledTask -TaskName "BatchDeleteFTP_MorningPreview"
+Start-ScheduledTask -TaskName "WorkManagement_MorningPreview"
 ```
 
 ---
@@ -238,7 +238,7 @@ Start-ScheduledTask -TaskName "BatchDeleteFTP_MorningPreview"
 1. Nhấn tổ hợp phím **Win + R**, gõ **`taskschd.msc`** và nhấn **Enter** để mở trình quản lý *Task Scheduler*.
 2. Ở khung bên phải, chọn **Create Task...** (không chọn *Create Basic Task* để có đầy đủ cấu hình nâng cao).
 3. **Tab General (Thông tin chung):**
-   - **Name:** Điền `BatchDeleteFTP_MorningPreview`.
+   - **Name:** Điền `WorkManagement_MorningPreview`.
    - **Description:** `Tự động kiểm tra file quá hạn trên tất cả Profile FTP và gửi email báo cáo mỗi sáng.`
    - Chọn **Run only when user is logged on** (nếu muốn cửa sổ console hiện ra để theo dõi) hoặc **Run whether user is logged on or not** (chạy ngầm hoàn toàn).
    - Tích chọn **Run with highest privileges** (chạy với quyền quản trị để không bị UAC chặn).
@@ -251,12 +251,12 @@ Start-ScheduledTask -TaskName "BatchDeleteFTP_MorningPreview"
 5. **Tab Actions (Hành động thực thi):**
    - Nhấn **New...**
    - **Action:** Chọn `Start a program`.
-   - **Program/script:** Nhấn *Browse...* và chọn tới file `BatchDeleteFTP.exe` (ví dụ: `C:\SourceCode\BatchDeleteFTP\src\BatchDeleteFTP\bin\Release\net9.0-windows\BatchDeleteFTP.exe`).
+   - **Program/script:** Nhấn *Browse...* và chọn tới file `WorkManagement.exe` (ví dụ: `C:\SourceCode\WorkManagement\src\WorkManagement\bin\Release\net9.0-windows\WorkManagement.exe`).
    - **Add arguments (optional):** Điền chính xác:
      ```text
      --preview --all --send-email
      ```
-   - **Start in (optional):** Điền đường dẫn thư mục chứa file exe (ví dụ: `C:\SourceCode\BatchDeleteFTP\src\BatchDeleteFTP\bin\Release\net9.0-windows`).
+   - **Start in (optional):** Điền đường dẫn thư mục chứa file exe (ví dụ: `C:\SourceCode\WorkManagement\src\WorkManagement\bin\Release\net9.0-windows`).
      > *Rất quan trọng:* Không được để trống ô này, chương trình cần đường dẫn gốc để nạp file cấu hình `config.json`.
    - Nhấn **OK**.
 6. **Tab Conditions (Điều kiện mạng):**
@@ -267,16 +267,16 @@ Start-ScheduledTask -TaskName "BatchDeleteFTP_MorningPreview"
 8. Nhấn **OK** để hoàn tất việc lưu Task.
 
 #### Kiểm tra thử nghiệm Task vừa tạo:
-- Trong danh sách *Task Scheduler Library*, tìm task `BatchDeleteFTP_MorningPreview`.
+- Trong danh sách *Task Scheduler Library*, tìm task `WorkManagement_MorningPreview`.
 - Nhấn chuột phải -> chọn **Run**.
-- Kiểm tra file log tại `logs/BatchDeleteFTP_yyyyMMdd.log` và kiểm tra hòm thư nhận email để xác nhận kết quả.
+- Kiểm tra file log tại `logs/WorkManagement_yyyyMMdd.log` và kiểm tra hòm thư nhận email để xác nhận kết quả.
 
 ---
 
 ### 3.4. Nhật Ký Hoạt Động (Logs)
 Toàn bộ lịch sử kết nối, chi tiết lệnh FTP, danh sách file quét được, đường dẫn file đã Backup và kết quả xóa được ghi tự động vào:
 ```text
-logs/BatchDeleteFTP_yyyyMMdd.log
+logs/WorkManagement_yyyyMMdd.log
 ```
 
 ---

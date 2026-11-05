@@ -1,4 +1,4 @@
-# Tài liệu Đặc tả Thiết kế: BatchDeleteFTP (C# .NET 8 WPF + Console Hybrid)
+﻿# Tài liệu Đặc tả Thiết kế: WorkManagement (C# .NET 8 WPF + Console Hybrid)
 
 **Ngày tạo:** 2026-10-28  
 **Trạng thái:** Đã duyệt thiết kế  
@@ -29,8 +29,8 @@ Xây dựng ứng dụng desktop C# WPF (.NET 8) có khả năng chạy ở 2 ch
 ## 3. Kiến trúc Module & Thành phần
 
 ```
-BatchDeleteFTP.sln
-├── src/BatchDeleteFTP/                  # Project chính (.NET 8 WPF, OutputType: WinExe)
+WorkManagement.sln
+├── src/WorkManagement/                  # Project chính (.NET 8 WPF, OutputType: WinExe)
 │   ├── Models/
 │   │   ├── FtpSettings.cs               # Cấu hình FTP, RemotePaths, Backup, RetentionDays
 │   │   ├── FtpFileCandidate.cs          # Thông tin file quét được (IsSelected, FullPath, Size, ModifiedDate, Status)
@@ -38,7 +38,7 @@ BatchDeleteFTP.sln
 │   ├── Services/
 │   │   ├── IConfigService.cs / ConfigService.cs             # Đọc/ghi config.json + mã hóa mật khẩu
 │   │   ├── IFtpCleanupService.cs / FtpCleanupService.cs     # Kết nối FluentFTP, lấy thư mục, Preview, Backup & Delete
-│   │   └── IAppLogger.cs / AppLogger.cs                     # Ghi log ra File (logs/BatchDeleteFTP_yyyyMMdd.log), Console, và UI
+│   │   └── IAppLogger.cs / AppLogger.cs                     # Ghi log ra File (logs/WorkManagement_yyyyMMdd.log), Console, và UI
 │   ├── Views/
 │   │   ├── MainWindow.xaml / .cs        # Giao diện chính (Cấu hình, Preview DataGrid, Log, Thực thi)
 │   │   └── RemoteFolderPickerWindow.xaml / .cs # Cửa sổ TreeView duyệt & chọn nhiều thư mục trên FTP
@@ -46,7 +46,7 @@ BatchDeleteFTP.sln
 │   │   ├── NativeConsole.cs             # P/Invoke AttachConsole(-1) và FreeConsole() cho chế độ CMD
 │   │   └── DateFilterRule.cs            # Logic thuần túy kiểm tra điều kiện ngày xóa (dễ dàng Unit Test)
 │   └── App.xaml / App.xaml.cs           # Điểm khởi chạy phân luồng GUI vs Console (--auto, --preview)
-└── tests/BatchDeleteFTP.Tests/          # Project Unit Test (xUnit)
+└── tests/WorkManagement.Tests/          # Project Unit Test (xUnit)
     ├── DateFilterRuleTests.cs           # Kiểm thử công thức SystemDate.Date > UploadDate.Date.AddDays(1)
     ├── ConfigServiceTests.cs            # Kiểm thử đọc/ghi cấu hình và danh sách RemotePaths
     └── BackupPathBuilderTests.cs        # Kiểm thử tạo đường dẫn backup bảo toàn cấu trúc sub-folder
@@ -63,7 +63,7 @@ BatchDeleteFTP.sln
 - Tránh quét trùng lặp: Nếu cả thư mục cha `/FolderA` và thư mục con `/FolderA/Sub` đều được chọn, hệ thống tự động gộp hoặc khử trùng lặp theo `FullPath` của file.
 
 ### 4.2. Tính năng Xem Trước (Preview)
-- Khi bấm **"Xem Trước (Preview)"** trên GUI (hoặc chạy `BatchDeleteFTP.exe --preview` trên CMD):
+- Khi bấm **"Xem Trước (Preview)"** trên GUI (hoặc chạy `WorkManagement.exe --preview` trên CMD):
   - Kết nối tới FTP, duyệt đệ quy các `RemotePaths` đã chọn.
   - Áp dụng `DateFilterRule.ShouldDelete(file.Modified, DateTime.Now, settings.RetentionDays)`.
   - Hiển thị danh sách các file thỏa điều kiện lên bảng `DataGrid` với cột Checkbox `Chọn xóa` (mặc định tích chọn `true`), Đường dẫn FTP, Ngày Upload, Dung lượng, và Trạng thái.
@@ -77,6 +77,6 @@ BatchDeleteFTP.sln
 
 ### 4.4. Chế độ Console (CMD)
 - Hỗ trợ các tham số dòng lệnh:
-  - `BatchDeleteFTP.exe` (không tham số): Mở giao diện WPF.
-  - `BatchDeleteFTP.exe --auto` hoặc `--console`: Chạy tự động theo cấu hình trong `config.json` (quét -> backup nếu bật -> xóa -> ghi log -> thoát với mã `0` hoặc `1`).
-  - `BatchDeleteFTP.exe --preview`: Chạy ở chế độ Console nhưng chỉ liệt kê các file sẽ bị xóa ra màn hình CMD và file log mà không xóa thật.
+  - `WorkManagement.exe` (không tham số): Mở giao diện WPF.
+  - `WorkManagement.exe --auto` hoặc `--console`: Chạy tự động theo cấu hình trong `config.json` (quét -> backup nếu bật -> xóa -> ghi log -> thoát với mã `0` hoặc `1`).
+  - `WorkManagement.exe --preview`: Chạy ở chế độ Console nhưng chỉ liệt kê các file sẽ bị xóa ra màn hình CMD và file log mà không xóa thật.

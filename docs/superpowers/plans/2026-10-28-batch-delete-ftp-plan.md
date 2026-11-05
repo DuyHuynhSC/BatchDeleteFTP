@@ -1,4 +1,4 @@
-# Kế hoạch Triển khai: BatchDeleteFTP (.NET 8 WPF + Console Hybrid)
+﻿# Kế hoạch Triển khai: WorkManagement (.NET 8 WPF + Console Hybrid)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** C# 12, .NET 8 (`net8.0-windows`), WPF, `FluentFTP` (NuGet), `System.Text.Json`, `xUnit` (Unit Test).
 
-**Spec:** [2026-10-28-batch-delete-ftp-design.md](file:///c:/SourceCode/BatchDeleteFTP/docs/superpowers/specs/2026-10-28-batch-delete-ftp-design.md)
+**Spec:** [2026-10-28-batch-delete-ftp-design.md](file:///c:/SourceCode/WorkManagement/docs/superpowers/specs/2026-10-28-batch-delete-ftp-design.md)
 
 ## Global Constraints
 
@@ -22,41 +22,41 @@
 ### Task 1: Khởi tạo Solution, Project Structure và Logic Lọc Ngày + Đường Dẫn Backup (TDD)
 
 **Files:**
-- Create: `BatchDeleteFTP.sln`
-- Create: `src/BatchDeleteFTP/BatchDeleteFTP.csproj`
-- Create: `src/BatchDeleteFTP/Helpers/DateFilterRule.cs`
-- Create: `src/BatchDeleteFTP/Helpers/BackupPathBuilder.cs`
-- Create: `tests/BatchDeleteFTP.Tests/BatchDeleteFTP.Tests.csproj`
-- Create: `tests/BatchDeleteFTP.Tests/DateFilterRuleTests.cs`
-- Create: `tests/BatchDeleteFTP.Tests/BackupPathBuilderTests.cs`
+- Create: `WorkManagement.sln`
+- Create: `src/WorkManagement/WorkManagement.csproj`
+- Create: `src/WorkManagement/Helpers/DateFilterRule.cs`
+- Create: `src/WorkManagement/Helpers/BackupPathBuilder.cs`
+- Create: `tests/WorkManagement.Tests/WorkManagement.Tests.csproj`
+- Create: `tests/WorkManagement.Tests/DateFilterRuleTests.cs`
+- Create: `tests/WorkManagement.Tests/BackupPathBuilderTests.cs`
 
 **Interfaces:**
 - Produces:
-  - `BatchDeleteFTP.Helpers.DateFilterRule.ShouldDelete(DateTime fileModifiedDate, DateTime currentSystemDate, int retentionDays = 1) -> bool`
-  - `BatchDeleteFTP.Helpers.BackupPathBuilder.BuildLocalBackupFilePath(string localBackupRoot, string sessionTimestamp, string remoteFilePath) -> string`
+  - `WorkManagement.Helpers.DateFilterRule.ShouldDelete(DateTime fileModifiedDate, DateTime currentSystemDate, int retentionDays = 1) -> bool`
+  - `WorkManagement.Helpers.BackupPathBuilder.BuildLocalBackupFilePath(string localBackupRoot, string sessionTimestamp, string remoteFilePath) -> string`
 
 - [ ] **Step 1: Khởi tạo Solution, Project WPF và Project xUnit**
 
 Chạy lệnh tạo solution và các project:
 ```powershell
-dotnet new sln -n BatchDeleteFTP
-dotnet new wpf -n BatchDeleteFTP -o src/BatchDeleteFTP -f net8.0-windows
-dotnet new xunit -n BatchDeleteFTP.Tests -o tests/BatchDeleteFTP.Tests -f net8.0-windows
-dotnet sln add src/BatchDeleteFTP/BatchDeleteFTP.csproj
-dotnet sln add tests/BatchDeleteFTP.Tests/BatchDeleteFTP.Tests.csproj
-dotnet add tests/BatchDeleteFTP.Tests/BatchDeleteFTP.Tests.csproj reference src/BatchDeleteFTP/BatchDeleteFTP.csproj
-dotnet add src/BatchDeleteFTP/BatchDeleteFTP.csproj package FluentFTP --version 51.1.0
+dotnet new sln -n WorkManagement
+dotnet new wpf -n WorkManagement -o src/WorkManagement -f net8.0-windows
+dotnet new xunit -n WorkManagement.Tests -o tests/WorkManagement.Tests -f net8.0-windows
+dotnet sln add src/WorkManagement/WorkManagement.csproj
+dotnet sln add tests/WorkManagement.Tests/WorkManagement.Tests.csproj
+dotnet add tests/WorkManagement.Tests/WorkManagement.Tests.csproj reference src/WorkManagement/WorkManagement.csproj
+dotnet add src/WorkManagement/WorkManagement.csproj package FluentFTP --version 51.1.0
 ```
 
 - [ ] **Step 2: Viết Unit Test cho `DateFilterRule` và `BackupPathBuilder` (Failing Tests)**
 
-Tạo file `tests/BatchDeleteFTP.Tests/DateFilterRuleTests.cs`:
+Tạo file `tests/WorkManagement.Tests/DateFilterRuleTests.cs`:
 ```csharp
 using System;
-using BatchDeleteFTP.Helpers;
+using WorkManagement.Helpers;
 using Xunit;
 
-namespace BatchDeleteFTP.Tests;
+namespace WorkManagement.Tests;
 
 public class DateFilterRuleTests
 {
@@ -95,13 +95,13 @@ public class DateFilterRuleTests
 }
 ```
 
-Tạo file `tests/BatchDeleteFTP.Tests/BackupPathBuilderTests.cs`:
+Tạo file `tests/WorkManagement.Tests/BackupPathBuilderTests.cs`:
 ```csharp
 using System.IO;
-using BatchDeleteFTP.Helpers;
+using WorkManagement.Helpers;
 using Xunit;
 
-namespace BatchDeleteFTP.Tests;
+namespace WorkManagement.Tests;
 
 public class BackupPathBuilderTests
 {
@@ -127,11 +127,11 @@ Expected: FAIL (chưa định nghĩa `DateFilterRule` và `BackupPathBuilder`).
 
 - [ ] **Step 4: Cài đặt `DateFilterRule` và `BackupPathBuilder` (Green)**
 
-Tạo file `src/BatchDeleteFTP/Helpers/DateFilterRule.cs`:
+Tạo file `src/WorkManagement/Helpers/DateFilterRule.cs`:
 ```csharp
 using System;
 
-namespace BatchDeleteFTP.Helpers;
+namespace WorkManagement.Helpers;
 
 public static class DateFilterRule
 {
@@ -142,12 +142,12 @@ public static class DateFilterRule
 }
 ```
 
-Tạo file `src/BatchDeleteFTP/Helpers/BackupPathBuilder.cs`:
+Tạo file `src/WorkManagement/Helpers/BackupPathBuilder.cs`:
 ```csharp
 using System;
 using System.IO;
 
-namespace BatchDeleteFTP.Helpers;
+namespace WorkManagement.Helpers;
 
 public static class BackupPathBuilder
 {
@@ -180,34 +180,34 @@ Expected: PASS (4/4 tests passed).
 ### Task 2: Xây dựng Models, Cấu hình (`ConfigService`) và Ghi Log (`AppLogger`)
 
 **Files:**
-- Create: `src/BatchDeleteFTP/Models/FtpSettings.cs`
-- Create: `src/BatchDeleteFTP/Models/FtpFileCandidate.cs`
-- Create: `src/BatchDeleteFTP/Models/FtpFolderNode.cs`
-- Create: `src/BatchDeleteFTP/Services/ConfigService.cs`
-- Create: `src/BatchDeleteFTP/Services/AppLogger.cs`
-- Create: `tests/BatchDeleteFTP.Tests/ConfigServiceTests.cs`
+- Create: `src/WorkManagement/Models/FtpSettings.cs`
+- Create: `src/WorkManagement/Models/FtpFileCandidate.cs`
+- Create: `src/WorkManagement/Models/FtpFolderNode.cs`
+- Create: `src/WorkManagement/Services/ConfigService.cs`
+- Create: `src/WorkManagement/Services/AppLogger.cs`
+- Create: `tests/WorkManagement.Tests/ConfigServiceTests.cs`
 
 **Interfaces:**
 - Produces:
-  - `BatchDeleteFTP.Models.FtpSettings`
-  - `BatchDeleteFTP.Models.FtpFileCandidate`
-  - `BatchDeleteFTP.Models.FtpFolderNode`
-  - `BatchDeleteFTP.Services.ConfigService.Load(string filePath) -> FtpSettings`
-  - `BatchDeleteFTP.Services.ConfigService.Save(FtpSettings settings, string filePath)`
-  - `BatchDeleteFTP.Services.AppLogger`
+  - `WorkManagement.Models.FtpSettings`
+  - `WorkManagement.Models.FtpFileCandidate`
+  - `WorkManagement.Models.FtpFolderNode`
+  - `WorkManagement.Services.ConfigService.Load(string filePath) -> FtpSettings`
+  - `WorkManagement.Services.ConfigService.Save(FtpSettings settings, string filePath)`
+  - `WorkManagement.Services.AppLogger`
 
 - [ ] **Step 1: Viết Unit Test cho `ConfigService` (Failing Test)**
 
-Tạo file `tests/BatchDeleteFTP.Tests/ConfigServiceTests.cs`:
+Tạo file `tests/WorkManagement.Tests/ConfigServiceTests.cs`:
 ```csharp
 using System;
 using System.Collections.Generic;
 using System.IO;
-using BatchDeleteFTP.Models;
-using BatchDeleteFTP.Services;
+using WorkManagement.Models;
+using WorkManagement.Services;
 using Xunit;
 
-namespace BatchDeleteFTP.Tests;
+namespace WorkManagement.Tests;
 
 public class ConfigServiceTests
 {
@@ -256,12 +256,12 @@ Expected: FAIL.
 
 - [ ] **Step 3: Cài đặt `FtpSettings`, `FtpFileCandidate`, `FtpFolderNode`, `ConfigService` và `AppLogger` (Green)**
 
-Tạo file `src/BatchDeleteFTP/Models/FtpSettings.cs`:
+Tạo file `src/WorkManagement/Models/FtpSettings.cs`:
 ```csharp
 using System.Collections.Generic;
 using System.IO;
 
-namespace BatchDeleteFTP.Models;
+namespace WorkManagement.Models;
 
 public class FtpSettings
 {
@@ -277,13 +277,13 @@ public class FtpSettings
 }
 ```
 
-Tạo file `src/BatchDeleteFTP/Models/FtpFileCandidate.cs`:
+Tạo file `src/WorkManagement/Models/FtpFileCandidate.cs`:
 ```csharp
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace BatchDeleteFTP.Models;
+namespace WorkManagement.Models;
 
 public class FtpFileCandidate : INotifyPropertyChanged
 {
@@ -313,13 +313,13 @@ public class FtpFileCandidate : INotifyPropertyChanged
 }
 ```
 
-Tạo file `src/BatchDeleteFTP/Models/FtpFolderNode.cs`:
+Tạo file `src/WorkManagement/Models/FtpFolderNode.cs`:
 ```csharp
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace BatchDeleteFTP.Models;
+namespace WorkManagement.Models;
 
 public class FtpFolderNode : INotifyPropertyChanged
 {
@@ -351,14 +351,14 @@ public class FtpFolderNode : INotifyPropertyChanged
 }
 ```
 
-Tạo file `src/BatchDeleteFTP/Services/ConfigService.cs`:
+Tạo file `src/WorkManagement/Services/ConfigService.cs`:
 ```csharp
 using System;
 using System.IO;
 using System.Text.Json;
-using BatchDeleteFTP.Models;
+using WorkManagement.Models;
 
-namespace BatchDeleteFTP.Services;
+namespace WorkManagement.Services;
 
 public class ConfigService
 {
@@ -403,12 +403,12 @@ public class ConfigService
 }
 ```
 
-Tạo file `src/BatchDeleteFTP/Services/AppLogger.cs`:
+Tạo file `src/WorkManagement/Services/AppLogger.cs`:
 ```csharp
 using System;
 using System.IO;
 
-namespace BatchDeleteFTP.Services;
+namespace WorkManagement.Services;
 
 public class AppLogger
 {
@@ -435,7 +435,7 @@ public class AppLogger
 
         try
         {
-            string logFile = Path.Combine(_logDir, $"BatchDeleteFTP_{DateTime.Now:yyyyMMdd}.log");
+            string logFile = Path.Combine(_logDir, $"WorkManagement_{DateTime.Now:yyyyMMdd}.log");
             File.AppendAllText(logFile, line + Environment.NewLine);
         }
         catch
@@ -456,8 +456,8 @@ Expected: PASS (5/5 tests passed).
 ### Task 3: Xây dựng Dịch vụ FTP (`FtpCleanupService`) hỗ trợ Duyệt Thư mục, Xem Trước (Preview), Backup & Xóa
 
 **Files:**
-- Create: `src/BatchDeleteFTP/Services/FtpCleanupService.cs`
-- Create: `tests/BatchDeleteFTP.Tests/RemotePathNormalizerTests.cs`
+- Create: `src/WorkManagement/Services/FtpCleanupService.cs`
+- Create: `tests/WorkManagement.Tests/RemotePathNormalizerTests.cs`
 
 **Interfaces:**
 - Consumes: `FtpSettings`, `FtpFileCandidate`, `DateFilterRule`, `BackupPathBuilder`, `AppLogger`
@@ -470,12 +470,12 @@ Expected: PASS (5/5 tests passed).
 
 - [ ] **Step 1: Viết Unit Test cho hàm chuẩn hóa và khử trùng lặp `RemotePaths` (Failing Test)**
 
-Tạo file `tests/BatchDeleteFTP.Tests/RemotePathNormalizerTests.cs`:
+Tạo file `tests/WorkManagement.Tests/RemotePathNormalizerTests.cs`:
 ```csharp
-using BatchDeleteFTP.Services;
+using WorkManagement.Services;
 using Xunit;
 
-namespace BatchDeleteFTP.Tests;
+namespace WorkManagement.Tests;
 
 public class RemotePathNormalizerTests
 {
@@ -498,7 +498,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Cài đặt `FtpCleanupService` sử dụng `FluentFTP` (Green)**
 
-Tạo file `src/BatchDeleteFTP/Services/FtpCleanupService.cs`:
+Tạo file `src/WorkManagement/Services/FtpCleanupService.cs`:
 ```csharp
 using System;
 using System.Collections.Generic;
@@ -506,11 +506,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using BatchDeleteFTP.Helpers;
-using BatchDeleteFTP.Models;
+using WorkManagement.Helpers;
+using WorkManagement.Models;
 using FluentFTP;
 
-namespace BatchDeleteFTP.Services;
+namespace WorkManagement.Services;
 
 public class FtpCleanupService
 {
@@ -767,22 +767,22 @@ Expected: PASS (6/6 tests passed).
 ### Task 4: Xây dựng Cửa sổ Chọn Thư mục Từ xa trên FTP (`RemoteFolderPickerWindow`) và Giao diện Chính (`MainWindow`)
 
 **Files:**
-- Create: `src/BatchDeleteFTP/Views/RemoteFolderPickerWindow.xaml`
-- Create: `src/BatchDeleteFTP/Views/RemoteFolderPickerWindow.xaml.cs`
-- Modify: `src/BatchDeleteFTP/MainWindow.xaml`
-- Modify: `src/BatchDeleteFTP/MainWindow.xaml.cs`
+- Create: `src/WorkManagement/Views/RemoteFolderPickerWindow.xaml`
+- Create: `src/WorkManagement/Views/RemoteFolderPickerWindow.xaml.cs`
+- Modify: `src/WorkManagement/MainWindow.xaml`
+- Modify: `src/WorkManagement/MainWindow.xaml.cs`
 
 **Interfaces:**
 - Consumes: `FtpSettings`, `FtpFolderNode`, `FtpFileCandidate`, `ConfigService`, `FtpCleanupService`, `AppLogger`
 - Produces:
-  - `BatchDeleteFTP.Views.RemoteFolderPickerWindow` (TreeView lazy-load thư mục FTP + Checkbox chọn nhiều đường dẫn)
-  - `BatchDeleteFTP.MainWindow` (Giao diện cấu hình, chọn Remote Paths, Xem trước, chọn/bỏ chọn file, Backup & Xóa)
+  - `WorkManagement.Views.RemoteFolderPickerWindow` (TreeView lazy-load thư mục FTP + Checkbox chọn nhiều đường dẫn)
+  - `WorkManagement.MainWindow` (Giao diện cấu hình, chọn Remote Paths, Xem trước, chọn/bỏ chọn file, Backup & Xóa)
 
 - [ ] **Step 1: Tạo cửa sổ `RemoteFolderPickerWindow.xaml` và `.xaml.cs` để duyệt và tích chọn Remote Path trên FTP**
 
-Tạo file `src/BatchDeleteFTP/Views/RemoteFolderPickerWindow.xaml`:
+Tạo file `src/WorkManagement/Views/RemoteFolderPickerWindow.xaml`:
 ```xml
-<Window x:Class="BatchDeleteFTP.Views.RemoteFolderPickerWindow"
+<Window x:Class="WorkManagement.Views.RemoteFolderPickerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Chọn Thư Mục Trên FTP Server" Height="480" Width="550"
@@ -820,7 +820,7 @@ Tạo file `src/BatchDeleteFTP/Views/RemoteFolderPickerWindow.xaml`:
 </Window>
 ```
 
-Tạo file `src/BatchDeleteFTP/Views/RemoteFolderPickerWindow.xaml.cs`:
+Tạo file `src/WorkManagement/Views/RemoteFolderPickerWindow.xaml.cs`:
 ```csharp
 using System;
 using System.Collections.Generic;
@@ -828,10 +828,10 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using BatchDeleteFTP.Models;
-using BatchDeleteFTP.Services;
+using WorkManagement.Models;
+using WorkManagement.Services;
 
-namespace BatchDeleteFTP.Views;
+namespace WorkManagement.Views;
 
 public partial class RemoteFolderPickerWindow : Window
 {
@@ -939,12 +939,12 @@ public partial class RemoteFolderPickerWindow : Window
 
 - [ ] **Step 2: Thiết kế giao diện `MainWindow.xaml` và `MainWindow.xaml.cs`**
 
-Cập nhật `src/BatchDeleteFTP/MainWindow.xaml`:
+Cập nhật `src/WorkManagement/MainWindow.xaml`:
 ```xml
-<Window x:Class="BatchDeleteFTP.MainWindow"
+<Window x:Class="WorkManagement.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="BatchDeleteFTP - Quản lý Xóa &amp; Backup File FTP (Implicit TLS)" Height="720" Width="1020"
+        Title="WorkManagement - Quản lý Xóa &amp; Backup File FTP (Implicit TLS)" Height="720" Width="1020"
         WindowStartupLocation="CenterScreen">
     <Grid Margin="12">
         <Grid.RowDefinitions>
@@ -1043,19 +1043,19 @@ Cập nhật `src/BatchDeleteFTP/MainWindow.xaml`:
 </Window>
 ```
 
-Cập nhật `src/BatchDeleteFTP/MainWindow.xaml.cs`:
+Cập nhật `src/WorkManagement/MainWindow.xaml.cs`:
 ```csharp
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using BatchDeleteFTP.Models;
-using BatchDeleteFTP.Services;
-using BatchDeleteFTP.Views;
+using WorkManagement.Models;
+using WorkManagement.Services;
+using WorkManagement.Views;
 using Microsoft.Win32;
 
-namespace BatchDeleteFTP;
+namespace WorkManagement;
 
 public partial class MainWindow : Window
 {
@@ -1286,25 +1286,25 @@ Expected: Build succeeded (0 Errors).
 ### Task 5: Tích hợp Chế độ Hybrid Console (`--auto`, `--console`, `--preview`) trong `App.xaml.cs`
 
 **Files:**
-- Create: `src/BatchDeleteFTP/Helpers/NativeConsole.cs`
-- Modify: `src/BatchDeleteFTP/App.xaml`
-- Modify: `src/BatchDeleteFTP/App.xaml.cs`
-- Create: `tests/BatchDeleteFTP.Tests/CliArgsParserTests.cs`
+- Create: `src/WorkManagement/Helpers/NativeConsole.cs`
+- Modify: `src/WorkManagement/App.xaml`
+- Modify: `src/WorkManagement/App.xaml.cs`
+- Create: `tests/WorkManagement.Tests/CliArgsParserTests.cs`
 
 **Interfaces:**
 - Consumes: `ConfigService`, `AppLogger`, `FtpCleanupService`, `MainWindow`
 - Produces:
-  - `BatchDeleteFTP.Helpers.CliOptions.Parse(string[] args) -> CliOptions`
-  - Hỗ trợ chạy `BatchDeleteFTP.exe` (mở WPF), `BatchDeleteFTP.exe --auto` / `--console` (chạy tự động Backup & Xóa từ CMD), `BatchDeleteFTP.exe --preview` (chỉ quét và in danh sách ra CMD).
+  - `WorkManagement.Helpers.CliOptions.Parse(string[] args) -> CliOptions`
+  - Hỗ trợ chạy `WorkManagement.exe` (mở WPF), `WorkManagement.exe --auto` / `--console` (chạy tự động Backup & Xóa từ CMD), `WorkManagement.exe --preview` (chỉ quét và in danh sách ra CMD).
 
 - [ ] **Step 1: Viết Unit Test cho bộ phân tích tham số dòng lệnh `CliOptions.Parse` (Failing Test)**
 
-Tạo file `tests/BatchDeleteFTP.Tests/CliArgsParserTests.cs`:
+Tạo file `tests/WorkManagement.Tests/CliArgsParserTests.cs`:
 ```csharp
-using BatchDeleteFTP.Helpers;
+using WorkManagement.Helpers;
 using Xunit;
 
-namespace BatchDeleteFTP.Tests;
+namespace WorkManagement.Tests;
 
 public class CliArgsParserTests
 {
@@ -1344,13 +1344,13 @@ Expected: FAIL.
 
 - [ ] **Step 3: Cài đặt `NativeConsole`, `CliOptions` và cập nhật `App.xaml` + `App.xaml.cs` (Green)**
 
-Tạo file `src/BatchDeleteFTP/Helpers/NativeConsole.cs`:
+Tạo file `src/WorkManagement/Helpers/NativeConsole.cs`:
 ```csharp
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace BatchDeleteFTP.Helpers;
+namespace WorkManagement.Helpers;
 
 public class CliOptions
 {
@@ -1405,9 +1405,9 @@ public static class NativeConsole
 }
 ```
 
-Cập nhật `src/BatchDeleteFTP/App.xaml` (bỏ `StartupUri` để điều khiển trong `OnStartup`):
+Cập nhật `src/WorkManagement/App.xaml` (bỏ `StartupUri` để điều khiển trong `OnStartup`):
 ```xml
-<Application x:Class="BatchDeleteFTP.App"
+<Application x:Class="WorkManagement.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
@@ -1415,14 +1415,14 @@ Cập nhật `src/BatchDeleteFTP/App.xaml` (bỏ `StartupUri` để điều khi�
 </Application>
 ```
 
-Cập nhật `src/BatchDeleteFTP/App.xaml.cs`:
+Cập nhật `src/WorkManagement/App.xaml.cs`:
 ```csharp
 using System;
 using System.Windows;
-using BatchDeleteFTP.Helpers;
-using BatchDeleteFTP.Services;
+using WorkManagement.Helpers;
+using WorkManagement.Services;
 
-namespace BatchDeleteFTP;
+namespace WorkManagement;
 
 public partial class App : Application
 {
