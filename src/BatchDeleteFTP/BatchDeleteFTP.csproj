@@ -6,6 +6,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <RollForward>LatestMajor</RollForward>
+    <AssemblyTitle>WorkManagement</AssemblyTitle>
+    <Product>WorkManagement</Product>
+    <Description>WorkManagement - DevOps Workspace &amp; FTP Automation Hub</Description>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -16,6 +20,7 @@
   <ItemGroup>
     <PackageReference Include="FluentFTP" Version="51.1.0" />
     <PackageReference Include="MaterialDesignThemes" Version="5.4.0" />
+    <PackageReference Include="MiniExcel" Version="1.46.0" />
   </ItemGroup>
 
 </Project>

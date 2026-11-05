@@ -1060,4 +1060,54 @@ public partial class MainWindow : Window
     {
         TxtLogs.Clear();
     }
-}
+
+    #region Navigation Dock Menu Handlers
+
+    private void NavBtnFtp_Click(object sender, RoutedEventArgs e)
+    {
+        SwitchToView(isFtp: true);
+    }
+
+    private void NavBtnVm_Click(object sender, RoutedEventArgs e)
+    {
+        SwitchToView(isFtp: false);
+    }
+
+    private void SwitchToView(bool isFtp)
+    {
+        if (isFtp)
+        {
+            ViewContainerFtp.Visibility = Visibility.Visible;
+            ViewContainerVm.Visibility = Visibility.Collapsed;
+
+            TxtCurrentPageTitle.Text = "Quản Lý File & Tự Động Xóa FTP";
+            TxtCurrentPageSub.Text = "Quét, sao lưu và dọn dẹp file tự động theo ngày trên máy chủ FTP";
+            IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.FolderSyncOutline;
+
+            NavBtnFtp.Style = (Style)FindResource("AppPrimaryButtonStyle");
+            NavBtnVm.Style = (Style)FindResource("AppOutlinedButtonStyle");
+        }
+        else
+        {
+            ViewContainerFtp.Visibility = Visibility.Collapsed;
+            ViewContainerVm.Visibility = Visibility.Visible;
+
+            TxtCurrentPageTitle.Text = "Quản Lý Danh Sách Máy Ảo (VMs & RDP)";
+            TxtCurrentPageSub.Text = "Quản lý thông tin máy chủ, tài khoản, kết nối Remote Desktop một chạm và Oracle DB";
+            IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.DesktopTowerMonitor;
+
+            NavBtnFtp.Style = (Style)FindResource("AppOutlinedButtonStyle");
+            NavBtnVm.Style = (Style)FindResource("AppPrimaryButtonStyle");
+
+            VmManagerControl.LoadData();
+        }
+    }
+
+    private void NavBtnScheduler_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new TaskSchedulerConfigDialog { Owner = this };
+        dialog.ShowDialog();
+    }
+
+    #endregion
+}

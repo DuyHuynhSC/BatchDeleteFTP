@@ -1,493 +1,606 @@
-<Window x:Class="BatchDeleteFTP.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        Title="BatchDeleteFTP - Quản lý File &amp; Tự động Xóa/Backup FTP (TLS/SSL)"
-        Height="820" Width="1160" MinHeight="700" MinWidth="1000"
-        Icon="pack://application:,,,/BatchDeleteFTP;component/Assets/app.ico"
-        WindowStartupLocation="CenterScreen"
-        Style="{StaticResource AppWindowStyle}">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*" MinHeight="260"/>
-            <RowDefinition Height="210"/>
-        </Grid.RowDefinitions>
-
-        <!-- TOP HEADER & CONTROLS BAR -->
-        <Border x:Name="HeaderBanner" Grid.Row="0" Style="{StaticResource AppHeaderBannerStyle}" Padding="16,10">
-            <DockPanel>
-                <!-- App Title (Left) -->
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <materialDesign:PackIcon Kind="CloudSyncOutline" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="BatchDeleteFTP" FontSize="17" FontWeight="Bold" LineHeight="20"/>
-                        <TextBlock Text="Quản lý File FTP, Tự động Backup &amp; Xóa File theo Ngày" FontSize="11" Opacity="0.85"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- Actions & Settings (Right) -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <!-- Configuration Group: FTP & Email Settings -->
-                    <Button x:Name="BtnOpenConnectionSettings" Style="{StaticResource AppPrimaryButtonStyle}"
-                            Height="32" Padding="12,0" Margin="0,0,8,0" Click="BtnOpenConnectionSettings_Click"
-                            ToolTip="Mở cửa sổ Cấu hình Chi tiết Kết nối FTP, Proxy &amp; Sao lưu">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="TuneVariant" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="Cấu Hình FTP &amp; Backup" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12"/>
-                        </StackPanel>
-                    </Button>
-
-                    <Button x:Name="BtnEmailSettings" Style="{StaticResource AppPrimaryButtonStyle}"
-                            Height="32" Padding="12,0" Margin="0,0,12,0" Click="BtnEmailSettings_Click"
-                            ToolTip="Cấu hình SMTP và danh sách nhiều địa chỉ Email nhận báo cáo">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="EmailEditOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="Cấu Hình Email" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12"/>
-                        </StackPanel>
-                    </Button>
-
-                    <!-- Theme Switcher -->
-                    <Border Background="{DynamicResource AppCardBackgroundBrush}"
-                            TextElement.Foreground="{DynamicResource AppPrimaryTextBrush}"
-                            BorderBrush="{DynamicResource AppHeaderPillBorderBrush}"
-                            BorderThickness="1" CornerRadius="6" Padding="8,3">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <materialDesign:PackIcon x:Name="IconThemeMode" Kind="PaletteOutline" Width="18" Height="18"
-                                                     Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="Theme:" FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <ComboBox x:Name="CboThemes" Width="148"
-                                      DisplayMemberPath="DisplayName"
-                                      SelectedValuePath="Kind"
-                                      VerticalContentAlignment="Center"
-                                      FontSize="12" FontWeight="SemiBold"
-                                      SelectionChanged="CboThemes_SelectionChanged"
-                                      ToolTip="Chọn phong cách giao diện (Material Light/Dark, Skeuomorphism, Neumorphism, Frutiger Aero)"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </DockPanel>
-        </Border>
-
-        <!-- MAIN AREA: TAB CONTROL (Batch Cleanup & File Manager) -->
-        <materialDesign:Card Grid.Row="1" Margin="14,8,14,8" Padding="10,8">
-            <TabControl x:Name="MainTabControl" SelectionChanged="MainTabControl_SelectionChanged">
-                <!-- TAB 1: BATCH CLEANUP & BACKUP -->
-                <TabItem x:Name="TabBatchCleanup">
-                    <TabItem.Header>
-                        <StackPanel Orientation="Horizontal" Margin="6,3">
-                            <materialDesign:PackIcon Kind="ClockAlertOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Text="1. Tự Động Quét &amp; Xóa (Batch Clean)" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </TabItem.Header>
-
-                    <Grid Margin="0,6,0,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- TOOLBAR FOR TAB 1 -->
-                        <Grid Grid.Row="0" Margin="0,0,0,8">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-
-                            <DockPanel Grid.Row="0">
-                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                                    <Button x:Name="BtnSelectScanProfiles" Style="{StaticResource AppOutlinedButtonStyle}"
-                                            Height="34" Padding="12,0" Margin="0,0,8,0" Click="BtnSelectScanProfiles_Click"
-                                            ToolTip="Chọn một hoặc nhiều Site Profile để quét cùng lúc">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="ServerNetwork" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock x:Name="TxtScanProfilesLabel" Text="Profiles Quét: Hiện Tại" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnPreview" Style="{StaticResource AppPrimaryButtonStyle}"
-                                            Height="34" Padding="14,0" Margin="0,0,8,0" Click="BtnPreview_Click">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="FileSearchOutline" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Xem Trước (Preview)" VerticalAlignment="Center" FontWeight="Bold"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnSendPreviewEmail" Style="{StaticResource AppTealButtonStyle}"
-                                            Height="34" Padding="12,0" Margin="0,0,8,0" Click="BtnSendPreviewEmail_Click"
-                                            ToolTip="Gửi kết quả Xem trước qua Email cho danh sách thành viên">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="EmailFastOutline" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Gửi Email Xem Trước" VerticalAlignment="Center" FontWeight="Bold"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnExecuteDelete" Style="{StaticResource AppDangerButtonStyle}"
-                                            Height="34" Padding="14,0" Click="BtnExecuteDelete_Click">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="DeleteSweepOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Thực Hiện Backup &amp; Xóa" VerticalAlignment="Center" FontWeight="Bold"/>
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                    <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="30" Padding="10,0" Margin="0,0,6,0" Click="BtnSelectAll_Click">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="CheckboxMultipleMarkedOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Chọn tất cả" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="30" Padding="10,0" Click="BtnUnselectAll_Click">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="CheckboxMultipleBlankOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Bỏ chọn tất cả" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                            </DockPanel>
-
-                            <ProgressBar x:Name="BusyProgressBar" Grid.Row="1" IsIndeterminate="True"
-                                         Visibility="Collapsed" Height="3" Margin="0,6,0,0"/>
-                        </Grid>
-
-                        <!-- CANDIDATE FILES DATAGRID -->
-                        <Grid Grid.Row="1">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <DockPanel Grid.Row="0" Margin="0,0,0,6">
-                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="FileDocumentMultipleOutline" Width="18" Height="18"
-                                                             Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Danh sách File Thỏa Điều Kiện Xóa (SystemDate.Date &gt; UploadDate.Date + N)"
-                                               FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DockPanel>
-
-                            <DataGrid x:Name="GridCandidates" Grid.Row="1"
-                                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="False"
-                                      HeadersVisibility="Column" SelectionUnit="FullRow"
-                                      GridLinesVisibility="Horizontal"
-                                      materialDesign:DataGridAssist.CellPadding="8,5"
-                                      materialDesign:DataGridAssist.ColumnHeaderPadding="8,6"
-                                      BorderThickness="1" BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}">
-                                <DataGrid.Columns>
-                                    <DataGridCheckBoxColumn Header="Chọn xóa" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
-                                    <DataGridTextColumn Header="Site Profile" Binding="{Binding ProfileName}" Width="120" FontWeight="SemiBold" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Đường dẫn FTP (Remote Path)" Binding="{Binding FullPath}" Width="*" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Ngày Upload (Modified)" Binding="{Binding ModifiedDate, StringFormat=yyyy-MM-dd HH:mm:ss}" Width="165" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Dung lượng (Bytes)" Binding="{Binding Size, StringFormat={}{0:N0}}" Width="140" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="180" IsReadOnly="True"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </Grid>
-                </TabItem>
-
-                <!-- TAB 2: FTP FILE MANAGER -->
-                <TabItem x:Name="TabFileManager">
-                    <TabItem.Header>
-                        <StackPanel Orientation="Horizontal" Margin="6,3">
-                            <materialDesign:PackIcon Kind="ServerNetwork" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Text="2. Quản Lý File FTP (File Manager)" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </TabItem.Header>
-
-                    <Grid Margin="0,6,0,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- ROW 0: REMOTE PATH NAVIGATION BAR -->
-                        <Border Grid.Row="0" Style="{StaticResource AppSubtleToolbarBorderStyle}" Padding="8,4" Margin="0,0,0,6">
-                            <DockPanel>
-                                <!-- Site Profile Picker (Left) -->
-                                <Border DockPanel.Dock="Left" Background="{DynamicResource AppCardBackgroundBrush}"
-                                        TextElement.Foreground="{DynamicResource AppPrimaryTextBrush}"
-                                        BorderBrush="{DynamicResource AppHeaderPillBorderBrush}" BorderThickness="1"
-                                        CornerRadius="6" Padding="8,2" Margin="0,0,10,0">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <materialDesign:PackIcon Kind="ServerNetwork" Width="17" Height="17" VerticalAlignment="Center"
-                                                                 Foreground="{DynamicResource AppSectionIconBrush}" Margin="0,0,6,0"/>
-                                        <TextBlock Text="Site Profile:" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
-                                        <ComboBox x:Name="CboProfiles" Width="170" IsEditable="True"
-                                                  VerticalContentAlignment="Center"
-                                                  materialDesign:HintAssist.Hint="Chọn Site Profile..."
-                                                  SelectionChanged="CboProfiles_SelectionChanged"
-                                                  ToolTip="Chọn Site/Profile để quản lý file"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,8,0">
-                                    <materialDesign:PackIcon Kind="FolderNetworkOutline" Width="18" Height="18"
-                                                             Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBlock Text="Thư mục FTP:" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="6,0,0,0">
-                                    <Button x:Name="BtnFmGo" Style="{StaticResource AppPrimaryButtonStyle}"
-                                            Height="30" Padding="10,0" Margin="0,0,4,0" Click="BtnFmGo_Click"
-                                            ToolTip="Đi đến đường dẫn đã nhập (hoặc gõ Enter)">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="ArrowRightBold" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                            <TextBlock Text="Đến" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnFmUp" Style="{StaticResource AppOutlinedButtonStyle}"
-                                            Height="30" Padding="8,0" Margin="0,0,4,0" Click="BtnFmUp_Click"
-                                            ToolTip="Lên thư mục cha (..)">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="FolderArrowUpOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                            <TextBlock Text="Lên 1 Cấp" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnFmHome" Style="{StaticResource AppOutlinedButtonStyle}"
-                                            Height="30" Padding="8,0" Margin="0,0,4,0" Click="BtnFmHome_Click"
-                                            ToolTip="Về thư mục gốc (/)">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="HomeOutline" Width="15" Height="15" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnFmRefresh" Style="{StaticResource AppOutlinedButtonStyle}"
-                                            Height="30" Padding="8,0" Click="BtnFmRefresh_Click"
-                                            ToolTip="Tải lại danh sách thư mục">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Refresh" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                            <TextBlock Text="Làm Mới" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-
-                                <TextBox x:Name="TxtFmRemotePath" Text="/"
-                                         VerticalContentAlignment="Center"
-                                         Padding="6,2"
-                                         KeyDown="TxtFmRemotePath_KeyDown"
-                                         ToolTip="Nhập đường dẫn thư mục FTP và gõ Enter"/>
-                            </DockPanel>
-                        </Border>
-
-                        <!-- ROW 1: ACTIONS TOOLBAR -->
-                        <Grid Grid.Row="1" Margin="0,0,0,6">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-
-                            <DockPanel Grid.Row="0">
-                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                                    <Button x:Name="BtnFmUploadFile" Style="{StaticResource AppSuccessButtonStyle}"
-                                            Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmUploadFile_Click"
-                                            ToolTip="Tải một hoặc nhiều file từ máy tính lên FTP">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="UploadOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Tải Lên File" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnFmUploadFolder" Style="{StaticResource AppSuccessButtonStyle}"
-                                            Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmUploadFolder_Click"
-                                            ToolTip="Tải nguyên thư mục từ máy tính lên FTP">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="FolderUploadOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Tải Lên Thư Mục" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnFmDownload" Style="{StaticResource AppPrimaryButtonStyle}"
-                                            Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmDownload_Click"
-                                            ToolTip="Tải các file/thư mục được chọn về máy tính">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="DownloadOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Tải Về Máy" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnFmView" Style="{StaticResource AppOutlinedButtonStyle}"
-                                            Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmView_Click"
-                                            ToolTip="Xem nội dung file (hỗ trợ file văn bản, code, log, ảnh hoặc mở bằng app mặc định)">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="EyeOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Xem File" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnFmNewFolder" Style="{StaticResource AppOutlinedButtonStyle}"
-                                            Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmNewFolder_Click"
-                                            ToolTip="Tạo một thư mục mới tại đường dẫn FTP hiện tại">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="FolderPlusOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Tạo Thư Mục" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="BtnFmDelete" Style="{StaticResource AppDangerButtonStyle}"
-                                            Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmDelete_Click"
-                                            ToolTip="Xóa các mục đã chọn trên FTP">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="Xóa" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                    <!-- Search Filter -->
-                                    <Border Background="{DynamicResource AppCardBackgroundBrush}" BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}" BorderThickness="1"
-                                            CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16" Opacity="0.6" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                            <TextBox x:Name="TxtFmFilter" Width="130" BorderThickness="0" Background="Transparent"
-                                                     materialDesign:HintAssist.Hint="Lọc file..."
-                                                     TextChanged="TxtFmFilter_TextChanged"
-                                                     VerticalContentAlignment="Center" FontSize="12"/>
-                                        </StackPanel>
-                                    </Border>
-
-                                    <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="30" Padding="8,0" Margin="0,0,4,0"
-                                            Click="BtnFmSelectAll_Click" ToolTip="Chọn tất cả các mục">
-                                        <materialDesign:PackIcon Kind="CheckboxMultipleMarkedOutline" Width="15" Height="15"/>
-                                    </Button>
-                                    <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="30" Padding="8,0"
-                                            Click="BtnFmUnselectAll_Click" ToolTip="Bỏ chọn tất cả">
-                                        <materialDesign:PackIcon Kind="CheckboxMultipleBlankOutline" Width="15" Height="15"/>
-                                    </Button>
-                                </StackPanel>
-                            </DockPanel>
-
-                            <ProgressBar x:Name="FmProgressBar" Grid.Row="1" IsIndeterminate="True"
-                                         Visibility="Collapsed" Height="3" Margin="0,4,0,0"/>
-                        </Grid>
-
-                        <!-- ROW 2: FILE MANAGER DATAGRID -->
-                        <DataGrid x:Name="GridFileManager" Grid.Row="2"
-                                  AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="False"
-                                  HeadersVisibility="Column" SelectionUnit="FullRow"
-                                  GridLinesVisibility="Horizontal"
-                                  materialDesign:DataGridAssist.CellPadding="8,5"
-                                  materialDesign:DataGridAssist.ColumnHeaderPadding="8,6"
-                                  BorderThickness="1" BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}"
-                                  MouseDoubleClick="GridFileManager_MouseDoubleClick">
-                            <DataGrid.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="Xem File (Quick Preview / Open)" Click="CtxFmView_Click">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon Kind="EyeOutline" Width="16" Height="16"/>
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="Tải Về Máy Tính (Download)" Click="CtxFmDownload_Click">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon Kind="DownloadOutline" Width="16" Height="16"/>
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <Separator/>
-                                    <MenuItem Header="Tải Lên File (Upload Files)..." Click="CtxFmUploadFile_Click">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon Kind="UploadOutline" Width="16" Height="16"/>
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="Tải Lên Thư Mục (Upload Folder)..." Click="CtxFmUploadFolder_Click">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon Kind="FolderUploadOutline" Width="16" Height="16"/>
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="Tạo Thư Mục Mới (New Folder)" Click="CtxFmNewFolder_Click">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon Kind="FolderPlusOutline" Width="16" Height="16"/>
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <Separator/>
-                                    <MenuItem Header="Xóa Khỏi FTP (Delete)" Click="CtxFmDelete_Click">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="16" Height="16" Foreground="#D32F2F"/>
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="Làm Mới (Refresh)" Click="CtxFmRefresh_Click">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16"/>
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                </ContextMenu>
-                            </DataGrid.ContextMenu>
-                            <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Header="Chọn" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-
-                                <DataGridTemplateColumn Header="Tên File / Thư Mục" Width="3*" SortMemberPath="Name">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <materialDesign:PackIcon Kind="{Binding IconKind}" Foreground="{Binding IconColor}"
-                                                                         Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-
-                                <DataGridTextColumn Header="Kích Thước" Binding="{Binding SizeFormatted}" Width="120" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="Định Dạng" Binding="{Binding TypeLabel}" Width="120" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="Ngày Cập Nhật" Binding="{Binding ModifiedFormatted}" Width="160" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="Quyền" Binding="{Binding Permissions}" Width="90" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="Trạng Thái" Binding="{Binding Status}" Width="140" IsReadOnly="True"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-
-                        <!-- ROW 3: FOOTER SUMMARY -->
-                        <Border Grid.Row="3" Style="{StaticResource AppSubtleToolbarBorderStyle}" Padding="8,4" Margin="0,4,0,0">
-                            <DockPanel>
-                                <TextBlock x:Name="TxtFmSummary" Text="0 mục" FontSize="12" Opacity="0.8" VerticalAlignment="Center"/>
-                                <TextBlock Text="Mẹo: Click đúp thư mục để mở, click đúp file để xem nhanh hoặc mở bằng app mặc định"
-                                           FontSize="11" Opacity="0.55" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                            </DockPanel>
-                        </Border>
-                    </Grid>
-                </TabItem>
-            </TabControl>
-        </materialDesign:Card>
-
-        <!-- SECTION 4: ACTIVITY LOG CARD -->
-        <materialDesign:Card Grid.Row="2" Margin="14,0,14,10" Padding="14,8">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <DockPanel Grid.Row="0" Margin="0,0,0,6">
-                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="Console" Width="18" Height="18"
-                                                 Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBlock Text="3. Nhật ký hoạt động (Activity Log)" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
-                    </StackPanel>
-
-                    <Button DockPanel.Dock="Right" HorizontalAlignment="Right"
-                            Style="{StaticResource AppFlatButtonStyle}"
-                            Height="24" Padding="8,0" Click="BtnClearLog_Click"
-                            ToolTip="Xóa nội dung nhật ký trên màn hình">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="EraserVariant" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                            <TextBlock Text="Xóa Log" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                </DockPanel>
-
-                <Border Grid.Row="1" Style="{StaticResource AppTerminalBorderStyle}" Padding="6">
-                    <TextBox x:Name="TxtLogs" IsReadOnly="True"
-                             BorderThickness="0"
-                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                             FontFamily="Consolas" FontSize="12"
-                             Background="Transparent" Foreground="{DynamicResource AppTerminalForegroundBrush}"/>
-                </Border>
-            </Grid>
-        </materialDesign:Card>
-    </Grid>
-</Window>
+<Window x:Class="BatchDeleteFTP.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:views="clr-namespace:BatchDeleteFTP.Views"
+        Title="WorkManagement - Quản lý File FTP &amp; Máy Ảo Server"
+        Height="840" Width="1280" MinHeight="700" MinWidth="1050"
+        Icon="pack://application:,,,/BatchDeleteFTP;component/Assets/app.ico"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource AppWindowStyle}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="230"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ============================================== -->
+        <!-- LEFT DOCK NAVIGATION SIDEBAR (COLUMN 0)       -->
+        <!-- ============================================== -->
+        <Border Grid.Column="0" Background="{DynamicResource AppHeaderBackgroundBrush}"
+                BorderBrush="{DynamicResource AppHeaderBorderBrush}"
+                BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- BRANDING / LOGO -->
+                <Border Grid.Row="0" Padding="16,14" BorderBrush="{DynamicResource AppHeaderPillBorderBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="ViewDashboardOutline" Width="30" Height="30"
+                                                 Foreground="{DynamicResource AppHeaderForegroundBrush}"
+                                                 VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="WorkManagement" FontSize="16" FontWeight="Bold"
+                                       Foreground="{DynamicResource AppHeaderForegroundBrush}"/>
+                            <TextBlock Text="DevOps &amp; Workspace Hub" FontSize="10.5" Opacity="0.8"
+                                       Foreground="{DynamicResource AppHeaderForegroundBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- DOCK NAVIGATION MENU ITEMS -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="10,12">
+                    <StackPanel>
+                        <TextBlock Text="CHỨC NĂNG CHÍNH" FontSize="10" FontWeight="Bold" Margin="10,0,0,8"
+                                   Foreground="{DynamicResource AppHeaderForegroundBrush}" Opacity="0.7"/>
+
+                        <!-- NAV 1: FTP CLEANER & MANAGER -->
+                        <Button x:Name="NavBtnFtp" Style="{StaticResource AppPrimaryButtonStyle}"
+                                Height="40" Margin="0,0,0,6" HorizontalContentAlignment="Left" Padding="12,0"
+                                Click="NavBtnFtp_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FolderSyncOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="FTP Cleaner" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- NAV 2: VIRTUAL MACHINES & RDP -->
+                        <Button x:Name="NavBtnVm" Style="{StaticResource AppOutlinedButtonStyle}"
+                                Height="40" Margin="0,0,0,6" HorizontalContentAlignment="Left" Padding="12,0"
+                                Click="NavBtnVm_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="DesktopTowerMonitor" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Máy Ảo (VMs &amp; RDP)" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- NAV 3: TASK SCHEDULER -->
+                        <Button x:Name="NavBtnScheduler" Style="{StaticResource AppOutlinedButtonStyle}"
+                                Height="40" Margin="0,0,0,14" HorizontalContentAlignment="Left" Padding="12,0"
+                                Click="NavBtnScheduler_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CalendarClock" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Lịch Task Scheduler" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Separator Margin="6,0,6,12" Background="{DynamicResource AppHeaderPillBorderBrush}"/>
+
+                        <TextBlock Text="CẤU HÌNH &amp; KẾT NỐI" FontSize="10" FontWeight="Bold" Margin="10,0,0,8"
+                                   Foreground="{DynamicResource AppHeaderForegroundBrush}" Opacity="0.7"/>
+
+                        <!-- CONFIG FTP BUTTON -->
+                        <Button x:Name="BtnOpenConnectionSettings" Style="{StaticResource AppOutlinedButtonStyle}"
+                                Height="36" Margin="0,0,0,6" HorizontalContentAlignment="Left" Padding="12,0"
+                                Click="BtnOpenConnectionSettings_Click"
+                                ToolTip="Mở cửa sổ Cấu hình Chi tiết Kết nối FTP, Proxy &amp; Sao lưu">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="TuneVariant" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Cấu Hình FTP" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- CONFIG EMAIL BUTTON -->
+                        <Button x:Name="BtnEmailSettings" Style="{StaticResource AppOutlinedButtonStyle}"
+                                Height="36" Margin="0,0,0,6" HorizontalContentAlignment="Left" Padding="12,0"
+                                Click="BtnEmailSettings_Click"
+                                ToolTip="Cấu hình SMTP và danh sách nhiều địa chỉ Email nhận báo cáo">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="EmailEditOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Cấu Hình Email" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- FOOTER / VERSION INFO -->
+                <Border Grid.Row="2" Padding="14,10" BorderBrush="{DynamicResource AppHeaderPillBorderBrush}" BorderThickness="0,1,0,0">
+                    <DockPanel>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="WorkManagement v2.0" FontSize="11" FontWeight="Bold"
+                                       Foreground="{DynamicResource AppHeaderForegroundBrush}"/>
+                            <TextBlock Text="Console &amp; GUI Ready" FontSize="10" Opacity="0.7"
+                                       Foreground="{DynamicResource AppHeaderForegroundBrush}"/>
+                        </StackPanel>
+                        <materialDesign:PackIcon Kind="ShieldCheckOutline" Width="20" Height="20" HorizontalAlignment="Right"
+                                                 Foreground="{DynamicResource AppHeaderForegroundBrush}" Opacity="0.8" VerticalAlignment="Center"/>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ============================================== -->
+        <!-- MAIN CONTENT WORKSPACE (COLUMN 1)              -->
+        <!-- ============================================== -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- TOP HEADER BANNER -->
+            <Border x:Name="HeaderBanner" Grid.Row="0" Style="{StaticResource AppHeaderBannerStyle}" Padding="16,10">
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                        <materialDesign:PackIcon x:Name="IconCurrentPage" Kind="FolderSyncOutline" Width="24" Height="24"
+                                                 VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="TxtCurrentPageTitle" Text="Quản Lý File &amp; Tự Động Xóa FTP" FontSize="16" FontWeight="Bold"/>
+                            <TextBlock x:Name="TxtCurrentPageSub" Text="Quét, sao lưu và dọn dẹp file tự động theo ngày trên máy chủ FTP" FontSize="11" Opacity="0.85"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Theme Switcher (Right) -->
+                    <Border HorizontalAlignment="Right" Background="{DynamicResource AppCardBackgroundBrush}"
+                            TextElement.Foreground="{DynamicResource AppPrimaryTextBrush}"
+                            BorderBrush="{DynamicResource AppHeaderPillBorderBrush}"
+                            BorderThickness="1" CornerRadius="6" Padding="8,3">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon x:Name="IconThemeMode" Kind="PaletteOutline" Width="18" Height="18"
+                                                     Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Theme:" FontSize="12" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <ComboBox x:Name="CboThemes" Width="148"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Kind"
+                                      VerticalContentAlignment="Center"
+                                      FontSize="12" FontWeight="SemiBold"
+                                      SelectionChanged="CboThemes_SelectionChanged"
+                                      ToolTip="Chọn phong cách giao diện (Material Light/Dark, Skeuomorphism, Neumorphism, Frutiger Aero...)"/>
+                        </StackPanel>
+                    </Border>
+                </DockPanel>
+            </Border>
+
+            <!-- CONTENT VIEWS CONTAINER -->
+            <Grid Grid.Row="1">
+                <!-- VIEW 1: FTP CLEANER & MANAGER -->
+                <Grid x:Name="ViewContainerFtp" Visibility="Visible">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" MinHeight="260"/>
+                        <RowDefinition Height="210"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- MAIN AREA: TAB CONTROL (Batch Cleanup & File Manager) -->
+                    <materialDesign:Card Grid.Row="0" Margin="14,8,14,8" Padding="10,8">
+                        <TabControl x:Name="MainTabControl" SelectionChanged="MainTabControl_SelectionChanged">
+                            <!-- TAB 1: BATCH CLEANUP & BACKUP -->
+                            <TabItem x:Name="TabBatchCleanup">
+                                <TabItem.Header>
+                                    <StackPanel Orientation="Horizontal" Margin="6,3">
+                                        <materialDesign:PackIcon Kind="ClockAlertOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="1. Tự Động Quét &amp; Xóa (Batch Clean)" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </TabItem.Header>
+
+                                <Grid Margin="0,6,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- TOOLBAR FOR TAB 1 -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <DockPanel Grid.Row="0">
+                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                <Button x:Name="BtnSelectScanProfiles" Style="{StaticResource AppOutlinedButtonStyle}"
+                                                        Height="34" Padding="12,0" Margin="0,0,8,0" Click="BtnSelectScanProfiles_Click"
+                                                        ToolTip="Chọn một hoặc nhiều Site Profile để quét cùng lúc">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="ServerNetwork" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock x:Name="TxtScanProfilesLabel" Text="Profiles Quét: Hiện Tại" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnPreview" Style="{StaticResource AppPrimaryButtonStyle}"
+                                                        Height="34" Padding="14,0" Margin="0,0,8,0" Click="BtnPreview_Click">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="FileSearchOutline" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Xem Trước (Preview)" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnSendPreviewEmail" Style="{StaticResource AppTealButtonStyle}"
+                                                        Height="34" Padding="12,0" Margin="0,0,8,0" Click="BtnSendPreviewEmail_Click"
+                                                        ToolTip="Gửi kết quả Xem trước qua Email cho danh sách thành viên">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="EmailFastOutline" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Gửi Email Xem Trước" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnExecuteDelete" Style="{StaticResource AppDangerButtonStyle}"
+                                                        Height="34" Padding="14,0" Click="BtnExecuteDelete_Click">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="DeleteSweepOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Thực Hiện Backup &amp; Xóa" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="30" Padding="10,0" Margin="0,0,6,0" Click="BtnSelectAll_Click">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="CheckboxMultipleMarkedOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Chọn tất cả" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="30" Padding="10,0" Click="BtnUnselectAll_Click">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="CheckboxMultipleBlankOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Bỏ chọn tất cả" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </DockPanel>
+
+                                        <ProgressBar x:Name="BusyProgressBar" Grid.Row="1" IsIndeterminate="True"
+                                                     Visibility="Collapsed" Height="3" Margin="0,6,0,0"/>
+                                    </Grid>
+
+                                    <!-- CANDIDATE FILES DATAGRID -->
+                                    <Grid Grid.Row="1">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+
+                                        <DockPanel Grid.Row="0" Margin="0,0,0,6">
+                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="FileDocumentMultipleOutline" Width="18" Height="18"
+                                                                         Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Danh sách File Thỏa Điều Kiện Xóa (SystemDate.Date &gt; UploadDate.Date + N)"
+                                                           FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DockPanel>
+
+                                        <DataGrid x:Name="GridCandidates" Grid.Row="1"
+                                                  AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="False"
+                                                  HeadersVisibility="Column" SelectionUnit="FullRow"
+                                                  GridLinesVisibility="Horizontal"
+                                                  materialDesign:DataGridAssist.CellPadding="8,5"
+                                                  materialDesign:DataGridAssist.ColumnHeaderPadding="8,6"
+                                                  BorderThickness="1" BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}">
+                                            <DataGrid.Columns>
+                                                <DataGridCheckBoxColumn Header="Chọn xóa" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
+                                                <DataGridTextColumn Header="Site Profile" Binding="{Binding ProfileName}" Width="120" FontWeight="SemiBold" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Đường dẫn FTP (Remote Path)" Binding="{Binding FullPath}" Width="*" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Ngày Upload (Modified)" Binding="{Binding ModifiedDate, StringFormat=yyyy-MM-dd HH:mm:ss}" Width="165" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Dung lượng (Bytes)" Binding="{Binding Size, StringFormat={}{0:N0}}" Width="140" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="180" IsReadOnly="True"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Grid>
+                                </Grid>
+                            </TabItem>
+
+                            <!-- TAB 2: FTP FILE MANAGER -->
+                            <TabItem x:Name="TabFileManager">
+                                <TabItem.Header>
+                                    <StackPanel Orientation="Horizontal" Margin="6,3">
+                                        <materialDesign:PackIcon Kind="ServerNetwork" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="2. Quản Lý File FTP (File Manager)" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </TabItem.Header>
+
+                                <Grid Margin="0,6,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- ROW 0: REMOTE PATH NAVIGATION BAR -->
+                                    <Border Grid.Row="0" Style="{StaticResource AppSubtleToolbarBorderStyle}" Padding="8,4" Margin="0,0,0,6">
+                                        <DockPanel>
+                                            <!-- Site Profile Picker (Left) -->
+                                            <Border DockPanel.Dock="Left" Background="{DynamicResource AppCardBackgroundBrush}"
+                                                    TextElement.Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                                    BorderBrush="{DynamicResource AppHeaderPillBorderBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="8,2" Margin="0,0,10,0">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon Kind="ServerNetwork" Width="17" Height="17" VerticalAlignment="Center"
+                                                                             Foreground="{DynamicResource AppSectionIconBrush}" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Site Profile:" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+                                                    <ComboBox x:Name="CboProfiles" Width="170" IsEditable="True"
+                                                              VerticalContentAlignment="Center"
+                                                              materialDesign:HintAssist.Hint="Chọn Site Profile..."
+                                                              SelectionChanged="CboProfiles_SelectionChanged"
+                                                              ToolTip="Chọn Site/Profile để quản lý file"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <materialDesign:PackIcon Kind="FolderNetworkOutline" Width="18" Height="18"
+                                                                         Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <TextBlock Text="Thư mục FTP:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="6,0,0,0">
+                                                <Button x:Name="BtnFmGo" Style="{StaticResource AppPrimaryButtonStyle}"
+                                                        Height="30" Padding="10,0" Margin="0,0,4,0" Click="BtnFmGo_Click"
+                                                        ToolTip="Đi đến đường dẫn đã nhập (hoặc gõ Enter)">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="ArrowRightBold" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Text="Đến" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnFmUp" Style="{StaticResource AppOutlinedButtonStyle}"
+                                                        Height="30" Padding="8,0" Margin="0,0,4,0" Click="BtnFmUp_Click"
+                                                        ToolTip="Lên thư mục cha (..)">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="FolderArrowUpOutline" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Text="Lên 1 Cấp" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnFmHome" Style="{StaticResource AppOutlinedButtonStyle}"
+                                                        Height="30" Padding="8,0" Margin="0,0,4,0" Click="BtnFmHome_Click"
+                                                        ToolTip="Về thư mục gốc (/)">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="HomeOutline" Width="15" Height="15" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnFmRefresh" Style="{StaticResource AppOutlinedButtonStyle}"
+                                                        Height="30" Padding="8,0" Click="BtnFmRefresh_Click"
+                                                        ToolTip="Tải lại danh sách thư mục">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="Refresh" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Text="Làm Mới" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+
+                                            <TextBox x:Name="TxtFmRemotePath" Text="/"
+                                                     VerticalContentAlignment="Center"
+                                                     Padding="6,2"
+                                                     KeyDown="TxtFmRemotePath_KeyDown"
+                                                     ToolTip="Nhập đường dẫn thư mục FTP và gõ Enter"/>
+                                        </DockPanel>
+                                    </Border>
+
+                                    <!-- ROW 1: ACTIONS TOOLBAR -->
+                                    <Grid Grid.Row="1" Margin="0,0,0,6">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <DockPanel Grid.Row="0">
+                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                <Button x:Name="BtnFmUploadFile" Style="{StaticResource AppSuccessButtonStyle}"
+                                                        Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmUploadFile_Click"
+                                                        ToolTip="Tải một hoặc nhiều file từ máy tính lên FTP">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="UploadOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Tải Lên File" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnFmUploadFolder" Style="{StaticResource AppSuccessButtonStyle}"
+                                                        Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmUploadFolder_Click"
+                                                        ToolTip="Tải nguyên thư mục từ máy tính lên FTP">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="FolderUploadOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Tải Lên Thư Mục" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnFmDownload" Style="{StaticResource AppPrimaryButtonStyle}"
+                                                        Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmDownload_Click"
+                                                        ToolTip="Tải các file/thư mục được chọn về máy tính">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="DownloadOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Tải Về Máy" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnFmView" Style="{StaticResource AppOutlinedButtonStyle}"
+                                                        Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmView_Click"
+                                                        ToolTip="Xem nội dung file (hỗ trợ file văn bản, code, log, ảnh hoặc mở bằng app mặc định)">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="EyeOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Xem File" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnFmNewFolder" Style="{StaticResource AppOutlinedButtonStyle}"
+                                                        Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmNewFolder_Click"
+                                                        ToolTip="Tạo một thư mục mới tại đường dẫn FTP hiện tại">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="FolderPlusOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Tạo Thư Mục" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button x:Name="BtnFmDelete" Style="{StaticResource AppDangerButtonStyle}"
+                                                        Height="32" Padding="12,0" Margin="0,0,6,0" Click="BtnFmDelete_Click"
+                                                        ToolTip="Xóa các mục đã chọn trên FTP">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="DeleteOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Xóa" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+
+                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <!-- Search Filter -->
+                                                <Border Background="{DynamicResource AppCardBackgroundBrush}" BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}" BorderThickness="1"
+                                                        CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16" Opacity="0.6" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBox x:Name="TxtFmFilter" Width="130" BorderThickness="0" Background="Transparent"
+                                                                 materialDesign:HintAssist.Hint="Lọc file..."
+                                                                 TextChanged="TxtFmFilter_TextChanged"
+                                                                 VerticalContentAlignment="Center" FontSize="12"/>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="30" Padding="8,0" Margin="0,0,4,0"
+                                                        Click="BtnFmSelectAll_Click" ToolTip="Chọn tất cả các mục">
+                                                    <materialDesign:PackIcon Kind="CheckboxMultipleMarkedOutline" Width="15" Height="15"/>
+                                                </Button>
+                                                <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="30" Padding="8,0"
+                                                        Click="BtnFmUnselectAll_Click" ToolTip="Bỏ chọn tất cả">
+                                                    <materialDesign:PackIcon Kind="CheckboxMultipleBlankOutline" Width="15" Height="15"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </DockPanel>
+
+                                        <ProgressBar x:Name="FmProgressBar" Grid.Row="1" IsIndeterminate="True"
+                                                     Visibility="Collapsed" Height="3" Margin="0,4,0,0"/>
+                                    </Grid>
+
+                                    <!-- ROW 2: FILE MANAGER DATAGRID -->
+                                    <DataGrid x:Name="GridFileManager" Grid.Row="2"
+                                              AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="False"
+                                              HeadersVisibility="Column" SelectionUnit="FullRow"
+                                              GridLinesVisibility="Horizontal"
+                                              materialDesign:DataGridAssist.CellPadding="8,5"
+                                              materialDesign:DataGridAssist.ColumnHeaderPadding="8,6"
+                                              BorderThickness="1" BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}"
+                                              MouseDoubleClick="GridFileManager_MouseDoubleClick">
+                                        <DataGrid.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Xem File (Quick Preview / Open)" Click="CtxFmView_Click">
+                                                    <MenuItem.Icon>
+                                                        <materialDesign:PackIcon Kind="EyeOutline" Width="16" Height="16"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Tải Về Máy Tính (Download)" Click="CtxFmDownload_Click">
+                                                    <MenuItem.Icon>
+                                                        <materialDesign:PackIcon Kind="DownloadOutline" Width="16" Height="16"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator/>
+                                                <MenuItem Header="Tải Lên File (Upload Files)..." Click="CtxFmUploadFile_Click">
+                                                    <MenuItem.Icon>
+                                                        <materialDesign:PackIcon Kind="UploadOutline" Width="16" Height="16"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Tải Lên Thư Mục (Upload Folder)..." Click="CtxFmUploadFolder_Click">
+                                                    <MenuItem.Icon>
+                                                        <materialDesign:PackIcon Kind="FolderUploadOutline" Width="16" Height="16"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Tạo Thư Mục Mới (New Folder)" Click="CtxFmNewFolder_Click">
+                                                    <MenuItem.Icon>
+                                                        <materialDesign:PackIcon Kind="FolderPlusOutline" Width="16" Height="16"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator/>
+                                                <MenuItem Header="Xóa Khỏi FTP (Delete)" Click="CtxFmDelete_Click">
+                                                    <MenuItem.Icon>
+                                                        <materialDesign:PackIcon Kind="DeleteOutline" Width="16" Height="16" Foreground="#D32F2F"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Làm Mới (Refresh)" Click="CtxFmRefresh_Click">
+                                                    <MenuItem.Icon>
+                                                        <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </DataGrid.ContextMenu>
+                                        <DataGrid.Columns>
+                                            <DataGridCheckBoxColumn Header="Chọn" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+
+                                            <DataGridTemplateColumn Header="Tên File / Thư Mục" Width="3*" SortMemberPath="Name">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <materialDesign:PackIcon Kind="{Binding IconKind}" Foreground="{Binding IconColor}"
+                                                                                     Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+
+                                            <DataGridTextColumn Header="Kích Thước" Binding="{Binding SizeFormatted}" Width="120" IsReadOnly="True"/>
+                                            <DataGridTextColumn Header="Định Dạng" Binding="{Binding TypeLabel}" Width="120" IsReadOnly="True"/>
+                                            <DataGridTextColumn Header="Ngày Cập Nhật" Binding="{Binding ModifiedFormatted}" Width="160" IsReadOnly="True"/>
+                                            <DataGridTextColumn Header="Quyền" Binding="{Binding Permissions}" Width="90" IsReadOnly="True"/>
+                                            <DataGridTextColumn Header="Trạng Thái" Binding="{Binding Status}" Width="140" IsReadOnly="True"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+
+                                    <!-- ROW 3: FOOTER SUMMARY -->
+                                    <Border Grid.Row="3" Style="{StaticResource AppSubtleToolbarBorderStyle}" Padding="8,4" Margin="0,4,0,0">
+                                        <DockPanel>
+                                            <TextBlock x:Name="TxtFmSummary" Text="0 mục" FontSize="12" Opacity="0.8" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Mẹo: Click đúp thư mục để mở, click đúp file để xem nhanh hoặc mở bằng app mặc định"
+                                                       FontSize="11" Opacity="0.55" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                    </Border>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+                    </materialDesign:Card>
+
+                    <!-- SECTION 4: ACTIVITY LOG CARD -->
+                    <materialDesign:Card Grid.Row="1" Margin="14,0,14,10" Padding="14,8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <DockPanel Grid.Row="0" Margin="0,0,0,6">
+                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Console" Width="18" Height="18"
+                                                             Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="3. Nhật ký hoạt động (Activity Log)" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Button DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                        Style="{StaticResource AppFlatButtonStyle}"
+                                        Height="24" Padding="8,0" Click="BtnClearLog_Click"
+                                        ToolTip="Xóa nội dung nhật ký trên màn hình">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="EraserVariant" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Xóa Log" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </DockPanel>
+
+                            <Border Grid.Row="1" Style="{StaticResource AppTerminalBorderStyle}" Padding="6">
+                                <TextBox x:Name="TxtLogs" IsReadOnly="True"
+                                         BorderThickness="0"
+                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                         FontFamily="Consolas" FontSize="12"
+                                         Background="Transparent" Foreground="{DynamicResource AppTerminalForegroundBrush}"/>
+                            </Border>
+                        </Grid>
+                    </materialDesign:Card>
+                </Grid>
+
+                <!-- VIEW 2: VIRTUAL MACHINES MANAGER -->
+                <Grid x:Name="ViewContainerVm" Visibility="Collapsed">
+                    <views:VmManagerView x:Name="VmManagerControl"/>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

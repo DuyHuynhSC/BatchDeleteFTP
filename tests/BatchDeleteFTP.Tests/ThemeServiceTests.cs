@@ -151,4 +151,48 @@ public class ThemeServiceTests
 
         Assert.Null(threadEx);
     }
+
+    [Fact]
+    public void NewViewsAndDialogs_InitializeAcrossAllThemesWithoutError()
+    {
+        Exception? threadEx = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                WpfTestHelper.EnsureApplication();
+
+                foreach (var option in ThemeService.AvailableThemes)
+                {
+                    ThemeService.ApplyTheme(option.Kind);
+
+                    // Test creating each new form and usercontrol under this theme
+                    var vmControl = new BatchDeleteFTP.Views.VmManagerView();
+                    Assert.NotNull(vmControl);
+
+                    var editDialog = new BatchDeleteFTP.Views.EditVmDialog();
+                    Assert.NotNull(editDialog);
+
+                    var sampleEntries = new List<BatchDeleteFTP.Models.VirtualMachineEntry>
+                    {
+                        new() { Ip = "172.16.6.16", MachineName = "D2-SVR15-6016" }
+                    };
+                    var importDialog = new BatchDeleteFTP.Views.ExcelImportPreviewDialog("test.xlsx", sampleEntries);
+                    Assert.NotNull(importDialog);
+
+                    var schedDialog = new BatchDeleteFTP.Views.TaskSchedulerConfigDialog();
+                    Assert.NotNull(schedDialog);
+                }
+            }
+            catch (Exception ex)
+            {
+                threadEx = ex;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
+        Assert.Null(threadEx);
+    }
 }
