@@ -1,4 +1,4 @@
-﻿using WorkManagement.Services;
+using WorkManagement.Services;
 using Xunit;
 
 namespace WorkManagement.Tests;
@@ -35,5 +35,27 @@ public class RemoteDesktopAndSchedulerServiceTests
         Assert.Contains("--preview", schtasksCmd);
         Assert.Contains("--all", schtasksCmd);
         Assert.DoesNotContain("--send-email", schtasksCmd);
+    }
+
+    [Fact]
+    public void BuildPowerShellLogonCommand_GeneratesValidPowerShellSyntaxWithDelay()
+    {
+        string psCmd = TaskSchedulerService.BuildPowerShellLogonCommand("WorkManagement_MorningPreview", "--preview", allProfiles: true, sendEmail: true, delayMinutes: 1);
+        Assert.StartsWith("powershell -NoProfile -Command", psCmd);
+        Assert.Contains("New-ScheduledTaskTrigger -AtLogOn", psCmd);
+        Assert.Contains("$t.Delay = 'PT1M'", psCmd);
+        Assert.Contains("Register-ScheduledTask -TaskName 'WorkManagement_MorningPreview'", psCmd);
+        Assert.Contains("--preview --all --send-email", psCmd);
+    }
+
+    [Fact]
+    public void BuildCommandPreview_RoutesToCorrectEngine()
+    {
+        string logonPreview = TaskSchedulerService.BuildCommandPreview(TaskSchedulerTriggerType.AtLogonWithDelay, "TaskA", "23:00", "--preview", true, true);
+        Assert.Contains("-AtLogOn", logonPreview);
+
+        string dailyPreview = TaskSchedulerService.BuildCommandPreview(TaskSchedulerTriggerType.DailyTime, "TaskB", "08:30", "--auto", true, false);
+        Assert.StartsWith("schtasks /create", dailyPreview);
+        Assert.Contains("/st 08:30", dailyPreview);
     }
 }

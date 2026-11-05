@@ -1,213 +1,108 @@
-﻿# WorkManagement
+# WorkManagement - DevOps Workspace & Automation Hub
 
-Ứng dụng C# .NET WPF kết hợp chế độ dòng lệnh (Console / CMD Hybrid) hỗ trợ kết nối tới **FTP over TLS (Implicit / Explicit)**, quản lý nhiều cấu hình kết nối (**Site / Profile Manager**), quét đồng thời nhiều Profile (**Multi-Profile Batch Scan & Delete**), duyệt và chọn các thư mục từ xa (`Remote Path`), **Xem trước (Preview)** danh sách các file thỏa điều kiện xóa, **Gửi email báo cáo kết quả xem trước** qua giao thức SMTP, **Backup** file về máy tính giữ nguyên cấu trúc thư mục con trước khi xóa, tích hợp đầy đủ trình quản lý file FTP (**FTP File Manager**) và hỗ trợ giao diện **Sáng / Tối (Dark / Light Theme)** theo chuẩn Material Design.
-
-Công thức dọn dẹp file tự động:
-```text
-SystemDate.Date > UploadDate.Date + RetentionDays (Mặc định RetentionDays = 1)
-```
+**WorkManagement** là ứng dụng C# .NET WPF hiện đại kết hợp chế độ dòng lệnh (Console/CMD Hybrid), đóng vai trò là trung tâm làm việc (Workspace Hub) dành cho lập trình viên, kỹ sư DevOps và quản trị hệ thống:
+1. **Quản lý máy ảo & Remote Desktop (VMs & RDP Hub):** Quản lý tập trung toàn bộ danh sách máy ảo, server cơ sở dữ liệu, tự động đăng nhập Remote Desktop (RDP) chỉ với 1 click, import/export dữ liệu Excel thông minh.
+2. **Tự động hóa dọn dẹp & quản lý file FTP (FTP Cleaner & Manager):** Kết nối FTPS (TLS 1.2/1.3), quét đa máy chủ, sao lưu (backup) trước khi xóa, duyệt file trực quan và gửi email báo cáo.
+3. **Lập lịch chạy tự động ngầm (Windows Task Scheduler):** Tự động khởi chạy ngầm mỗi sáng khi đăng nhập Windows (tự động delay 1 phút chờ mạng/VPN sẵn sàng), mặc định chạy ở chế độ **Xem trước (Preview)** an toàn và gửi email thông báo.
 
 ---
 
-## 1. Tính năng Chính
+## 1. Các Tính Năng Nổi Bật
 
-### 1.1. Tự Động Quét & Xóa File (Batch Clean & Backup)
-- **Quét đồng thời nhiều Profile (`Multi-Profile Scan`):**
-  - Cho phép người dùng linh hoạt chọn quét trên **Profile hiện tại**, **Tất cả các Profile**, hoặc **Tùy chọn danh sách Profile cụ thể**.
-  - Kết quả quét tổng hợp hiển thị rõ cột **Site Profile**, đường dẫn remote, ngày upload, kích thước và trạng thái.
-  - Quá trình quét được cách ly độc lập theo từng profile: nếu một máy chủ gặp sự cố kết nối hoặc quá thời gian chờ, hệ thống vẫn tiếp tục quét các profile còn lại và cảnh báo chi tiết.
-- **Thực thi Backup & Xóa đa máy chủ FTP (`Fail-safe Multi-Server Execution`):**
-  - Tự động gom nhóm các file được chọn theo từng Site Profile tương ứng.
-  - Kết nối tuần tự tới từng máy chủ FTP với các cấu hình riêng biệt (Proxy, cổng, TLS, thông tin xác thực).
-  - **Cơ chế bảo vệ dữ liệu:** Nếu bật Backup, ứng dụng sẽ tải file về máy tính trước theo cấu trúc:
-    `<LocalBackupPath>\<yyyyMMdd_HHmmss>\<RelativeSubFolder>\<FileName>`
-    Chỉ khi file được sao lưu thành công và tồn tại trọn vẹn trên ổ cứng cục bộ thì ứng dụng mới gửi lệnh xóa file đó trên FTP Server.
-  - Chỉ xóa file, giữ nguyên toàn bộ cấu trúc thư mục trên FTP Server.
+### 1.1. Quản Lý Máy Ảo & Kết Nối Remote Desktop (VMs & RDP Hub)
+- **Danh mục máy ảo chi tiết:** Quản lý đầy đủ các trường thông tin: *STT, Địa chỉ IP, Tên máy, Domain/Workgroup, Hệ điều hành (OS), User, Password, TNS, Database Name, Oracle Version, Người kiểm tra, Ghi chú, Ngày hết hạn*.
+- **Kết nối RDP 1-click (Nút Play):**
+  - Tự động nạp thông tin đăng nhập vào Windows Credential (`cmdkey`) theo chuẩn định dạng `[Tên máy]\[User]` (ví dụ: `D2-SVR15-6016\Administrator`) và khởi chạy `mstsc.exe` kết nối tới IP đích mà không cần nhập lại mật khẩu.
+- **Bảo mật & Thao tác nhanh:**
+  - Hỗ trợ nút ẩn/hiện mật khẩu dạng `••••••••` trên từng dòng.
+  - Nút sao chép (Copy) nhanh IP và Password vào Clipboard chỉ với một chạm.
+- **Import Excel Đa Sheet Thông Minh:**
+  - Hỗ trợ cả file `.xlsx` và `.xls`.
+  - Tự động nhận diện dòng tiêu đề (kể cả khi tiêu đề nằm ở dòng 2 hoặc dòng 3 của bảng tính).
+  - Tự động chấm điểm chất lượng (Score) và đề xuất sheet chứa danh sách máy ảo remote.
+  - Cho phép người dùng chuyển đổi xem trước dữ liệu giữa các sheet qua ComboBox chọn Sheet.
+  - Hỗ trợ 3 chế độ xử lý khi trùng IP/Tên máy: *Ghi đè (Overwrite)*, *Bỏ qua (Skip)*, *Thêm tất cả (Append)*. Khi chọn Ghi đè, số thứ tự (STT) từ file Excel sẽ luôn được cập nhật đè vào hệ thống.
+  - Tự động bù STT tăng dần nếu file nguồn để trống cột No.
+- **Nút "Auto-Fit Cột":** Tự động căn chỉnh độ rộng tất cả các cột trong bảng vừa khít nội dung văn bản.
+- **Nút "Xóa Tất Cả" (Delete All):** Dọn sạch danh sách máy ảo hiện tại với hộp thoại xác nhận an toàn trước khi import dữ liệu mới.
+- **Xuất file mẫu Excel (Template):** Tải file mẫu `.xlsx` chuẩn để người dùng nhập liệu nhanh chóng.
 
-### 1.2. Quản Lý Nhiều Cấu Hình Kết Nối (Site / Profile Manager)
-- Cho phép lưu trữ và chuyển đổi nhanh giữa nhiều máy chủ / tài khoản FTP khác nhau (tương tự *Site Manager* của FileZilla).
-- Hỗ trợ các thao tác **➕ Tạo Mới**, **💾 Lưu Profile**, **🗑 Xóa Profile** trực quan ngay trên thanh tiêu đề ứng dụng.
-- Cửa sổ **Cấu hình FTP & Backup** chi tiết hỗ trợ kiểm tra kết nối trực tiếp, chọn thư mục backup cục bộ và thiết lập proxy riêng.
+### 1.2. Phân Hệ FTP Cleaner & Quản Lý File (FTP Automation)
+- **Tự động quét & dọn dẹp file theo hạn lưu trữ:**
+  ```text
+  SystemDate.Date > UploadDate.Date + RetentionDays (Mặc định RetentionDays = 1)
+  ```
+- **Quét đồng thời nhiều Profile (`Multi-Profile Scan`):** Quét trên profile hiện tại hoặc quét hàng loạt trên tất cả các máy chủ FTP đã cấu hình.
+- **Cơ chế Fail-safe Backup:** Tải file về máy tính cục bộ bảo toàn cấu trúc thư mục con trước khi thực hiện lệnh xóa thật trên FTP Server.
+- **Hỗ trợ FTPS & Proxy:** Hỗ trợ Implicit TLS (Port 6021/990), Explicit TLS (Port 21) và HTTP/HTTPS Proxy doanh nghiệp.
+- **Trình duyệt File FTP Trực Quan:** Xem file (text, code, hình ảnh), Upload file/thư mục, Download về máy, Tạo thư mục mới và Xóa trực tiếp.
+- **Email Báo Cáo HTML:** Gửi báo cáo chi tiết danh sách file cần xóa qua SMTP server tới danh sách email cấu hình sẵn.
 
-### 1.3. Hỗ Trợ Chuẩn FTPS (TLS 1.2 / 1.3) & Proxy Doanh Nghiệp
-- Hỗ trợ cả 2 chế độ mã hóa: `Implicit FTP over TLS` (Port `6021` / `990`) và `Explicit FTP over TLS` (Port `21`).
-- Hỗ trợ kết nối qua HTTP/HTTPS Proxy (ví dụ `proxy.xxx.vn:8080`) kèm xác thực `Proxy User / Password` thông qua đường hầm HTTP 1.1 CONNECT của `FluentFTP`.
-- Tối ưu hóa bắt tay TLS 1.2 / TLS 1.3 với chế độ truyền dữ liệu thụ động `PASV` và ghi log chi tiết thời gian thực.
-
-### 1.4. Chọn Thư Mục Từ Xa Trên FTP (Remote Folder Picker)
-- Hỗ trợ nhập thủ công danh sách đường dẫn cách nhau bởi dấu `;` (ví dụ: `/FolderA;/FolderB/Sub1`).
-- Nút **"Chọn thư mục FTP..."** mở cửa sổ cây thư mục (`TreeView` lazy-load) trực tiếp từ FTP Server, hỗ trợ mở rộng từng cấp và tích chọn nhiều thư mục cần dọn dẹp.
-- Tự động chuẩn hóa và khử trùng lặp đường dẫn (nếu chọn cả thư mục cha và thư mục con, ứng dụng tự động gộp để tránh quét trùng lặp).
-
-### 1.5. Gửi Email Báo Cáo Xem Trước (Email Notification Service)
-- Thiết lập thông số máy chủ gửi thư Outgoing Mail Server (SMTP - Port 25 / 587) có hoặc không có SSL/TLS.
-- Tự động phân tích và suy luận địa chỉ người gửi theo cấu trúc `username@domain` dựa trên tên máy chủ SMTP (ví dụ: `duy-hd` + `mail.fujinet.net` -> `duy-hd@fujinet.net`).
-- Hỗ trợ nhập danh sách nhiều email nhận (ngăn cách bởi dấu chấm phẩy `;`, dấu phẩy `,` hoặc xuống dòng), tự động khử trùng lặp và xác thực cú pháp email.
-- Tạo báo cáo định dạng HTML chuyên nghiệp: tóm tắt thông số cấu hình, phạm vi các profile đã quét, tổng số file, dung lượng ước tính và bảng chi tiết từng file.
-- Tùy chọn **Tự động gửi email sau khi Preview** (`AutoSendEmailOnPreview`).
-
-### 1.6. Quản Lý File FTP Trực Quan (Tab File Manager)
-- **Thanh điều hướng Remote Path:** Gõ trực tiếp đường dẫn thư mục FTP và nhấn Enter hoặc bấm **Đến**. Hỗ trợ các nút tắt: **Lên 1 Cấp**, **Về Gốc (/)**, và **Làm Mới**.
-- **Xem file (`Xem File`):** Tích hợp trình xem trước hỗ trợ xem trực tiếp các định dạng text, log, code (`.txt`, `.log`, `.csv`, `.json`, `.xml`, `.cs`, `.py`...), hiển thị hình ảnh (`.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.ico`) hoặc mở bằng ứng dụng mặc định của Windows.
-- **Tải lên (`Upload`):** Hỗ trợ **Tải Lên File** (chọn một hoặc nhiều file) và **Tải Lên Thư Mục** (giữ nguyên cấu trúc thư mục con).
-- **Tải về (`Download`):** Tải các file hoặc thư mục được chọn từ FTP về thư mục lưu trữ trên máy tính.
-- **Tạo thư mục mới:** Tạo nhanh folder mới ngay tại đường dẫn remote hiện tại.
-- **Xóa mục trên FTP:** Hỗ trợ chọn nhiều file / thư mục và xóa trực tiếp với hộp thoại xác nhận an toàn.
-- **Lọc nhanh file:** Ô tìm kiếm tức thì trên thanh công cụ hỗ trợ lọc nhanh theo tên file trong danh sách hiển thị.
-
-### 1.7. Giao Diện Material Design & Chuyển Đổi Dark/Light Theme
-- Giao diện người dùng hiện đại, đồng bộ màu sắc thương hiệu và icon theo chuẩn Google Material Design.
-- Nút gạt chuyển đổi giao diện **Sáng / Tối (Light / Dark Theme)** góc trên bên phải, tự động lưu và áp dụng cho toàn bộ các cửa sổ của chương trình.
-
-### 1.8. Chế Độ Kép (GUI & Chạy Tự Động Qua Command Line)
-- Chạy trực tiếp `WorkManagement.exe` để mở giao diện đồ họa WPF.
-- Hỗ trợ các tham số dòng lệnh `--auto`, `--console`, `--preview` phục vụ tích hợp với **Windows Task Scheduler** hoặc batch script để tự động hóa hàng ngày.
+### 1.3. Giao Diện Người Dùng & Bộ Theme Phong Phú
+- **Menu Dock Bên Trái (Sidebar):** Điều hướng linh hoạt giữa các chức năng, có nút thu gọn/mở rộng menu (Collapse/Expand) để mở rộng tối đa không gian làm việc.
+- **Đa dạng Theme:** Hỗ trợ chuyển đổi mượt mà giữa các phong cách thiết kế:
+  - *Material Light* (Sáng hiện đại, độ tương phản cao)
+  - *Material Dark* (Tối dịu mắt)
+  - *Skeuomorphism* (Mô phỏng chất liệu nổi)
+  - *Neumorphism* (Giao diện dập nổi mượt mà)
+  - *Frutiger Aero* (Kính trong suốt, xanh lục bảo)
+  - *Claymorphism* (Đất sét 3D bo tròn)
+  - *Glassmorphism* (Kính mờ acrylic)
+  - *Y2K Digital* (Công nghệ số hoài cổ)
 
 ---
 
-## 2. Cấu Trúc File Cấu Hình (`config.json`)
+## 2. Chế Độ Dòng Lệnh & Lập Lịch Tự Động (Windows Task Scheduler)
 
-File `config.json` tự động được khởi tạo và lưu trữ cùng thư mục với file thực thi `WorkManagement.exe`:
+Ứng dụng hỗ trợ chạy ở chế độ Console/CMD không cần mở giao diện đồ họa, rất thích hợp để chạy tự động qua Windows Task Scheduler.
 
-```json
-{
-  "SelectedProfileName": "SITE_A",
-  "SelectedScanProfileNames": [
-    "SITE_A"
-  ],
-  "Host": "ftp.xxx.net",
-  "Port": 6021,
-  "EncryptionMode": "Implicit",
-  "Username": "XXX-USER",
-  "Password": "",
-  "UseProxy": true,
-  "ProxyHost": "proxy.xxx.vn",
-  "ProxyPort": 8080,
-  "ProxyUser": "",
-  "ProxyPassword": "",
-  "RemotePaths": [
-    "/"
-  ],
-  "RetentionDays": 1,
-  "EnableBackup": true,
-  "LocalBackupPath": "C:\\SourceCode\\WorkManagement\\Backups",
-  "SmtpHost": "mail.fujinet.net",
-  "SmtpPort": 25,
-  "SmtpEnableSsl": false,
-  "SmtpUser": "duy-hd",
-  "SmtpPassword": "",
-  "SenderEmail": "duy-hd@fujinet.net",
-  "RecipientEmails": [
-    "admin@fujinet.net",
-    "monitor@fujinet.net"
-  ],
-  "AutoSendEmailOnPreview": false,
-  "IsDarkTheme": false,
-  "Profiles": [
-    {
-      "Name": "SITE_A",
-      "Host": "ftp.xxx.net",
-      "Port": 6021,
-      "EncryptionMode": "Implicit",
-      "Username": "XXX-USER",
-      "Password": "",
-      "UseProxy": true,
-      "ProxyHost": "proxy.xxx.vn",
-      "ProxyPort": 8080,
-      "ProxyUser": "",
-      "ProxyPassword": "",
-      "RemotePaths": [
-        "/"
-      ],
-      "RetentionDays": 1,
-      "EnableBackup": true,
-      "LocalBackupPath": "C:\\SourceCode\\WorkManagement\\Backups",
-      "SmtpHost": "mail.fujinet.net",
-      "SmtpPort": 25,
-      "SmtpEnableSsl": false,
-      "SmtpUser": "duy-hd",
-      "SmtpPassword": "",
-      "SenderEmail": "duy-hd@fujinet.net",
-      "RecipientEmails": [
-        "admin@fujinet.net"
-      ],
-      "AutoSendEmailOnPreview": false
-    }
-  ]
-}
-```
-
----
-
-## 3. Hướng Dẫn Sử Dụng
-
-### 3.1. Chế Độ Giao Diện (WPF GUI)
-Khởi chạy trực tiếp `WorkManagement.exe`:
-
-1. **Thiết lập & Quản lý Profile:**
-   - Chọn Profile có sẵn ở danh sách thả xuống trên thanh tiêu đề hoặc bấm **Tạo Mới** để thêm một cấu hình máy chủ mới.
-   - Nhập thông số kết nối và bấm **Lưu Profile**.
-   - Bấm **Cấu Hình FTP & Backup** để tùy chỉnh chi tiết: cổng, TLS, Proxy, thư mục Remote Path và đường dẫn lưu trữ Backup.
-   - Bấm **Kiểm Tra Kết Nối** để xác nhận thông số FTPS hoạt động chính xác.
-
-2. **Quét & Xóa File Đa Profile (Tab 1: Tự Động Quét & Xóa):**
-   - Bấm **Profiles Quét: ...** để mở hộp thoại lựa chọn các Site Profile bạn muốn quét cùng lúc (mặc định là Profile đang active).
-   - Bấm **Xem Trước (Preview)** để hệ thống quét các thư mục đã chọn trên tất cả các Profile đã đánh dấu.
-   - Kiểm tra danh sách file thỏa điều kiện xóa hiển thị trên bảng `DataGrid` (phân loại rõ cột `Site Profile`). Bạn có thể tích chọn / bỏ chọn từng file hoặc dùng nút **Chọn tất cả** / **Bỏ chọn tất cả**.
-   - Bấm **Thực Hiện Backup & Xóa** để tiến hành sao lưu về máy và dọn dẹp file trên các máy chủ FTP tương ứng.
-
-3. **Gửi Email Báo Cáo:**
-   - Bấm **Cấu Hình Email** để thiết lập máy chủ SMTP và danh sách địa chỉ nhận thông báo.
-   - Bấm **Gửi Email Xem Trước** để gửi kết quả danh sách các file cần dọn dẹp tới email các thành viên liên quan.
-
-4. **Quản Lý File Trực Tiếp Trên FTP (Tab 2: File Manager):**
-   - Chuyển sang Tab **2. Quản Lý File FTP**.
-   - Nhập đường dẫn thư mục remote hoặc điều hướng trực tiếp bằng các nút trên thanh công cụ.
-   - Thực hiện các thao tác: **Xem File**, **Tải Lên File / Thư Mục**, **Tải Về Máy**, **Tạo Thư Mục**, hoặc **Xóa**.
-
-### 3.2. Chế Độ Dòng Lệnh (Console / CMD / Windows Task Scheduler)
-
-Hỗ trợ chạy ngầm hoặc tự động hóa hoàn toàn với các tham số dòng lệnh linh hoạt:
+### 2.1. Các Tham Số Dòng Lệnh (CLI Arguments)
 
 | Tham số | Ý nghĩa |
 | :--- | :--- |
-| `--preview` hoặc `/preview` | Chạy chế độ **Xem trước (Preview)**: chỉ quét và liệt kê danh sách file thỏa điều kiện xóa ra console/log, **không xóa thật** trên FTP. |
-| `--auto` hoặc `--console` | Chạy chế độ **Tự Động Thực Thi**: tự động sao lưu về máy và dọn dẹp file trên FTP. |
-| `--all` hoặc `--all-profiles` | Áp dụng cho **TẤT CẢ các Site Profile** đã cấu hình trong `config.json` (thay vì chỉ quét Profile đang active). |
-| `--send-email` hoặc `--email` | **Tự động gửi email báo cáo** nếu phát hiện có ít nhất 1 file thỏa điều kiện cần xóa (nếu không có file cần xóa sẽ tự động bỏ qua để tránh spam email). |
+| `--preview` hoặc `/preview` | **(Mặc định - Khuyên dùng):** Chỉ quét và liệt kê danh sách file cần xóa ra màn hình console và file log, **không xóa thật** trên FTP. |
+| `--auto` hoặc `--console` | **Tự Động Thực Thi:** Tự động sao lưu file về máy và thực hiện lệnh xóa thật trên FTP. |
+| `--all` hoặc `--all-profiles` | Áp dụng quét trên **TẤT CẢ các Site Profile** đã cấu hình trong `config.json`. |
+| `--send-email` hoặc `--email` | **Tự động gửi email thông báo** nếu có ít nhất 1 file thỏa điều kiện xóa. |
 
-#### Các câu lệnh thường dùng:
+### 2.2. Lệnh CLI Thường Dùng
 
-1. **Quét kiểm tra tất cả Profile và gửi mail nếu có file cần xóa (Khuyên dùng cho Task Scheduler mỗi sáng):**
+1. **Quét kiểm tra tất cả Profile và gửi mail báo cáo (Chế độ khuyến nghị mỗi sáng):**
    ```cmd
    WorkManagement.exe --preview --all --send-email
    ```
-2. **Quét xem trước tất cả Profile trên màn hình console (không gửi mail, không xóa):**
+2. **Xem trước danh sách file trên console (không gửi mail, không xóa):**
    ```cmd
    WorkManagement.exe --preview --all
    ```
-3. **Quét xem trước chỉ trên Profile mặc định hiện tại:**
-   ```cmd
-   WorkManagement.exe --preview
-   ```
-4. **Tự động Backup & Xóa trên TẤT CẢ Profile:**
+3. **Thực thi Backup & Xóa tự động trên tất cả Profile:**
    ```cmd
    WorkManagement.exe --auto --all
    ```
 
-> **Mã Thoát (Exit Code):**
-> - `0`: Tiến trình kết thúc thành công hoàn toàn, không có lỗi.
-> - `1`: Xảy ra lỗi kết nối mạng hoặc có ít nhất 1 file thất bại trong quá trình kết nối / Backup / Xóa.
+---
+
+## 3. Cấu Hình Windows Task Scheduler
+
+Bạn có thể thiết lập lịch chạy tự động theo 1 trong 2 cách sau:
+
+### Cách 1: Thiết lập trực tiếp từ Giao diện Ứng dụng (Nhanh nhất - 1 Click)
+
+1. Mở ứng dụng **WorkManagement**, ở menu bên trái chọn **Lịch Task Scheduler**.
+2. Cửa sổ cấu hình hiển thị:
+   - **Thời điểm kích hoạt Task:**
+     - **Tùy chọn 1 (Mặc định - Khuyên dùng cho mỗi sáng):** *"Khi khởi động / đăng nhập Windows (Tự động delay 1 phút chờ mạng/VPN sẵn sàng)"*.
+     - **Tùy chọn 2:** *"Chạy định kỳ vào giờ cố định hàng ngày (HH:mm)"*.
+   - **Chế độ thực thi:** Mặc định chọn **`Chỉ Preview & Gửi Mail Báo Cáo (--preview)`** để đảm bảo an toàn tuyệt đối.
+   - Tích chọn sẵn **Áp dụng cho tất cả Profiles FTP (--all)** và **Gửi email thông báo kết quả (--send-email)**.
+3. Bấm nút **"Tạo Task Vào Windows"**. Ứng dụng sẽ tự động đăng ký Task vào Windows Task Scheduler.
+   *(Nếu cần chạy thủ công, bạn có thể bấm **Copy Lệnh** để dán vào PowerShell Administrator).*
 
 ---
 
-### 3.3. Hướng Dẫn Cấu Hình Windows Task Scheduler Chạy Tự Động Mỗi Sáng
+### Cách 2: Thiết lập bằng PowerShell Administrator
 
-Để ứng dụng tự động chạy ở chế độ **Console, Preview, kiểm tra tất cả các Profile và gửi mail nếu có file cần xóa** mỗi khi bạn khởi động máy tính vào buổi sáng, bạn có thể thiết lập theo 1 trong 2 cách sau:
-
-#### Cách 1: Thiết lập tự động bằng PowerShell (Nhanh nhất - 1 lệnh duy nhất)
-
-Mở **PowerShell với quyền Administrator** (`Run as Administrator`) và chạy đoạn lệnh sau (thay đổi `$appPath` nếu file exe nằm ở thư mục khác):
+Mở PowerShell với quyền Quản trị (`Run as Administrator`) và chạy đoạn mã sau:
 
 ```powershell
 $exePath = "C:\SourceCode\WorkManagement\src\WorkManagement\bin\Release\net9.0-windows\WorkManagement.exe"
@@ -215,80 +110,46 @@ $workingDir = [System.IO.Path]::GetDirectoryName($exePath)
 
 $action = New-ScheduledTaskAction -Execute $exePath -Argument "--preview --all --send-email" -WorkingDirectory $workingDir
 $trigger = New-ScheduledTaskTrigger -AtLogOn
-$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
-
-# Đặt delay 1 phút sau khi đăng nhập để đảm bảo card mạng và kết nối Internet/VPN đã sẵn sàng
+# Delay 1 phút sau khi đăng nhập để đảm bảo card mạng/VPN/Proxy đã kết nối ổn định
 $trigger.Delay = "PT1M"
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
 
 Register-ScheduledTask -TaskName "WorkManagement_MorningPreview" `
     -Action $action `
     -Trigger $trigger `
     -Settings $settings `
-    -Description "Quét kiểm tra tất cả FTP Profile và gửi mail báo cáo nếu có file cần xóa mỗi sáng khi mở máy." `
+    -Description "WorkManagement tu dong quet va kiem tra FTP moi sang khi mo may." `
     -RunLevel Highest -Force
 
-Write-Host "Đã tạo Task thành công! Chạy thử nghiệm ngay:" -ForegroundColor Green
+Write-Host "Da tao Task thanh cong! Chay thu nghiem ngay:" -ForegroundColor Green
 Start-ScheduledTask -TaskName "WorkManagement_MorningPreview"
 ```
 
 ---
 
-#### Cách 2: Thiết lập thủ công qua giao diện Windows Task Scheduler (GUI)
+## 4. Cấu Trúc Lưu Trữ Dữ Liệu
 
-1. Nhấn tổ hợp phím **Win + R**, gõ **`taskschd.msc`** và nhấn **Enter** để mở trình quản lý *Task Scheduler*.
-2. Ở khung bên phải, chọn **Create Task...** (không chọn *Create Basic Task* để có đầy đủ cấu hình nâng cao).
-3. **Tab General (Thông tin chung):**
-   - **Name:** Điền `WorkManagement_MorningPreview`.
-   - **Description:** `Tự động kiểm tra file quá hạn trên tất cả Profile FTP và gửi email báo cáo mỗi sáng.`
-   - Chọn **Run only when user is logged on** (nếu muốn cửa sổ console hiện ra để theo dõi) hoặc **Run whether user is logged on or not** (chạy ngầm hoàn toàn).
-   - Tích chọn **Run with highest privileges** (chạy với quyền quản trị để không bị UAC chặn).
-4. **Tab Triggers (Thời điểm kích hoạt):**
-   - Nhấn **New...**
-   - **Begin the task:** Chọn **At log on** (Mỗi khi đăng nhập vào Windows) hoặc **At startup** (Mỗi khi khởi động máy).
-   - Trong mục *Advanced settings*, tích chọn **Delay task for:** và chọn **1 minute** (hoặc **2 minutes**).
-     > *Lưu ý quan trọng:* Bước Delay giúp máy tính có đủ thời gian kết nối mạng LAN / Wifi / Proxy doanh nghiệp trước khi chương trình kết nối tới FTP Server.
-   - Nhấn **OK**.
-5. **Tab Actions (Hành động thực thi):**
-   - Nhấn **New...**
-   - **Action:** Chọn `Start a program`.
-   - **Program/script:** Nhấn *Browse...* và chọn tới file `WorkManagement.exe` (ví dụ: `C:\SourceCode\WorkManagement\src\WorkManagement\bin\Release\net9.0-windows\WorkManagement.exe`).
-   - **Add arguments (optional):** Điền chính xác:
-     ```text
-     --preview --all --send-email
-     ```
-   - **Start in (optional):** Điền đường dẫn thư mục chứa file exe (ví dụ: `C:\SourceCode\WorkManagement\src\WorkManagement\bin\Release\net9.0-windows`).
-     > *Rất quan trọng:* Không được để trống ô này, chương trình cần đường dẫn gốc để nạp file cấu hình `config.json`.
-   - Nhấn **OK**.
-6. **Tab Conditions (Điều kiện mạng):**
-   - Tích chọn **Start only if the following network connection is available:** và chọn **Any connection** (đảm bảo chỉ chạy khi máy đã có mạng).
-7. **Tab Settings:**
-   - Tích chọn **Allow task to be run on demand** (để có thể bấm chuột phải chọn *Run* kiểm tra bất cứ lúc nào).
-   - Tích chọn **If the running task does not end when requested, force it to stop**.
-8. Nhấn **OK** để hoàn tất việc lưu Task.
-
-#### Kiểm tra thử nghiệm Task vừa tạo:
-- Trong danh sách *Task Scheduler Library*, tìm task `WorkManagement_MorningPreview`.
-- Nhấn chuột phải -> chọn **Run**.
-- Kiểm tra file log tại `logs/WorkManagement_yyyyMMdd.log` và kiểm tra hòm thư nhận email để xác nhận kết quả.
+1. **Cấu hình FTP & Email (`config.json`):**
+   - Lưu trữ cùng thư mục với file thực thi `WorkManagement.exe`.
+2. **Danh sách máy ảo (`virtual_machines.json`):**
+   - Lưu trữ an toàn tại thư mục AppData của người dùng:
+     `%APPDATA%\WorkManagement\virtual_machines.json`
+3. **Nhật ký hoạt động (`logs`):**
+   - Toàn bộ log quét, kết nối RDP, thao tác backup/xóa file được lưu tại:
+     `logs/WorkManagement_yyyyMMdd.log`
 
 ---
 
-### 3.4. Nhật Ký Hoạt Động (Logs)
-Toàn bộ lịch sử kết nối, chi tiết lệnh FTP, danh sách file quét được, đường dẫn file đã Backup và kết quả xóa được ghi tự động vào:
-```text
-logs/WorkManagement_yyyyMMdd.log
-```
+## 5. Hướng Dẫn Biên Dịch & Kiểm Thử (Developer Guide)
 
----
-
-## 4. Hướng Dẫn Biên Dịch & Kiểm Thử (Developer Guide)
-
-- **Yêu cầu môi trường:** .NET 9.0 SDK hoặc .NET 10.0 SDK trên hệ điều hành Windows.
-- **Biên dịch mã nguồn bản Release:**
+- **Môi trường yêu cầu:** .NET 9.0 SDK trở lên trên Windows.
+- **Biên dịch bản Release:**
   ```powershell
-  dotnet build -c Release
+  dotnet build -c Release WorkManagement.sln
   ```
-- **Chạy toàn bộ Unit Tests (xUnit):**
+- **Chạy kiểm thử toàn bộ Unit Tests (xUnit):**
   ```powershell
-  dotnet test
+  dotnet test WorkManagement.sln
   ```
+- File thực thi sau khi biên dịch:
+  `src\WorkManagement\bin\Release\net9.0-windows\WorkManagement.exe`

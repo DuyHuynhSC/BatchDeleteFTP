@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using WorkManagement.Services;
@@ -18,20 +18,60 @@ public partial class TaskSchedulerConfigDialog : Window
 
     private string GetSelectedMode()
     {
-        return CboExecutionMode?.SelectedIndex == 1 ? "--preview" : "--auto";
+        return CboExecutionMode?.SelectedIndex == 1 ? "--auto" : "--preview";
+    }
+
+    private TaskSchedulerTriggerType GetSelectedTriggerType()
+    {
+        return RbTriggerLogon?.IsChecked == true
+            ? TaskSchedulerTriggerType.AtLogonWithDelay
+            : TaskSchedulerTriggerType.DailyTime;
+    }
+
+    private void TriggerType_Changed(object sender, RoutedEventArgs e)
+    {
+        bool isDaily = RbTriggerDaily?.IsChecked == true;
+        if (TxtRunTime != null)
+        {
+            TxtRunTime.IsEnabled = isDaily;
+        }
+
+        if (TxtTaskName != null)
+        {
+            if (isDaily && TxtTaskName.Text == TaskSchedulerService.DefaultMorningTaskName)
+            {
+                TxtTaskName.Text = TaskSchedulerService.DefaultTaskName;
+            }
+            else if (!isDaily && TxtTaskName.Text == TaskSchedulerService.DefaultTaskName)
+            {
+                TxtTaskName.Text = TaskSchedulerService.DefaultMorningTaskName;
+            }
+        }
+
+        UpdateCommandPreview();
+    }
+
+    private void TxtTaskName_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdateCommandPreview();
     }
 
     private void UpdateCommandPreview(object? sender = null, RoutedEventArgs? e = null)
     {
         if (TxtCmdPreview == null) return;
 
-        string taskName = string.IsNullOrWhiteSpace(TxtTaskName?.Text) ? TaskSchedulerService.DefaultTaskName : TxtTaskName.Text.Trim();
+        var triggerType = GetSelectedTriggerType();
+        string defaultName = triggerType == TaskSchedulerTriggerType.AtLogonWithDelay
+            ? TaskSchedulerService.DefaultMorningTaskName
+            : TaskSchedulerService.DefaultTaskName;
+
+        string taskName = string.IsNullOrWhiteSpace(TxtTaskName?.Text) ? defaultName : TxtTaskName.Text.Trim();
         string runTime = string.IsNullOrWhiteSpace(TxtRunTime?.Text) ? "23:00" : TxtRunTime.Text.Trim();
         string mode = GetSelectedMode();
         bool all = ChkAllProfiles?.IsChecked == true;
         bool email = ChkSendEmail?.IsChecked == true;
 
-        TxtCmdPreview.Text = TaskSchedulerService.BuildSchtasksCreateCommand(taskName, runTime, mode, all, email);
+        TxtCmdPreview.Text = TaskSchedulerService.BuildCommandPreview(triggerType, taskName, runTime, mode, all, email, delayMinutes: 1);
     }
 
     private void TxtRunTime_TextChanged(object sender, TextChangedEventArgs e)
@@ -59,7 +99,12 @@ public partial class TaskSchedulerConfigDialog : Window
 
     private async void BtnRegisterTask_Click(object sender, RoutedEventArgs e)
     {
-        string taskName = string.IsNullOrWhiteSpace(TxtTaskName.Text) ? TaskSchedulerService.DefaultTaskName : TxtTaskName.Text.Trim();
+        var triggerType = GetSelectedTriggerType();
+        string defaultName = triggerType == TaskSchedulerTriggerType.AtLogonWithDelay
+            ? TaskSchedulerService.DefaultMorningTaskName
+            : TaskSchedulerService.DefaultTaskName;
+
+        string taskName = string.IsNullOrWhiteSpace(TxtTaskName.Text) ? defaultName : TxtTaskName.Text.Trim();
         string runTime = string.IsNullOrWhiteSpace(TxtRunTime.Text) ? "23:00" : TxtRunTime.Text.Trim();
         string mode = GetSelectedMode();
         bool all = ChkAllProfiles.IsChecked == true;
@@ -68,15 +113,19 @@ public partial class TaskSchedulerConfigDialog : Window
         BtnRegisterTask.IsEnabled = false;
         try
         {
-            var (success, output) = await _schedulerService.RegisterDailyTaskAsync(taskName, runTime, mode, all, email);
+            var (success, output) = await _schedulerService.RegisterTaskAsync(triggerType, taskName, runTime, mode, all, email, delayMinutes: 1);
             if (success)
             {
-                MessageBox.Show(this, $"Đã tạo/cập nhật Task '{taskName}' thành công trong Windows Task Scheduler!\n\nChi tiết:\n{output}",
+                string triggerDesc = triggerType == TaskSchedulerTriggerType.AtLogonWithDelay
+                    ? "khi khởi động/đăng nhập máy (delay 1 phút)"
+                    : $"hàng ngày lúc {runTime}";
+
+                MessageBox.Show(this, $"Đã tạo/cập nhật Task '{taskName}' ({triggerDesc}) thành công trong Windows Task Scheduler!\n\nChi tiết:\n{output}",
                     "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                MessageBox.Show(this, $"Không thể tạo Task.\n\nThông báo từ Windows: {output}\n\nLưu ý: Nếu cần quyền Quản trị (Admin), hãy mở ứng dụng dưới quyền 'Run as administrator' hoặc copy câu lệnh để chạy trong CMD (Admin).",
+                MessageBox.Show(this, $"Không thể tạo Task.\n\nThông báo từ Windows: {output}\n\nLưu ý: Nếu cần quyền Quản trị (Admin), hãy mở ứng dụng dưới quyền 'Run as administrator' hoặc copy câu lệnh để chạy trong CMD/PowerShell (Admin).",
                     "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
