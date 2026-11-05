@@ -36,48 +36,225 @@ public class ExcelImportService
                 throw new FileNotFoundException("Không tìm thấy file Excel", filePath);
             }
 
-            var rows = MiniExcel.Query(filePath, useHeaderRow: true).ToList();
-            var list = new List<VirtualMachineEntry>();
-
-            foreach (IDictionary<string, object> row in rows)
+            // Lấy danh sách tất cả các sheet trong file Excel
+            List<string> sheetNames;
+            try
             {
-                // Bỏ qua dòng hoàn toàn rỗng
-                if (row.Values.All(v => v == null || string.IsNullOrWhiteSpace(v.ToString())))
+                sheetNames = MiniExcel.GetSheetNames(filePath).ToList();
+            }
+            catch
+            {
+                sheetNames = new List<string>();
+            }
+
+            if (sheetNames.Count == 0)
+            {
+                sheetNames.Add(string.Empty); // Fallback query default/first sheet
+            }
+
+            // Quét từng sheet cho đến khi tìm thấy sheet chứa dữ liệu hợp lệ
+            foreach (var sheetName in sheetNames)
+            {
+                var entries = ReadEntriesFromSheet(filePath, string.IsNullOrEmpty(sheetName) ? null : sheetName);
+                if (entries.Count > 0)
+                {
+                    return entries;
+                }
+            }
+
+            // Fallback cuối cùng: query mặc định
+            return ReadEntriesFromSheet(filePath, null);
+        });
+    }
+
+    private List<VirtualMachineEntry> ReadEntriesFromSheet(string filePath, string? sheetName)
+    {
+        var list = new List<VirtualMachineEntry>();
+        var rawRows = new List<IDictionary<string, object>>();
+
+        try
+        {
+            var queryResult = (sheetName == null
+                ? MiniExcel.Query(filePath, useHeaderRow: false)
+                : MiniExcel.Query(filePath, useHeaderRow: false, sheetName: sheetName));
+
+            foreach (var row in queryResult)
+            {
+                if (row is IDictionary<string, object> dict)
+                {
+                    rawRows.Add(dict);
+                }
+            }
+        }
+        catch
+        {
+            return list;
+        }
+
+        if (rawRows.Count == 0) return list;
+
+        int headerRowIndex = -1;
+        var colMapping = new Dictionary<string, string>(); // ColumnKey (ví dụ "A", "B") -> Property Name
+
+        // Quét tìm dòng tiêu đề Header (tìm trong tối đa 20 dòng đầu)
+        int searchLimit = Math.Min(20, rawRows.Count);
+        for (int i = 0; i < searchLimit; i++)
+        {
+            var row = rawRows[i];
+            var detected = DetectHeaderRow(row);
+            if (detected.Count >= 2) // Chứa ít nhất 2 cột nhận diện hợp lệ (ví dụ IP, Tên máy...)
+            {
+                headerRowIndex = i;
+                colMapping = detected;
+                break;
+            }
+        }
+
+        if (headerRowIndex == -1 || colMapping.Count == 0)
+        {
+            return list;
+        }
+
+        // Đọc tất cả các dòng dữ liệu nằm sau dòng Header
+        for (int i = headerRowIndex + 1; i < rawRows.Count; i++)
+        {
+            var row = rawRows[i];
+
+            // Bỏ qua dòng rỗng hoàn toàn
+            if (row.Values.All(v => v == null || string.IsNullOrWhiteSpace(v.ToString())))
+            {
+                continue;
+            }
+
+            var entry = new VirtualMachineEntry();
+
+            foreach (var mapping in colMapping)
+            {
+                string colKey = mapping.Key;
+                string propName = mapping.Value;
+
+                if (!row.TryGetValue(colKey, out var rawVal) || rawVal == null)
                 {
                     continue;
                 }
 
-                var entry = new VirtualMachineEntry
-                {
-                    No = GetValue(row, "no", "stt", "id"),
-                    Ip = GetValue(row, "ip", "địa chỉ ip", "ip address"),
-                    MachineName = GetValue(row, "tên máy", "machine name", "hostname", "host name", "tên server", "server name"),
-                    DomainOrWorkgroup = GetValue(row, "domain/workgroup", "domain", "workgroup"),
-                    Os = GetValue(row, "os", "hệ điều hành", "operating system"),
-                    Username = GetValue(row, "user", "username", "tài khoản", "người dùng"),
-                    Password = GetValue(row, "p", "password", "pass", "mật khẩu"),
-                    Tns = GetValue(row, "tns", "tns name"),
-                    DatabaseName = GetValue(row, "database name", "database", "db name", "tên db"),
-                    OracleVersion = GetValue(row, "version oracle", "oracle version", "phiên bản oracle"),
-                    Tester = GetValue(row, "người kiểm tra", "người kiểm tra/quản lý", "tester", "quản trị"),
-                    Notes = GetValue(row, "ghi chú", "note", "notes", "mô tả"),
-                    ExpirationDate = GetValue(row, "ngày hết hạn", "hết hạn", "expire", "expiration date", "expired date")
-                };
+                string valStr = FormatCellValue(rawVal);
+                if (string.IsNullOrWhiteSpace(valStr)) continue;
 
-                if (string.IsNullOrWhiteSpace(entry.ExpirationDate))
+                switch (propName)
                 {
-                    entry.ExpirationDate = "Vô hạn";
-                }
-
-                // Nếu có ít nhất IP hoặc Tên máy thì mới xem là dòng hợp lệ
-                if (!string.IsNullOrWhiteSpace(entry.Ip) || !string.IsNullOrWhiteSpace(entry.MachineName))
-                {
-                    list.Add(entry);
+                    case nameof(VirtualMachineEntry.No):
+                        entry.No = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.Ip):
+                        entry.Ip = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.MachineName):
+                        entry.MachineName = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.DomainOrWorkgroup):
+                        entry.DomainOrWorkgroup = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.Os):
+                        entry.Os = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.Username):
+                        entry.Username = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.Password):
+                        entry.Password = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.Tns):
+                        entry.Tns = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.DatabaseName):
+                        entry.DatabaseName = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.OracleVersion):
+                        entry.OracleVersion = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.Tester):
+                        entry.Tester = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.Notes):
+                        entry.Notes = valStr;
+                        break;
+                    case nameof(VirtualMachineEntry.ExpirationDate):
+                        entry.ExpirationDate = valStr;
+                        break;
                 }
             }
 
-            return list;
-        });
+            if (string.IsNullOrWhiteSpace(entry.ExpirationDate))
+            {
+                entry.ExpirationDate = "Vô hạn";
+            }
+
+            // Dòng được xem là hợp lệ nếu có ít nhất IP hoặc Tên máy
+            if (!string.IsNullOrWhiteSpace(entry.Ip) || !string.IsNullOrWhiteSpace(entry.MachineName))
+            {
+                list.Add(entry);
+            }
+        }
+
+        return list;
+    }
+
+    private static Dictionary<string, string> DetectHeaderRow(IDictionary<string, object> row)
+    {
+        var mapping = new Dictionary<string, string>();
+
+        foreach (var kv in row)
+        {
+            if (kv.Value == null) continue;
+            string text = kv.Value.ToString()?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(text)) continue;
+
+            string normalized = NormalizeKey(text);
+
+            if (MatchAny(normalized, "no", "stt", "id"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.No);
+            else if (MatchAny(normalized, "ip", "dia chi ip", "ip address"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.Ip);
+            else if (MatchAny(normalized, "ten may", "machine name", "hostname", "host name", "ten server", "server name", "machine"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.MachineName);
+            else if (MatchAny(normalized, "domain workgroup", "domain", "workgroup", "domainworkgroup"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.DomainOrWorkgroup);
+            else if (MatchAny(normalized, "os", "he dieu hanh", "operating system"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.Os);
+            else if (MatchAny(normalized, "user", "username", "tai khoan", "nguoi dung"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.Username);
+            else if (MatchAny(normalized, "p", "password", "pass", "mat khau"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.Password);
+            else if (MatchAny(normalized, "tns", "tns name"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.Tns);
+            else if (MatchAny(normalized, "database name", "database", "db name", "ten db", "dbname"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.DatabaseName);
+            else if (MatchAny(normalized, "version oracle", "oracle version", "phien ban oracle", "version oracl"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.OracleVersion);
+            else if (MatchAny(normalized, "nguoi kiem tra", "nguoi kiem tra quan ly", "tester", "quan tri", "nguoi kt", "nguoi kiem t"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.Tester);
+            else if (MatchAny(normalized, "ghi chu", "note", "notes", "mo ta"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.Notes);
+            else if (MatchAny(normalized, "ngay het han", "het han", "expire", "expiration date", "expired date"))
+                mapping[kv.Key] = nameof(VirtualMachineEntry.ExpirationDate);
+        }
+
+        return mapping;
+    }
+
+    private static string FormatCellValue(object val)
+    {
+        if (val is DateTime dt)
+        {
+            return dt.ToString("yyyy/MM/dd");
+        }
+        return val.ToString()?.Trim() ?? string.Empty;
+    }
+
+    private static bool MatchAny(string text, params string[] patterns)
+    {
+        return patterns.Any(p => text == p || text.StartsWith(p) || text.Contains(p));
     }
 
     public ExcelImportResult MergeIntoList(
@@ -170,24 +347,38 @@ public class ExcelImportService
         });
     }
 
-    private static string GetValue(IDictionary<string, object> dict, params string[] possibleKeys)
-    {
-        foreach (var key in possibleKeys)
-        {
-            // Normalize key for matching
-            var entry = dict.FirstOrDefault(kv => NormalizeKey(kv.Key) == NormalizeKey(key));
-            if (entry.Value != null)
-            {
-                string val = entry.Value.ToString()?.Trim() ?? string.Empty;
-                if (!string.IsNullOrEmpty(val)) return val;
-            }
-        }
-        return string.Empty;
-    }
-
     private static string NormalizeKey(string? str)
     {
         if (string.IsNullOrWhiteSpace(str)) return string.Empty;
-        return str.Trim().ToLowerInvariant().Replace("_", " ").Replace("-", " ").Replace("/", " ").Replace(".", "");
+
+        // Loại bỏ dấu tiếng Việt để so khớp dễ dàng
+        string withoutDiacritics = RemoveDiacritics(str);
+
+        return withoutDiacritics.Trim().ToLowerInvariant()
+            .Replace("_", " ")
+            .Replace("-", " ")
+            .Replace("/", " ")
+            .Replace(".", " ")
+            .Replace(":", " ")
+            .Replace("\r", " ")
+            .Replace("\n", " ");
+    }
+
+    private static string RemoveDiacritics(string text)
+    {
+        var normalizedString = text.Normalize(System.Text.NormalizationForm.FormD);
+        var stringBuilder = new System.Text.StringBuilder();
+
+        foreach (var c in normalizedString)
+        {
+            var unicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+            if (unicodeCategory != System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                stringBuilder.Append(c);
+            }
+        }
+
+        return stringBuilder.ToString().Normalize(System.Text.NormalizationForm.FormC)
+            .Replace("đ", "d").Replace("Đ", "D");
     }
 }
