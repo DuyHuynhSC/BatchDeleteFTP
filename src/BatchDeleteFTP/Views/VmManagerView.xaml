@@ -100,7 +100,7 @@
                 </DataGrid.RowStyle>
                 <DataGrid.Columns>
                     <!-- PLAY (CONNECT RDP) BUTTON -->
-                    <DataGridTemplateColumn Header="Play" Width="60">
+                    <DataGridTemplateColumn Header="Play" Width="55">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource AppSuccessButtonStyle}"
@@ -113,10 +113,10 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="STT" Binding="{Binding No}" Width="45"/>
+                    <DataGridTextColumn Header="STT" Binding="{Binding No}" Width="Auto" MinWidth="50"/>
 
                     <!-- IP WITH COPY BUTTON -->
-                    <DataGridTemplateColumn Header="Địa Chỉ IP" Width="140">
+                    <DataGridTemplateColumn Header="Địa Chỉ IP" Width="Auto" MinWidth="150">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <DockPanel LastChildFill="True">
@@ -126,19 +126,19 @@
                                         <materialDesign:PackIcon Kind="ContentCopy" Width="13" Height="13"
                                                                  Foreground="{DynamicResource AppSecondaryTextBrush}"/>
                                     </Button>
-                                    <TextBlock Text="{Binding Ip}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Ip}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                 </DockPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="Tên Máy" Binding="{Binding MachineName}" Width="130" FontWeight="SemiBold"/>
-                    <DataGridTextColumn Header="Domain/Workgroup" Binding="{Binding DomainOrWorkgroup}" Width="110"/>
-                    <DataGridTextColumn Header="Hệ Điều Hành" Binding="{Binding Os}" Width="160"/>
-                    <DataGridTextColumn Header="User" Binding="{Binding Username}" Width="90"/>
+                    <DataGridTextColumn Header="Tên Máy" Binding="{Binding MachineName}" Width="Auto" MinWidth="160" FontWeight="SemiBold"/>
+                    <DataGridTextColumn Header="Domain/Workgroup" Binding="{Binding DomainOrWorkgroup}" Width="Auto" MinWidth="145"/>
+                    <DataGridTextColumn Header="Hệ Điều Hành" Binding="{Binding Os}" Width="Auto" MinWidth="240"/>
+                    <DataGridTextColumn Header="User" Binding="{Binding Username}" Width="Auto" MinWidth="110"/>
 
                     <!-- PASSWORD WITH MASK TOGGLE & COPY -->
-                    <DataGridTemplateColumn Header="Password" Width="130">
+                    <DataGridTemplateColumn Header="Password" Width="Auto" MinWidth="145">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <DockPanel LastChildFill="True">
@@ -157,21 +157,21 @@
                                                                      Foreground="{DynamicResource AppSecondaryTextBrush}"/>
                                         </Button>
                                     </StackPanel>
-                                    <TextBlock Text="{Binding DisplayPassword}" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                    <TextBlock Text="{Binding DisplayPassword}" VerticalAlignment="Center" FontFamily="Consolas" Margin="0,0,4,0"/>
                                 </DockPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="TNS" Binding="{Binding Tns}" Width="90"/>
-                    <DataGridTextColumn Header="Database Name" Binding="{Binding DatabaseName}" Width="100"/>
-                    <DataGridTextColumn Header="Oracle Ver" Binding="{Binding OracleVersion}" Width="90"/>
-                    <DataGridTextColumn Header="Người KT" Binding="{Binding Tester}" Width="80"/>
-                    <DataGridTextColumn Header="Ghi Chú" Binding="{Binding Notes}" Width="150"/>
-                    <DataGridTextColumn Header="Ngày Hết Hạn" Binding="{Binding ExpirationDate}" Width="105"/>
+                    <DataGridTextColumn Header="TNS" Binding="{Binding Tns}" Width="Auto" MinWidth="120"/>
+                    <DataGridTextColumn Header="Database Name" Binding="{Binding DatabaseName}" Width="Auto" MinWidth="135"/>
+                    <DataGridTextColumn Header="Oracle Ver" Binding="{Binding OracleVersion}" Width="Auto" MinWidth="110"/>
+                    <DataGridTextColumn Header="Người KT" Binding="{Binding Tester}" Width="Auto" MinWidth="95"/>
+                    <DataGridTextColumn Header="Ghi Chú" Binding="{Binding Notes}" Width="*" MinWidth="180"/>
+                    <DataGridTextColumn Header="Ngày Hết Hạn" Binding="{Binding ExpirationDate}" Width="Auto" MinWidth="120"/>
 
                     <!-- EDIT & DELETE BUTTONS -->
-                    <DataGridTemplateColumn Header="Thao Tác" Width="80">
+                    <DataGridTemplateColumn Header="Thao Tác" Width="Auto" MinWidth="85">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">

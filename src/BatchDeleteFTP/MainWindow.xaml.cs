@@ -1103,6 +1103,19 @@ public partial class MainWindow : Window
         }
     }
 
+
+    private bool _isDockExpanded = true;
+
+    private void BtnToggleDock_Click(object sender, RoutedEventArgs e)
+    {
+        _isDockExpanded = !_isDockExpanded;
+        ColDockSidebar.Width = _isDockExpanded ? new GridLength(230) : new GridLength(0);
+
+        string tip = _isDockExpanded ? "Ẩn / Thu gọn Menu Dock" : "Mở / Hiện Menu Dock";
+        if (BtnToggleDock != null) BtnToggleDock.ToolTip = tip;
+        if (BtnCollapseDock != null) BtnCollapseDock.ToolTip = tip;
+    }
+
     private void NavBtnScheduler_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new TaskSchedulerConfigDialog { Owner = this };

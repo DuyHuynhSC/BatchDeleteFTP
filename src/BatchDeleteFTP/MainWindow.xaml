@@ -10,7 +10,7 @@
         Style="{StaticResource AppWindowStyle}">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="230"/>
+            <ColumnDefinition x:Name="ColDockSidebar" Width="230"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -28,18 +28,26 @@
                 </Grid.RowDefinitions>
 
                 <!-- BRANDING / LOGO -->
-                <Border Grid.Row="0" Padding="16,14" BorderBrush="{DynamicResource AppHeaderPillBorderBrush}" BorderThickness="0,0,0,1">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="ViewDashboardOutline" Width="30" Height="30"
-                                                 Foreground="{DynamicResource AppHeaderForegroundBrush}"
-                                                 VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="WorkManagement" FontSize="16" FontWeight="Bold"
-                                       Foreground="{DynamicResource AppHeaderForegroundBrush}"/>
-                            <TextBlock Text="DevOps &amp; Workspace Hub" FontSize="10.5" Opacity="0.8"
-                                       Foreground="{DynamicResource AppHeaderForegroundBrush}"/>
+                <Border Grid.Row="0" Padding="14,14" BorderBrush="{DynamicResource AppHeaderPillBorderBrush}" BorderThickness="0,0,0,1">
+                    <DockPanel LastChildFill="True">
+                        <Button x:Name="BtnCollapseDock" Style="{StaticResource MaterialDesignFlatButton}"
+                                DockPanel.Dock="Right" Width="28" Height="28" Padding="0" Margin="4,0,0,0"
+                                Click="BtnToggleDock_Click" ToolTip="Ẩn / Thu gọn Menu Dock">
+                            <materialDesign:PackIcon Kind="ChevronLeft" Width="20" Height="20"
+                                                     Foreground="{DynamicResource AppHeaderForegroundBrush}"/>
+                        </Button>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="ViewDashboardOutline" Width="28" Height="28"
+                                                     Foreground="{DynamicResource AppHeaderForegroundBrush}"
+                                                     VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="WorkManagement" FontSize="15" FontWeight="Bold"
+                                           Foreground="{DynamicResource AppHeaderForegroundBrush}"/>
+                                <TextBlock Text="DevOps &amp; Workspace Hub" FontSize="10" Opacity="0.8"
+                                           Foreground="{DynamicResource AppHeaderForegroundBrush}"/>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
+                    </DockPanel>
                 </Border>
 
                 <!-- DOCK NAVIGATION MENU ITEMS -->
@@ -136,6 +144,12 @@
             <Border x:Name="HeaderBanner" Grid.Row="0" Style="{StaticResource AppHeaderBannerStyle}" Padding="16,10">
                 <DockPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                        <Button x:Name="BtnToggleDock" Style="{StaticResource MaterialDesignFlatButton}"
+                                Width="32" Height="32" Padding="0" Margin="0,0,10,0"
+                                Click="BtnToggleDock_Click" ToolTip="Ẩn / Hiện Menu Dock">
+                            <materialDesign:PackIcon Kind="Menu" Width="22" Height="22"
+                                                     Foreground="{DynamicResource AppHeaderForegroundBrush}"/>
+                        </Button>
                         <materialDesign:PackIcon x:Name="IconCurrentPage" Kind="FolderSyncOutline" Width="24" Height="24"
                                                  VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <StackPanel VerticalAlignment="Center">
