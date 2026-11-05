@@ -81,4 +81,25 @@ public class VmManagerServiceTests
             if (File.Exists(tempFile)) File.Delete(tempFile);
         }
     }
+
+    [Fact]
+    public void ClearAll_EmptiesList_AndDoesNotReloadSampleData()
+    {
+        string tempFile = Path.Combine(Path.GetTempPath(), $"vm_clear_test_{Guid.NewGuid()}.json");
+        try
+        {
+            var service = new VmManagerService(tempFile);
+            var initial = service.LoadAll();
+            Assert.NotEmpty(initial);
+
+            service.ClearAll();
+
+            var afterClear = service.LoadAll();
+            Assert.Empty(afterClear);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
 }

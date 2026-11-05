@@ -42,7 +42,7 @@ public class VmManagerService
             {
                 string json = File.ReadAllText(_storagePath);
                 var list = JsonSerializer.Deserialize<List<VirtualMachineEntry>>(json, _jsonOptions);
-                if (list != null && list.Count > 0)
+                if (list != null)
                 {
                     return list;
                 }
@@ -56,6 +56,11 @@ public class VmManagerService
         var initialList = GetInitialSampleData();
         SaveAll(initialList);
         return initialList;
+    }
+
+    public void ClearAll()
+    {
+        SaveAll(new List<VirtualMachineEntry>());
     }
 
     public void SaveAll(IEnumerable<VirtualMachineEntry> list)

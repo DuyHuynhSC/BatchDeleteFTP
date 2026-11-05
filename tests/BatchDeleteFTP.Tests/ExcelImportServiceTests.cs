@@ -47,6 +47,7 @@ public class ExcelImportServiceTests
             new()
             {
                 Id = "id-1",
+                No = "17",
                 Ip = "172.16.6.16",
                 MachineName = "OLD-NAME",
                 Password = "OldPassword"
@@ -57,6 +58,7 @@ public class ExcelImportServiceTests
         {
             new()
             {
+                No = "1",
                 Ip = "172.16.6.16",
                 MachineName = "NEW-NAME",
                 Password = "NewPassword123"
@@ -68,6 +70,7 @@ public class ExcelImportServiceTests
         Assert.Equal(1, result.UpdatedCount);
         Assert.Equal(0, result.AddedCount);
         Assert.Single(current);
+        Assert.Equal("1", current[0].No);
         Assert.Equal("NEW-NAME", current[0].MachineName);
         Assert.Equal("NewPassword123", current[0].Password);
     }

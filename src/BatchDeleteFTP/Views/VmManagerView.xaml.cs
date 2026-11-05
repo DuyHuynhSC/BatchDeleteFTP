@@ -181,6 +181,28 @@ public partial class VmManagerView : UserControl
         }
     }
 
+    private void BtnDeleteAll_Click(object sender, RoutedEventArgs e)
+    {
+        if (_allEntries.Count == 0)
+        {
+            MessageBox.Show(Window.GetWindow(this), "Danh sách máy ảo hiện đang trống.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var parentWindow = Window.GetWindow(this);
+        var confirm = MessageBox.Show(parentWindow,
+            $"Bạn có chắc chắn muốn XÓA TOÀN BỘ {_allEntries.Count} máy ảo hiện tại không?\n\nThao tác này sẽ dọn sạch danh sách để bạn có thể import lại từ đầu.",
+            "Xác nhận xóa tất cả", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+        if (confirm == MessageBoxResult.Yes)
+        {
+            _allEntries.Clear();
+            _vmService.ClearAll();
+            ApplyFilter();
+            MessageBox.Show(parentWindow, "Đã xóa toàn bộ danh sách máy ảo thành công.", "Hoàn tất", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
     private async void BtnToolbarPlay_Click(object sender, RoutedEventArgs e)
     {
         var selected = GridVms.SelectedItem as VirtualMachineEntry ?? _displayEntries.FirstOrDefault();

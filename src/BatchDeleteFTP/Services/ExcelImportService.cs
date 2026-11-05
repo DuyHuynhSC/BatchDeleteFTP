@@ -233,6 +233,12 @@ public class ExcelImportService
                 entry.ExpirationDate = "Vô hạn";
             }
 
+            // Nếu file Excel không có cột No hoặc No bị trống, tự động gán theo số thứ tự dòng
+            if (string.IsNullOrWhiteSpace(entry.No))
+            {
+                entry.No = (result.Entries.Count + 1).ToString();
+            }
+
             // Dòng được xem là hợp lệ nếu có ít nhất IP hoặc Tên máy
             if (!string.IsNullOrWhiteSpace(entry.Ip) || !string.IsNullOrWhiteSpace(entry.MachineName))
             {
@@ -392,7 +398,12 @@ public class ExcelImportService
                 }
                 else if (conflictAction == ExcelImportConflictAction.OverwriteExisting)
                 {
+                    // Luôn ghi đè số thứ tự từ file Excel
                     existing.No = string.IsNullOrWhiteSpace(incoming.No) ? existing.No : incoming.No;
+                    if (!string.IsNullOrWhiteSpace(incoming.No))
+                    {
+                        existing.No = incoming.No;
+                    }
                     existing.MachineName = string.IsNullOrWhiteSpace(incoming.MachineName) ? existing.MachineName : incoming.MachineName;
                     existing.DomainOrWorkgroup = string.IsNullOrWhiteSpace(incoming.DomainOrWorkgroup) ? existing.DomainOrWorkgroup : incoming.DomainOrWorkgroup;
                     existing.Os = string.IsNullOrWhiteSpace(incoming.Os) ? existing.Os : incoming.Os;
