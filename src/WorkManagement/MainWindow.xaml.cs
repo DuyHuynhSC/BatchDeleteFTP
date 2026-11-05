@@ -76,7 +76,34 @@ public partial class MainWindow : Window
         RefreshProfileComboBox(_currentSettings.SelectedProfileName);
         UpdateScanProfilesButtonLabel();
         var initialTheme = ThemeService.ParseTheme(_currentSettings.ThemeName, _currentSettings.IsDarkTheme);
-        ApplyTheme(initialTheme);        
+        ApplyTheme(initialTheme);
+
+        FtpConfigViewControl.Initialize(_currentSettings, _configService, _ftpService, _logger);
+        FtpConfigViewControl.SettingsSaved += FtpConfigViewControl_SettingsSaved;
+
+        EmailConfigViewControl.Initialize(_currentSettings, _emailService, () => _candidates);
+        EmailConfigViewControl.SettingsSaved += EmailConfigViewControl_SettingsSaved;
+    }
+
+    private void FtpConfigViewControl_SettingsSaved(object? sender, EventArgs e)
+    {
+        RefreshProfileComboBox(_currentSettings.SelectedProfileName);
+        _selectedScanProfileNames.RemoveAll(name => !_currentSettings.Profiles.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)));
+        if (_selectedScanProfileNames.Count == 0 && !string.IsNullOrWhiteSpace(_currentSettings.SelectedProfileName))
+        {
+            _selectedScanProfileNames.Add(_currentSettings.SelectedProfileName);
+        }
+        _currentSettings.SelectedScanProfileNames = new List<string>(_selectedScanProfileNames);
+        _configService.Save(_currentSettings);
+        UpdateScanProfilesButtonLabel();
+        LoadSettingsToUi(_currentSettings);
+        _logger.Info($"Đã cập nhật và đồng bộ cấu hình Profile '{_currentSettings.SelectedProfileName}' sang giao diện FTP Cleaner.");
+    }
+
+    private void EmailConfigViewControl_SettingsSaved(object? sender, EventArgs e)
+    {
+        _configService.Save(_currentSettings);
+        _logger.Info($"Đã lưu cấu hình Email chung cho tất cả Profile (SMTP: {_currentSettings.SmtpHost}:{_currentSettings.SmtpPort}, Số email nhận: {_currentSettings.RecipientEmails.Count}).");
     }
 
     public void SetDarkTheme(bool isDark) =>
@@ -172,26 +199,9 @@ public partial class MainWindow : Window
         return _currentSettings;
     }
 
-    private void BtnOpenConnectionSettings_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new Views.ConnectionSettingsWindow(_currentSettings, _configService, _ftpService, _logger)
-        {
-            Owner = this
-        };
-
-        if (dialog.ShowDialog() == true)
-        {
-            RefreshProfileComboBox(_currentSettings.SelectedProfileName);
-            _selectedScanProfileNames.RemoveAll(name => !_currentSettings.Profiles.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)));
-            if (_selectedScanProfileNames.Count == 0 && !string.IsNullOrWhiteSpace(_currentSettings.SelectedProfileName))
-            {
-                _selectedScanProfileNames.Add(_currentSettings.SelectedProfileName);
-            }
-            _currentSettings.SelectedScanProfileNames = new List<string>(_selectedScanProfileNames);
-            _configService.Save(_currentSettings);
-            UpdateScanProfilesButtonLabel();
-            _logger.Info($"Đã cập nhật và áp dụng cấu hình Profile '{_currentSettings.SelectedProfileName}'.");
-        }
+    private void BtnOpenConnectionSettings_Click(object sender, RoutedEventArgs e)
+    {
+        SwitchToView(AppNavView.FtpConfig);
     }
 
     private async void CboProfiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -402,19 +412,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private void BtnEmailSettings_Click(object sender, RoutedEventArgs e)
-    {
-        _currentSettings = ReadSettingsFromUi();
-        var dialog = new EmailSettingsWindow(_currentSettings, _emailService, _candidates)
-        {
-            Owner = this
-        };
-
-        if (dialog.ShowDialog() == true)
-        {
-            _configService.Save(_currentSettings);
-            _logger.Info($"Đã lưu cấu hình Email chung cho tất cả Profile (SMTP: {_currentSettings.SmtpHost}:{_currentSettings.SmtpPort}, Số email nhận: {_currentSettings.RecipientEmails.Count}).");
-        }
+    private void BtnEmailSettings_Click(object sender, RoutedEventArgs e)
+    {
+        SwitchToView(AppNavView.EmailConfig);
     }
 
     private async void BtnSendPreviewEmail_Click(object sender, RoutedEventArgs e)
@@ -1063,46 +1063,82 @@ public partial class MainWindow : Window
 
     #region Navigation Dock Menu Handlers
 
+    public enum AppNavView
+    {
+        FtpCleaner,
+        VmManager,
+        TaskScheduler,
+        FtpConfig,
+        EmailConfig
+    }
+
     private void NavBtnFtp_Click(object sender, RoutedEventArgs e)
     {
-        SwitchToView(isFtp: true);
+        SwitchToView(AppNavView.FtpCleaner);
     }
 
     private void NavBtnVm_Click(object sender, RoutedEventArgs e)
     {
-        SwitchToView(isFtp: false);
+        SwitchToView(AppNavView.VmManager);
     }
 
-    private void SwitchToView(bool isFtp)
+    private void NavBtnScheduler_Click(object sender, RoutedEventArgs e)
     {
-        if (isFtp)
-        {
-            ViewContainerFtp.Visibility = Visibility.Visible;
-            ViewContainerVm.Visibility = Visibility.Collapsed;
-
-            TxtCurrentPageTitle.Text = "Quản Lý File & Tự Động Xóa FTP";
-            TxtCurrentPageSub.Text = "Quét, sao lưu và dọn dẹp file tự động theo ngày trên máy chủ FTP";
-            IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.FolderSyncOutline;
-
-            NavBtnFtp.Style = (Style)FindResource("AppNavButtonActiveStyle");
-            NavBtnVm.Style = (Style)FindResource("AppNavButtonInactiveStyle");
-        }
-        else
-        {
-            ViewContainerFtp.Visibility = Visibility.Collapsed;
-            ViewContainerVm.Visibility = Visibility.Visible;
-
-            TxtCurrentPageTitle.Text = "Quản Lý Danh Sách Máy Ảo (VMs & RDP)";
-            TxtCurrentPageSub.Text = "Quản lý thông tin máy chủ, tài khoản, kết nối Remote Desktop một chạm và Oracle DB";
-            IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.DesktopTowerMonitor;
-
-            NavBtnFtp.Style = (Style)FindResource("AppNavButtonInactiveStyle");
-            NavBtnVm.Style = (Style)FindResource("AppNavButtonActiveStyle");
-
-            VmManagerControl.LoadData();
-        }
+        SwitchToView(AppNavView.TaskScheduler);
     }
 
+    private void SwitchToView(AppNavView targetView)
+    {
+        ViewContainerFtp.Visibility = targetView == AppNavView.FtpCleaner ? Visibility.Visible : Visibility.Collapsed;
+        ViewContainerVm.Visibility = targetView == AppNavView.VmManager ? Visibility.Visible : Visibility.Collapsed;
+        ViewContainerScheduler.Visibility = targetView == AppNavView.TaskScheduler ? Visibility.Visible : Visibility.Collapsed;
+        ViewContainerFtpConfig.Visibility = targetView == AppNavView.FtpConfig ? Visibility.Visible : Visibility.Collapsed;
+        ViewContainerEmailConfig.Visibility = targetView == AppNavView.EmailConfig ? Visibility.Visible : Visibility.Collapsed;
+
+        NavBtnFtp.Style = (Style)FindResource(targetView == AppNavView.FtpCleaner ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
+        NavBtnVm.Style = (Style)FindResource(targetView == AppNavView.VmManager ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
+        NavBtnScheduler.Style = (Style)FindResource(targetView == AppNavView.TaskScheduler ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
+        BtnOpenConnectionSettings.Style = (Style)FindResource(targetView == AppNavView.FtpConfig ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
+        BtnEmailSettings.Style = (Style)FindResource(targetView == AppNavView.EmailConfig ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
+
+        switch (targetView)
+        {
+            case AppNavView.FtpCleaner:
+                TxtCurrentPageTitle.Text = "Quản Lý File & Tự Động Xóa FTP";
+                TxtCurrentPageSub.Text = "Quét, sao lưu và dọn dẹp file tự động theo ngày trên máy chủ FTP";
+                IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.FolderSyncOutline;
+                break;
+
+            case AppNavView.VmManager:
+                TxtCurrentPageTitle.Text = "Quản Lý Danh Sách Máy Ảo (VMs & RDP)";
+                TxtCurrentPageSub.Text = "Quản lý thông tin máy chủ, tài khoản, kết nối Remote Desktop một chạm và Oracle DB";
+                IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.DesktopTowerMonitor;
+                VmManagerControl.LoadData();
+                break;
+
+            case AppNavView.TaskScheduler:
+                TxtCurrentPageTitle.Text = "Cấu Hình Lịch Chạy Windows Task Scheduler";
+                TxtCurrentPageSub.Text = "Tự động quét, backup và dọn dẹp file FTP định kỳ ở chế độ Console ngầm";
+                IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.CalendarClock;
+                SchedulerViewControl.UpdateCommandPreview();
+                break;
+
+            case AppNavView.FtpConfig:
+                TxtCurrentPageTitle.Text = "Cấu Hình Kết Nối FTP, Proxy & Sao Lưu (Backup)";
+                TxtCurrentPageSub.Text = "Thiết lập kết nối máy chủ FTP/FTPS, proxy mạng và thư mục tự động sao lưu dữ liệu";
+                IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.TuneVariant;
+                FtpConfigViewControl.LoadSettingsToUi(_currentSettings);
+                FtpConfigViewControl.RefreshProfileComboBox(_currentSettings.SelectedProfileName);
+                break;
+
+            case AppNavView.EmailConfig:
+                TxtCurrentPageTitle.Text = "Cấu Hình Gửi Email Báo Cáo Xem Trước";
+                TxtCurrentPageSub.Text = "Thiết lập Outgoing Server (SMTP - Port 25/587) và danh sách email thành viên nhận báo cáo";
+                IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.EmailFastOutline;
+                EmailConfigViewControl.LoadFromSettings();
+                break;
+        }
+    }
 
     private bool _isDockExpanded = true;
 
@@ -1114,12 +1150,6 @@ public partial class MainWindow : Window
         string tip = _isDockExpanded ? "Ẩn / Thu gọn Menu Dock" : "Mở / Hiện Menu Dock";
         if (BtnToggleDock != null) BtnToggleDock.ToolTip = tip;
         if (BtnCollapseDock != null) BtnCollapseDock.ToolTip = tip;
-    }
-
-    private void NavBtnScheduler_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new TaskSchedulerConfigDialog { Owner = this };
-        dialog.ShowDialog();
     }
 
     #endregion
