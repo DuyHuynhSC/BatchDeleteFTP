@@ -15,6 +15,18 @@ public enum ExcelImportConflictAction
     AppendAll
 }
 
+public class ExcelSheetData
+{
+    public string SheetName { get; set; } = string.Empty;
+    public List<VirtualMachineEntry> Entries { get; set; } = new();
+    public int Score { get; set; }
+    public bool IsRecommended { get; set; }
+
+    public string DisplayText => IsRecommended
+        ? $"{SheetName} ({Entries.Count} máy) [Khuyến nghị]"
+        : $"{SheetName} ({Entries.Count} dòng)";
+}
+
 public class ExcelImportResult
 {
     public int TotalRead { get; set; }
@@ -27,7 +39,13 @@ public class ExcelImportResult
 
 public class ExcelImportService
 {
-    public Task<List<VirtualMachineEntry>> ReadExcelAsync(string filePath)
+    public async Task<List<VirtualMachineEntry>> ReadExcelAsync(string filePath)
+    {
+        var sheets = await ReadSheetsFromExcelAsync(filePath);
+        return sheets.Count > 0 ? sheets[0].Entries : new List<VirtualMachineEntry>();
+    }
+
+    public Task<List<ExcelSheetData>> ReadSheetsFromExcelAsync(string filePath)
     {
         return Task.Run(() =>
         {
@@ -49,27 +67,49 @@ public class ExcelImportService
 
             if (sheetNames.Count == 0)
             {
-                sheetNames.Add(string.Empty); // Fallback query default/first sheet
+                sheetNames.Add(string.Empty);
             }
 
-            // Quét từng sheet cho đến khi tìm thấy sheet chứa dữ liệu hợp lệ
+            var sheetResults = new List<ExcelSheetData>();
+
             foreach (var sheetName in sheetNames)
             {
-                var entries = ReadEntriesFromSheet(filePath, string.IsNullOrEmpty(sheetName) ? null : sheetName);
-                if (entries.Count > 0)
+                var sheetData = ReadSheetData(filePath, string.IsNullOrEmpty(sheetName) ? null : sheetName);
+                if (sheetData.Entries.Count > 0)
                 {
-                    return entries;
+                    sheetResults.Add(sheetData);
                 }
             }
 
-            // Fallback cuối cùng: query mặc định
-            return ReadEntriesFromSheet(filePath, null);
+            // Nếu không tìm thấy bằng danh sách tên sheet, thử fallback query mặc định
+            if (sheetResults.Count == 0)
+            {
+                var fallbackData = ReadSheetData(filePath, null);
+                if (fallbackData.Entries.Count > 0)
+                {
+                    sheetResults.Add(fallbackData);
+                }
+            }
+
+            // Sắp xếp các sheet theo điểm khớp (Score) giảm dần
+            sheetResults = sheetResults.OrderByDescending(s => s.Score).ThenByDescending(s => s.Entries.Count).ToList();
+
+            if (sheetResults.Count > 0)
+            {
+                sheetResults[0].IsRecommended = true;
+            }
+
+            return sheetResults;
         });
     }
 
-    private List<VirtualMachineEntry> ReadEntriesFromSheet(string filePath, string? sheetName)
+    private ExcelSheetData ReadSheetData(string filePath, string? sheetName)
     {
-        var list = new List<VirtualMachineEntry>();
+        var result = new ExcelSheetData
+        {
+            SheetName = string.IsNullOrWhiteSpace(sheetName) ? "Sheet1" : sheetName
+        };
+
         var rawRows = new List<IDictionary<string, object>>();
 
         try
@@ -88,32 +128,35 @@ public class ExcelImportService
         }
         catch
         {
-            return list;
+            return result;
         }
 
-        if (rawRows.Count == 0) return list;
+        if (rawRows.Count == 0) return result;
 
         int headerRowIndex = -1;
         var colMapping = new Dictionary<string, string>(); // ColumnKey (ví dụ "A", "B") -> Property Name
+        int bestScore = 0;
 
         // Quét tìm dòng tiêu đề Header (tìm trong tối đa 20 dòng đầu)
         int searchLimit = Math.Min(20, rawRows.Count);
         for (int i = 0; i < searchLimit; i++)
         {
             var row = rawRows[i];
-            var detected = DetectHeaderRow(row);
-            if (detected.Count >= 2) // Chứa ít nhất 2 cột nhận diện hợp lệ (ví dụ IP, Tên máy...)
+            var (mapping, score) = DetectHeaderRow(row);
+            if (score > bestScore && mapping.Count >= 2)
             {
+                bestScore = score;
                 headerRowIndex = i;
-                colMapping = detected;
-                break;
+                colMapping = mapping;
             }
         }
 
         if (headerRowIndex == -1 || colMapping.Count == 0)
         {
-            return list;
+            return result;
         }
+
+        result.Score = bestScore;
 
         // Đọc tất cả các dòng dữ liệu nằm sau dòng Header
         for (int i = headerRowIndex + 1; i < rawRows.Count; i++)
@@ -193,16 +236,17 @@ public class ExcelImportService
             // Dòng được xem là hợp lệ nếu có ít nhất IP hoặc Tên máy
             if (!string.IsNullOrWhiteSpace(entry.Ip) || !string.IsNullOrWhiteSpace(entry.MachineName))
             {
-                list.Add(entry);
+                result.Entries.Add(entry);
             }
         }
 
-        return list;
+        return result;
     }
 
-    private static Dictionary<string, string> DetectHeaderRow(IDictionary<string, object> row)
+    private static (Dictionary<string, string> Mapping, int Score) DetectHeaderRow(IDictionary<string, object> row)
     {
         var mapping = new Dictionary<string, string>();
+        int score = 0;
 
         foreach (var kv in row)
         {
@@ -211,36 +255,103 @@ public class ExcelImportService
             if (string.IsNullOrWhiteSpace(text)) continue;
 
             string normalized = NormalizeKey(text);
+            string[] words = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (MatchAny(normalized, "no", "stt", "id"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.No);
-            else if (MatchAny(normalized, "ip", "dia chi ip", "ip address"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.Ip);
-            else if (MatchAny(normalized, "ten may", "machine name", "hostname", "host name", "ten server", "server name", "machine"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.MachineName);
-            else if (MatchAny(normalized, "domain workgroup", "domain", "workgroup", "domainworkgroup"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.DomainOrWorkgroup);
-            else if (MatchAny(normalized, "os", "he dieu hanh", "operating system"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.Os);
-            else if (MatchAny(normalized, "user", "username", "tai khoan", "nguoi dung"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.Username);
-            else if (MatchAny(normalized, "p", "password", "pass", "mat khau"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.Password);
-            else if (MatchAny(normalized, "tns", "tns name"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.Tns);
-            else if (MatchAny(normalized, "database name", "database", "db name", "ten db", "dbname"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.DatabaseName);
-            else if (MatchAny(normalized, "version oracle", "oracle version", "phien ban oracle", "version oracl"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.OracleVersion);
-            else if (MatchAny(normalized, "nguoi kiem tra", "nguoi kiem tra quan ly", "tester", "quan tri", "nguoi kt", "nguoi kiem t"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.Tester);
-            else if (MatchAny(normalized, "ghi chu", "note", "notes", "mo ta"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.Notes);
-            else if (MatchAny(normalized, "ngay het han", "het han", "expire", "expiration date", "expired date"))
-                mapping[kv.Key] = nameof(VirtualMachineEntry.ExpirationDate);
+            string? prop = MatchProperty(normalized, words);
+            if (prop != null && !mapping.ContainsValue(prop))
+            {
+                mapping[kv.Key] = prop;
+
+                // Tính điểm chất lượng nhận diện của Sheet
+                switch (prop)
+                {
+                    case nameof(VirtualMachineEntry.Ip):
+                        score += 30;
+                        break;
+                    case nameof(VirtualMachineEntry.MachineName):
+                        score += 25;
+                        break;
+                    case nameof(VirtualMachineEntry.Os):
+                        score += 15;
+                        break;
+                    case nameof(VirtualMachineEntry.DomainOrWorkgroup):
+                        score += 10;
+                        break;
+                    case nameof(VirtualMachineEntry.Username):
+                        score += 10;
+                        break;
+                    case nameof(VirtualMachineEntry.Password):
+                        score += 10;
+                        break;
+                    default:
+                        score += 5;
+                        break;
+                }
+            }
         }
 
-        return mapping;
+        return (mapping, score);
+    }
+
+    private static string? MatchProperty(string norm, string[] words)
+    {
+        // NO / STT: so khớp chính xác
+        if (norm == "no" || norm == "stt" || norm == "id" || norm == "no." || words.Contains("stt"))
+            return nameof(VirtualMachineEntry.No);
+
+        // IP: phải là 'ip', 'dia chi ip', 'ip address' hoặc từ 'ip' riêng biệt (tránh Description, Equipment, Equipment...)
+        if (norm == "ip" || norm == "dia chi ip" || norm == "ip address" || words.Contains("ip"))
+            return nameof(VirtualMachineEntry.Ip);
+
+        // TÊN MÁY
+        if (norm == "ten may" || norm == "machine name" || norm == "hostname" || norm == "host name" ||
+            norm == "ten server" || norm == "server name" || norm == "machine" ||
+            norm.Contains("ten may") || norm.Contains("machine name"))
+            return nameof(VirtualMachineEntry.MachineName);
+
+        // DOMAIN / WORKGROUP
+        if (norm.Contains("domain") || norm.Contains("workgroup"))
+            return nameof(VirtualMachineEntry.DomainOrWorkgroup);
+
+        // OS / HỆ ĐIỀU HÀNH: so khớp chính xác hoặc theo từ
+        if (norm == "os" || norm == "he dieu hanh" || norm == "operating system" || words.Contains("os"))
+            return nameof(VirtualMachineEntry.Os);
+
+        // USER / USERNAME / TÀI KHOẢN
+        if (norm == "user" || norm == "username" || norm == "tai khoan" || norm == "nguoi dung" || words.Contains("user"))
+            return nameof(VirtualMachineEntry.Username);
+
+        // PASSWORD / P: phải là 'p' chính xác hoặc từ pass/password (tránh bắt nhầm chữ cái 'p' trong Description, Dept, Group)
+        if (norm == "p" || norm == "pass" || norm == "password" || norm == "mat khau" ||
+            words.Contains("pass") || words.Contains("password"))
+            return nameof(VirtualMachineEntry.Password);
+
+        // TNS: so khớp chính xác hoặc từ
+        if (norm == "tns" || norm == "tns name" || words.Contains("tns"))
+            return nameof(VirtualMachineEntry.Tns);
+
+        // DATABASE NAME: tránh nhầm với Database Oracle Version
+        if (norm == "database name" || norm == "db name" || norm == "ten db" || norm == "database" || norm == "db" || norm == "dbname" ||
+            norm.StartsWith("database name") || norm.StartsWith("db name"))
+            return nameof(VirtualMachineEntry.DatabaseName);
+
+        // ORACLE VERSION
+        if (norm.Contains("version") || norm.Contains("phien ban oracle") || norm.Contains("version oracl"))
+            return nameof(VirtualMachineEntry.OracleVersion);
+
+        // NGƯỜI KIỂM TRA
+        if (norm.Contains("nguoi kiem") || norm.Contains("tester") || norm.Contains("quan tri") || norm.Contains("nguoi kt"))
+            return nameof(VirtualMachineEntry.Tester);
+
+        // GHI CHÚ
+        if (norm.Contains("ghi chu") || norm == "note" || norm == "notes" || norm == "mo ta")
+            return nameof(VirtualMachineEntry.Notes);
+
+        // NGÀY HẾT HẠN
+        if (norm.Contains("het han") || norm.Contains("expire") || norm.Contains("expiration"))
+            return nameof(VirtualMachineEntry.ExpirationDate);
+
+        return null;
     }
 
     private static string FormatCellValue(object val)
@@ -254,7 +365,7 @@ public class ExcelImportService
 
     private static bool MatchAny(string text, params string[] patterns)
     {
-        return patterns.Any(p => text == p || text.StartsWith(p) || text.Contains(p));
+        return patterns.Any(p => text == p || text.StartsWith(p));
     }
 
     public ExcelImportResult MergeIntoList(

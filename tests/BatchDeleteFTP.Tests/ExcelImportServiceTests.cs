@@ -227,4 +227,82 @@ public class ExcelImportServiceTests
             if (File.Exists(tempXlsx)) File.Delete(tempXlsx);
         }
     }
+
+    [Fact]
+    public async Task ReadSheetsFromExcel_WhenDbUsersSheetIsFirst_PrioritizesRemoteVmsSheet()
+    {
+        string tempXlsx = Path.Combine(Path.GetTempPath(), $"multisheet_db_first_{Guid.NewGuid()}.xlsx");
+        try
+        {
+            // Sheet 1: DB Users (giống trường hợp lỗi thực tế của người dùng)
+            var dbUsersSheet = new List<Dictionary<string, object>>
+            {
+                new()
+                {
+                    { "A", "STT" }, { "B", "Đánh dấu" }, { "C", "Tên máy" }, { "D", "User" },
+                    { "E", "Password" }, { "F", "TNS" }, { "G", "Ghi chú" }
+                },
+                new()
+                {
+                    { "A", "" }, { "B", "*" }, { "C", "FJN-TEST-2" }, { "D", "TSH_RPS" },
+                    { "E", "ORCL10-1" }, { "F", "ORCL10" }, { "G", "Schema test" }
+                }
+            };
+
+            // Sheet 2: Danh sách máy ảo Remote đầy đủ cột
+            var remoteVmsSheet = new List<Dictionary<string, object>>
+            {
+                new()
+                {
+                    { "A", "No" }, { "B", "ip" }, { "C", "Tên máy" }, { "D", "Domain/Workgroup" },
+                    { "E", "OS" }, { "F", "user" }, { "G", "P" }, { "H", "TNS" },
+                    { "I", "Database Name" }, { "J", "Version Oracle" }, { "K", "Người kiểm tra" },
+                    { "L", "Ghi chú" }, { "M", "Ngày hết hạn" }
+                },
+                new()
+                {
+                    { "A", "1" }, { "B", "172.16.7.31" }, { "C", "TECH-6984E35E4E" }, { "D", "WORKGROUP" },
+                    { "E", "Windows 2000 Server" }, { "F", "sc" }, { "G", "Xyz09876" }, { "H", "ORCL8I" },
+                    { "I", "ORCL8I.WORLD" }, { "J", "8.1.7" }, { "K", "Hùng" },
+                    { "L", "Oracle Server 8i" }, { "M", "Vô hạn" }
+                }
+            };
+
+            var workbook = new Dictionary<string, object>
+            {
+                { "DB_Users", dbUsersSheet },
+                { "Remote_VMs", remoteVmsSheet }
+            };
+
+            MiniExcelLibs.MiniExcel.SaveAs(tempXlsx, workbook, overwriteFile: true);
+
+            var service = new ExcelImportService();
+            var sheets = await service.ReadSheetsFromExcelAsync(tempXlsx);
+
+            // Phải đọc được cả 2 sheet
+            Assert.Equal(2, sheets.Count);
+
+            // Sheet Remote_VMs phải có điểm cao nhất và được chọn làm đề xuất (IsRecommended = true)
+            var topSheet = sheets[0];
+            Assert.Equal("Remote_VMs", topSheet.SheetName);
+            Assert.True(topSheet.IsRecommended);
+            Assert.Single(topSheet.Entries);
+
+            var entry = topSheet.Entries[0];
+            Assert.Equal("172.16.7.31", entry.Ip);
+            Assert.Equal("TECH-6984E35E4E", entry.MachineName);
+            Assert.Equal("WORKGROUP", entry.DomainOrWorkgroup);
+            Assert.Equal("sc", entry.Username);
+            Assert.Equal("Xyz09876", entry.Password);
+
+            // ReadExcelAsync cũng phải tự động trả về sheet Remote_VMs
+            var defaultEntries = await service.ReadExcelAsync(tempXlsx);
+            Assert.Single(defaultEntries);
+            Assert.Equal("172.16.7.31", defaultEntries[0].Ip);
+        }
+        finally
+        {
+            if (File.Exists(tempXlsx)) File.Delete(tempXlsx);
+        }
+    }
 }

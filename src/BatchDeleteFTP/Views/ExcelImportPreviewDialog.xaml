@@ -29,18 +29,30 @@
             </DockPanel>
         </Border>
 
-        <!-- OPTIONS BAR -->
+        <!-- OPTIONS & SHEET SELECTOR BAR -->
         <Border Grid.Row="1" Style="{StaticResource AppSubtleToolbarBorderStyle}" Margin="14,10,14,6" Padding="12,8">
-            <DockPanel>
-                <TextBlock Text="Khi phát hiện IP / Tên máy đã tồn tại:" VerticalAlignment="Center" FontWeight="SemiBold"
-                           Foreground="{DynamicResource AppPrimaryTextBrush}" Margin="0,0,16,0"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <RadioButton x:Name="RbOverwrite" Content="Ghi đè (Cập nhật)" IsChecked="True" Margin="0,0,16,0"
+            <DockPanel LastChildFill="True">
+                <!-- Conflict Mode (Right-aligned) -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Khi trùng IP/Tên máy:" VerticalAlignment="Center" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppPrimaryTextBrush}" Margin="0,0,12,0"/>
+                    <RadioButton x:Name="RbOverwrite" Content="Ghi đè" IsChecked="True" Margin="0,0,12,0"
                                  Foreground="{DynamicResource AppPrimaryTextBrush}"/>
-                    <RadioButton x:Name="RbSkip" Content="Bỏ qua (Chỉ thêm mới)" Margin="0,0,16,0"
+                    <RadioButton x:Name="RbSkip" Content="Bỏ qua" Margin="0,0,12,0"
                                  Foreground="{DynamicResource AppPrimaryTextBrush}"/>
                     <RadioButton x:Name="RbAppend" Content="Thêm tất cả"
                                  Foreground="{DynamicResource AppPrimaryTextBrush}"/>
+                </StackPanel>
+
+                <!-- Sheet Selector (Left-aligned) -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <materialDesign:PackIcon Kind="TableMultiple" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,6,0"
+                                             Foreground="{DynamicResource AppPrimaryBrush}"/>
+                    <TextBlock Text="Chọn Sheet:" VerticalAlignment="Center" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppPrimaryTextBrush}" Margin="0,0,8,0"/>
+                    <ComboBox x:Name="CboSheets" Width="300" Height="32" VerticalAlignment="Center"
+                              DisplayMemberPath="DisplayText" SelectionChanged="CboSheets_SelectionChanged"
+                              Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -55,18 +67,18 @@
                       HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="STT" Binding="{Binding No}" Width="50"/>
-                    <DataGridTextColumn Header="Địa Chỉ IP" Binding="{Binding Ip}" Width="120" FontWeight="SemiBold"/>
-                    <DataGridTextColumn Header="Tên Máy" Binding="{Binding MachineName}" Width="130"/>
-                    <DataGridTextColumn Header="Domain/Workgroup" Binding="{Binding DomainOrWorkgroup}" Width="120"/>
-                    <DataGridTextColumn Header="Hệ Điều Hành (OS)" Binding="{Binding Os}" Width="150"/>
-                    <DataGridTextColumn Header="User" Binding="{Binding Username}" Width="90"/>
-                    <DataGridTextColumn Header="Password" Binding="{Binding Password}" Width="90"/>
-                    <DataGridTextColumn Header="TNS" Binding="{Binding Tns}" Width="90"/>
-                    <DataGridTextColumn Header="Database" Binding="{Binding DatabaseName}" Width="90"/>
-                    <DataGridTextColumn Header="Oracle Ver" Binding="{Binding OracleVersion}" Width="90"/>
-                    <DataGridTextColumn Header="Người KT" Binding="{Binding Tester}" Width="80"/>
-                    <DataGridTextColumn Header="Ghi Chú" Binding="{Binding Notes}" Width="140"/>
-                    <DataGridTextColumn Header="Ngày Hết Hạn" Binding="{Binding ExpirationDate}" Width="100"/>
+                    <DataGridTextColumn Header="Địa Chỉ IP" Binding="{Binding Ip}" Width="130" FontWeight="SemiBold"/>
+                    <DataGridTextColumn Header="Tên Máy" Binding="{Binding MachineName}" Width="140"/>
+                    <DataGridTextColumn Header="Domain/Workgroup" Binding="{Binding DomainOrWorkgroup}" Width="130"/>
+                    <DataGridTextColumn Header="Hệ Điều Hành (OS)" Binding="{Binding Os}" Width="180"/>
+                    <DataGridTextColumn Header="User" Binding="{Binding Username}" Width="110"/>
+                    <DataGridTextColumn Header="Password" Binding="{Binding Password}" Width="100"/>
+                    <DataGridTextColumn Header="TNS" Binding="{Binding Tns}" Width="110"/>
+                    <DataGridTextColumn Header="Database" Binding="{Binding DatabaseName}" Width="120"/>
+                    <DataGridTextColumn Header="Oracle Ver" Binding="{Binding OracleVersion}" Width="100"/>
+                    <DataGridTextColumn Header="Người KT" Binding="{Binding Tester}" Width="90"/>
+                    <DataGridTextColumn Header="Ghi Chú" Binding="{Binding Notes}" Width="180"/>
+                    <DataGridTextColumn Header="Ngày Hết Hạn" Binding="{Binding ExpirationDate}" Width="110"/>
                 </DataGrid.Columns>
             </DataGrid>
         </materialDesign:Card>

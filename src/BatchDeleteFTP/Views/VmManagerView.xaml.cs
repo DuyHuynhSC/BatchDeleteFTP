@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -261,17 +261,17 @@ public partial class VmManagerView : UserControl
 
         try
         {
-            var imported = await _excelService.ReadExcelAsync(ofd.FileName);
-            if (imported.Count == 0)
+            var sheets = await _excelService.ReadSheetsFromExcelAsync(ofd.FileName);
+            if (sheets.Count == 0 || sheets.All(s => s.Entries.Count == 0))
             {
                 MessageBox.Show(parentWindow, "Không tìm thấy dữ liệu hợp lệ trong file Excel đã chọn.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            var previewDialog = new ExcelImportPreviewDialog(ofd.FileName, imported) { Owner = parentWindow };
-            if (previewDialog.ShowDialog() == true)
+            var previewDialog = new ExcelImportPreviewDialog(ofd.FileName, sheets) { Owner = parentWindow };
+            if (previewDialog.ShowDialog() == true && previewDialog.ImportedList.Count > 0)
             {
-                var result = _excelService.MergeIntoList(_allEntries, imported, previewDialog.SelectedAction);
+                var result = _excelService.MergeIntoList(_allEntries, previewDialog.ImportedList, previewDialog.SelectedAction);
                 _vmService.SaveAll(_allEntries);
                 ApplyFilter();
 
