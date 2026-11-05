@@ -14,7 +14,7 @@ public class RemoteDesktopService
         _logger = logger ?? new AppLogger();
     }
 
-    public static string FormatUsername(string username, string? domainOrWorkgroup)
+    public static string FormatUsername(string username, string? machineName)
     {
         if (string.IsNullOrWhiteSpace(username)) return string.Empty;
 
@@ -24,10 +24,9 @@ public class RemoteDesktopService
             return username.Trim();
         }
 
-        if (!string.IsNullOrWhiteSpace(domainOrWorkgroup) &&
-            !domainOrWorkgroup.Equals("WORKGROUP", StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(machineName))
         {
-            return $"{domainOrWorkgroup.Trim()}\\{username.Trim()}";
+            return $"{machineName.Trim()}\\{username.Trim()}";
         }
 
         return username.Trim();
@@ -44,7 +43,8 @@ public class RemoteDesktopService
         try
         {
             string ip = vm.Ip.Trim();
-            string user = FormatUsername(vm.Username, vm.DomainOrWorkgroup);
+            // Lấy [Tên máy] + "\" + [User] theo yêu cầu
+            string user = FormatUsername(vm.Username, vm.MachineName);
             string password = vm.Password ?? string.Empty;
 
             if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(password))
@@ -62,7 +62,7 @@ public class RemoteDesktopService
                 UseShellExecute = true
             };
             Process.Start(psi);
-            _logger.Info($"Đã khởi động Remote Desktop tới {ip}.");
+            _logger.Info($"Đã khởi động Remote Desktop tới {ip} với user {user}.");
             return true;
         }
         catch (Exception ex)

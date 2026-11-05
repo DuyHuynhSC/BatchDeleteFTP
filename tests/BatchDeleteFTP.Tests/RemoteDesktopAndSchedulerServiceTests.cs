@@ -6,14 +6,14 @@ namespace BatchDeleteFTP.Tests;
 public class RemoteDesktopAndSchedulerServiceTests
 {
     [Theory]
-    [InlineData("Administrator", "FUJINET.vn", "FUJINET.vn\\Administrator")]
-    [InlineData("User01", "WORKGROUP", "User01")]
+    [InlineData("Administrator", "D2-SVR15-6016", "D2-SVR15-6016\\Administrator")]
+    [InlineData("User01", "D2-VM-7023", "D2-VM-7023\\User01")]
     [InlineData("User01", "", "User01")]
-    [InlineData("CORP\\Admin", "FUJINET.vn", "CORP\\Admin")]
-    [InlineData("admin@domain.com", "FUJINET.vn", "admin@domain.com")]
-    public void FormatUsername_FormatsProperlyForDomainAndWorkgroup(string user, string domain, string expected)
+    [InlineData("D2-SVR\\Admin", "D2-SVR", "D2-SVR\\Admin")]
+    [InlineData("admin@domain.com", "D2-SVR", "admin@domain.com")]
+    public void FormatUsername_FormatsProperlyForMachineNameAndUser(string user, string machineName, string expected)
     {
-        string actual = RemoteDesktopService.FormatUsername(user, domain);
+        string actual = RemoteDesktopService.FormatUsername(user, machineName);
         Assert.Equal(expected, actual);
     }
 
