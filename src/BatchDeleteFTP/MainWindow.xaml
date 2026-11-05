@@ -1,4 +1,4 @@
-<Window x:Class="BatchDeleteFTP.MainWindow"
+﻿<Window x:Class="BatchDeleteFTP.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -59,7 +59,7 @@
                         </Button>
 
                         <!-- NAV 2: VIRTUAL MACHINES & RDP -->
-                        <Button x:Name="NavBtnVm" Style="{StaticResource AppOutlinedButtonStyle}"
+                        <Button x:Name="NavBtnVm" Style="{StaticResource AppNavButtonInactiveStyle}"
                                 Height="40" Margin="0,0,0,6" HorizontalContentAlignment="Left" Padding="12,0"
                                 Click="NavBtnVm_Click">
                             <StackPanel Orientation="Horizontal">
@@ -69,7 +69,7 @@
                         </Button>
 
                         <!-- NAV 3: TASK SCHEDULER -->
-                        <Button x:Name="NavBtnScheduler" Style="{StaticResource AppOutlinedButtonStyle}"
+                        <Button x:Name="NavBtnScheduler" Style="{StaticResource AppNavButtonInactiveStyle}"
                                 Height="40" Margin="0,0,0,14" HorizontalContentAlignment="Left" Padding="12,0"
                                 Click="NavBtnScheduler_Click">
                             <StackPanel Orientation="Horizontal">
@@ -84,7 +84,7 @@
                                    Foreground="{DynamicResource AppHeaderForegroundBrush}" Opacity="0.7"/>
 
                         <!-- CONFIG FTP BUTTON -->
-                        <Button x:Name="BtnOpenConnectionSettings" Style="{StaticResource AppOutlinedButtonStyle}"
+                        <Button x:Name="BtnOpenConnectionSettings" Style="{StaticResource AppNavButtonInactiveStyle}"
                                 Height="36" Margin="0,0,0,6" HorizontalContentAlignment="Left" Padding="12,0"
                                 Click="BtnOpenConnectionSettings_Click"
                                 ToolTip="Mở cửa sổ Cấu hình Chi tiết Kết nối FTP, Proxy &amp; Sao lưu">
@@ -95,7 +95,7 @@
                         </Button>
 
                         <!-- CONFIG EMAIL BUTTON -->
-                        <Button x:Name="BtnEmailSettings" Style="{StaticResource AppOutlinedButtonStyle}"
+                        <Button x:Name="BtnEmailSettings" Style="{StaticResource AppNavButtonInactiveStyle}"
                                 Height="36" Margin="0,0,0,6" HorizontalContentAlignment="Left" Padding="12,0"
                                 Click="BtnEmailSettings_Click"
                                 ToolTip="Cấu hình SMTP và danh sách nhiều địa chỉ Email nhận báo cáo">

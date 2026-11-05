@@ -1084,8 +1084,8 @@ public partial class MainWindow : Window
             TxtCurrentPageSub.Text = "Quét, sao lưu và dọn dẹp file tự động theo ngày trên máy chủ FTP";
             IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.FolderSyncOutline;
 
-            NavBtnFtp.Style = (Style)FindResource("AppPrimaryButtonStyle");
-            NavBtnVm.Style = (Style)FindResource("AppOutlinedButtonStyle");
+            NavBtnFtp.Style = (Style)FindResource("AppNavButtonActiveStyle");
+            NavBtnVm.Style = (Style)FindResource("AppNavButtonInactiveStyle");
         }
         else
         {
@@ -1096,8 +1096,8 @@ public partial class MainWindow : Window
             TxtCurrentPageSub.Text = "Quản lý thông tin máy chủ, tài khoản, kết nối Remote Desktop một chạm và Oracle DB";
             IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.DesktopTowerMonitor;
 
-            NavBtnFtp.Style = (Style)FindResource("AppOutlinedButtonStyle");
-            NavBtnVm.Style = (Style)FindResource("AppPrimaryButtonStyle");
+            NavBtnFtp.Style = (Style)FindResource("AppNavButtonInactiveStyle");
+            NavBtnVm.Style = (Style)FindResource("AppNavButtonActiveStyle");
 
             VmManagerControl.LoadData();
         }
