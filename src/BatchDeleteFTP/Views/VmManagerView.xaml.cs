@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -149,21 +149,38 @@ public partial class VmManagerView : UserControl
         }
     }
 
+    private async void BtnToolbarPlay_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = GridVms.SelectedItem as VirtualMachineEntry ?? _displayEntries.FirstOrDefault();
+        if (selected == null)
+        {
+            MessageBox.Show(Window.GetWindow(this), "Vui lòng chọn một máy ảo từ danh sách để kết nối Remote Desktop.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        await ConnectToVmAsync(selected);
+    }
+
     private async void BtnPlayRdp_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.DataContext is VirtualMachineEntry entry)
         {
-            if (string.IsNullOrWhiteSpace(entry.Ip))
-            {
-                MessageBox.Show(Window.GetWindow(this), "Địa chỉ IP của máy ảo này đang bị trống.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            await ConnectToVmAsync(entry);
+        }
+    }
 
-            bool success = await _rdpService.ConnectAsync(entry);
-            if (!success)
-            {
-                MessageBox.Show(Window.GetWindow(this), $"Không thể mở Remote Desktop tới {entry.Ip}.", "Lỗi RDP", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+    private async System.Threading.Tasks.Task ConnectToVmAsync(VirtualMachineEntry entry)
+    {
+        if (string.IsNullOrWhiteSpace(entry.Ip))
+        {
+            MessageBox.Show(Window.GetWindow(this), "Địa chỉ IP của máy ảo này đang bị trống.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        bool success = await _rdpService.ConnectAsync(entry);
+        if (!success)
+        {
+            MessageBox.Show(Window.GetWindow(this), $"Không thể mở Remote Desktop tới {entry.Ip}.", "Lỗi RDP", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

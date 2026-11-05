@@ -18,6 +18,16 @@
             <DockPanel LastChildFill="True">
                 <!-- Action Buttons (Left) -->
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <!-- NÚT PLAY CHÍNH TRÊN TOOLBAR -->
+                    <Button x:Name="BtnToolbarPlay" Style="{StaticResource AppSuccessButtonStyle}"
+                            Height="32" Padding="14,0" Margin="0,0,8,0" Click="BtnToolbarPlay_Click"
+                            ToolTip="Mở Remote Desktop kết nối ngay tới máy ảo đang chọn">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Play" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Play (Mở RDP)" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+
                     <Button x:Name="BtnAddVm" Style="{StaticResource AppPrimaryButtonStyle}"
                             Height="32" Padding="12,0" Margin="0,0,8,0" Click="BtnAddVm_Click"
                             ToolTip="Thêm máy ảo mới vào danh sách">
@@ -99,15 +109,18 @@
                     </Style>
                 </DataGrid.RowStyle>
                 <DataGrid.Columns>
-                    <!-- PLAY (CONNECT RDP) BUTTON -->
-                    <DataGridTemplateColumn Header="Play" Width="55">
+                    <!-- PLAY (CONNECT RDP) BUTTON - RỘNG RÃI RÕ RÀNG -->
+                    <DataGridTemplateColumn Header="Kết Nối / Play" Width="Auto" MinWidth="95">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource AppSuccessButtonStyle}"
-                                        Width="30" Height="26" Padding="0"
+                                        Height="28" Padding="10,0" Margin="2,1"
                                         Click="BtnPlayRdp_Click"
-                                        ToolTip="Kết nối Remote Desktop (Play)">
-                                    <materialDesign:PackIcon Kind="Play" Width="16" Height="16"/>
+                                        ToolTip="Mở Remote Desktop (Play)">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Play" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Play" FontWeight="Bold" FontSize="11.5" VerticalAlignment="Center"/>
+                                    </StackPanel>
                                 </Button>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -200,7 +213,7 @@
             <DockPanel>
                 <TextBlock x:Name="TxtSummary" Text="Tổng cộng: 0 máy ảo" FontWeight="SemiBold"
                            FontSize="12" Foreground="{DynamicResource AppPrimaryTextBrush}" VerticalAlignment="Center"/>
-                <TextBlock Text="Nháy đúp vào dòng để chỉnh sửa thông tin • Nhấn nút Play để mở Remote Desktop"
+                <TextBlock Text="Nháy đúp vào dòng hoặc nhấn nút Play để mở Remote Desktop"
                            HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource AppSecondaryTextBrush}"
                            VerticalAlignment="Center"/>
             </DockPanel>
