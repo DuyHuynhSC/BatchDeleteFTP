@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using WorkManagement.Models;
 using WorkManagement.Services;
@@ -25,6 +26,14 @@ public partial class VmManagerView : UserControl
     private readonly DispatcherTimer _searchDebounceTimer;
     private bool _isUpdatingSelectAllHeader;
     private string _currentSearchQuery = string.Empty;
+
+    // EXCEL-STYLE COLUMN FILTER STATE
+    private readonly Dictionary<string, HashSet<string>> _activeColumnFilters = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Button> _columnFilterButtons = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ObservableCollection<ColumnFilterItem> _filterItems = new();
+    private readonly ICollectionView _filterItemsView;
+    private string _currentFilterColumnKey = string.Empty;
+    private bool _isUpdatingFilterSelectAll;
 
     public VmManagerView()
     {
@@ -45,8 +54,11 @@ public partial class VmManagerView : UserControl
 
         _collectionView = CollectionViewSource.GetDefaultView(_displayEntries);
         _collectionView.Filter = FilterVm;
-
         GridVms.ItemsSource = _collectionView;
+
+        _filterItemsView = CollectionViewSource.GetDefaultView(_filterItems);
+        ListFilterItems.ItemsSource = _filterItemsView;
+
         LoadData();
     }
 
@@ -82,6 +94,18 @@ public partial class VmManagerView : UserControl
     private bool FilterVm(object obj)
     {
         if (obj is not VirtualMachineEntry vm) return false;
+
+        // 1. Excel-style column filters
+        foreach (var kvp in _activeColumnFilters)
+        {
+            string val = GetColumnValue(vm, kvp.Key);
+            if (!kvp.Value.Contains(val))
+            {
+                return false;
+            }
+        }
+
+        // 2. Global search box query
         if (string.IsNullOrWhiteSpace(_currentSearchQuery)) return true;
 
         var terms = _currentSearchQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -112,7 +136,17 @@ public partial class VmManagerView : UserControl
         if (TxtSummary == null) return;
         int total = _allEntries.Count;
         int visible = _collectionView?.Cast<object>().Count() ?? _displayEntries.Count;
-        TxtSummary.Text = $"Tổng cộng: {total} máy ảo (Đang hiển thị: {visible})";
+
+        string filterInfo = _activeColumnFilters.Count > 0
+            ? $" (Đang lọc {_activeColumnFilters.Count} cột)"
+            : string.Empty;
+
+        TxtSummary.Text = $"Tổng cộng: {total} máy ảo (Đang hiển thị: {visible}){filterInfo}";
+
+        if (BtnClearAllFilters != null)
+        {
+            BtnClearAllFilters.Visibility = _activeColumnFilters.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
     }
 
     public void AutoFitColumns()
@@ -122,11 +156,11 @@ public partial class VmManagerView : UserControl
         for (int i = 0; i < GridVms.Columns.Count; i++)
         {
             var col = GridVms.Columns[i];
-            string header = col.Header?.ToString() ?? string.Empty;
+            string header = GetColumnHeaderString(col);
 
             if (i == 0 || col.Header is CheckBox)
             {
-                col.Width = new DataGridLength(42);
+                col.Width = new DataGridLength(60);
             }
             else if (header == "Play")
             {
@@ -141,6 +175,17 @@ public partial class VmManagerView : UserControl
                 col.Width = new DataGridLength(1.0, DataGridLengthUnitType.Auto);
             }
         }
+    }
+
+    private static string GetColumnHeaderString(DataGridColumn col)
+    {
+        if (col.Header is string str) return str;
+        if (col.Header is Panel panel)
+        {
+            var tb = panel.Children.OfType<TextBlock>().FirstOrDefault();
+            if (tb != null) return tb.Text;
+        }
+        return col.Header?.ToString() ?? string.Empty;
     }
 
     private void BtnAutoFitColumns_Click(object sender, RoutedEventArgs e)
@@ -296,6 +341,274 @@ public partial class VmManagerView : UserControl
 
     #endregion
 
+    #region Excel-Style Column Filter Logic
+
+    private void BtnColumnFilter_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not Button btn || btn.Tag is not string colKey) return;
+
+        OpenFilterPopup(btn, colKey);
+    }
+
+    private void OpenFilterPopup(Button anchorButton, string colKey)
+    {
+        _currentFilterColumnKey = colKey;
+        _columnFilterButtons[colKey] = anchorButton;
+
+        TxtFilterColumnTitle.Text = $"Lọc Cột: {GetColumnDisplayName(colKey)}";
+
+        // Group values and counts from _allEntries
+        var groups = _allEntries
+            .GroupBy(vm => GetColumnValue(vm, colKey))
+            .OrderBy(g => string.IsNullOrWhiteSpace(g.Key) ? 1 : 0) // blank items at the end
+            .ThenBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+        bool hasFilter = _activeColumnFilters.TryGetValue(colKey, out var allowedSet);
+
+        _filterItems.Clear();
+        foreach (var g in groups)
+        {
+            string raw = g.Key;
+            string display = string.IsNullOrWhiteSpace(raw)
+                ? $"(Trống / Blanks) ({g.Count()})"
+                : $"{raw} ({g.Count()})";
+
+            bool isChecked = !hasFilter || (allowedSet != null && allowedSet.Contains(raw));
+
+            _filterItems.Add(new ColumnFilterItem
+            {
+                RawValue = raw,
+                DisplayText = display,
+                IsChecked = isChecked
+            });
+        }
+
+        TxtFilterSearch.Text = string.Empty;
+        UpdateFilterSelectAllState();
+        UpdateFilterItemCount();
+
+        FilterPopup.PlacementTarget = anchorButton;
+        FilterPopup.IsOpen = true;
+        TxtFilterSearch.Focus();
+    }
+
+    private void TxtFilterSearch_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        string q = TxtFilterSearch.Text.Trim();
+        BtnClearFilterSearch.Visibility = string.IsNullOrEmpty(q) ? Visibility.Collapsed : Visibility.Visible;
+
+        _filterItemsView.Filter = obj =>
+        {
+            if (string.IsNullOrEmpty(q)) return true;
+            if (obj is ColumnFilterItem item)
+            {
+                return item.DisplayText.Contains(q, StringComparison.OrdinalIgnoreCase);
+            }
+            return false;
+        };
+        _filterItemsView.Refresh();
+
+        UpdateFilterSelectAllState();
+        UpdateFilterItemCount();
+    }
+
+    private void BtnClearFilterSearch_Click(object sender, RoutedEventArgs e)
+    {
+        TxtFilterSearch.Text = string.Empty;
+    }
+
+    private void ChkFilterSelectAll_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingFilterSelectAll || ChkFilterSelectAll == null) return;
+
+        var visibleItems = _filterItemsView.Cast<ColumnFilterItem>().ToList();
+        bool allChecked = visibleItems.Count > 0 && visibleItems.All(x => x.IsChecked);
+        bool newState = !allChecked;
+
+        foreach (var item in visibleItems)
+        {
+            item.IsChecked = newState;
+        }
+
+        _isUpdatingFilterSelectAll = true;
+        ChkFilterSelectAll.IsChecked = newState;
+        _isUpdatingFilterSelectAll = false;
+        UpdateFilterItemCount();
+    }
+
+    private void FilterItemCheckBox_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateFilterSelectAllState();
+        UpdateFilterItemCount();
+    }
+
+    private void UpdateFilterSelectAllState()
+    {
+        if (ChkFilterSelectAll == null || _filterItemsView == null) return;
+
+        var visibleItems = _filterItemsView.Cast<ColumnFilterItem>().ToList();
+        if (visibleItems.Count == 0)
+        {
+            _isUpdatingFilterSelectAll = true;
+            ChkFilterSelectAll.IsChecked = false;
+            _isUpdatingFilterSelectAll = false;
+            return;
+        }
+
+        int checkedCount = visibleItems.Count(x => x.IsChecked);
+        _isUpdatingFilterSelectAll = true;
+        if (checkedCount == 0)
+        {
+            ChkFilterSelectAll.IsChecked = false;
+        }
+        else if (checkedCount == visibleItems.Count)
+        {
+            ChkFilterSelectAll.IsChecked = true;
+        }
+        else
+        {
+            ChkFilterSelectAll.IsChecked = null; // Indeterminate
+        }
+        _isUpdatingFilterSelectAll = false;
+    }
+
+    private void UpdateFilterItemCount()
+    {
+        if (TxtFilterItemCount == null || _filterItemsView == null) return;
+        var visibleItems = _filterItemsView.Cast<ColumnFilterItem>().ToList();
+        int checkedCount = visibleItems.Count(x => x.IsChecked);
+        TxtFilterItemCount.Text = $"{checkedCount} / {visibleItems.Count} mục";
+    }
+
+    private void BtnApplyFilter_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentFilterColumnKey)) return;
+
+        int totalCount = _filterItems.Count;
+        int checkedCount = _filterItems.Count(x => x.IsChecked);
+
+        if (checkedCount == totalCount)
+        {
+            // All selected = remove column filter
+            _activeColumnFilters.Remove(_currentFilterColumnKey);
+            UpdateColumnButtonVisual(_currentFilterColumnKey, false);
+        }
+        else
+        {
+            // Subset selected
+            var set = new HashSet<string>(_filterItems.Where(x => x.IsChecked).Select(x => x.RawValue), StringComparer.OrdinalIgnoreCase);
+            _activeColumnFilters[_currentFilterColumnKey] = set;
+            UpdateColumnButtonVisual(_currentFilterColumnKey, true);
+        }
+
+        FilterPopup.IsOpen = false;
+        ApplyFilter();
+    }
+
+    private void BtnClearColumnFilter_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentFilterColumnKey)) return;
+
+        _activeColumnFilters.Remove(_currentFilterColumnKey);
+        UpdateColumnButtonVisual(_currentFilterColumnKey, false);
+
+        FilterPopup.IsOpen = false;
+        ApplyFilter();
+    }
+
+    private void BtnCloseFilterPopup_Click(object sender, RoutedEventArgs e)
+    {
+        FilterPopup.IsOpen = false;
+    }
+
+    private void BtnClearAllFilters_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (var key in _activeColumnFilters.Keys.ToList())
+        {
+            UpdateColumnButtonVisual(key, false);
+        }
+        _activeColumnFilters.Clear();
+        ApplyFilter();
+    }
+
+    private void BtnSortAsc_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentFilterColumnKey)) return;
+        ApplySort(_currentFilterColumnKey, ListSortDirection.Ascending);
+        FilterPopup.IsOpen = false;
+    }
+
+    private void BtnSortDesc_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentFilterColumnKey)) return;
+        ApplySort(_currentFilterColumnKey, ListSortDirection.Descending);
+        FilterPopup.IsOpen = false;
+    }
+
+    private void ApplySort(string colKey, ListSortDirection direction)
+    {
+        if (_collectionView == null) return;
+        _collectionView.SortDescriptions.Clear();
+        _collectionView.SortDescriptions.Add(new SortDescription(colKey, direction));
+    }
+
+    private void UpdateColumnButtonVisual(string colKey, bool isActive)
+    {
+        if (_columnFilterButtons.TryGetValue(colKey, out var btn))
+        {
+            if (btn.Content is MaterialDesignThemes.Wpf.PackIcon icon)
+            {
+                icon.Kind = isActive ? MaterialDesignThemes.Wpf.PackIconKind.Filter : MaterialDesignThemes.Wpf.PackIconKind.FilterOutline;
+                icon.Foreground = isActive
+                    ? (Brush)FindResource("AppPrimaryButtonBackground")
+                    : (Brush)FindResource("AppSecondaryTextBrush");
+            }
+            string name = GetColumnDisplayName(colKey);
+            btn.ToolTip = isActive
+                ? $"Đang lọc cột '{name}'. Nhấn để thay đổi hoặc bỏ lọc."
+                : $"Lọc cột '{name}'";
+        }
+    }
+
+    private static string GetColumnValue(VirtualMachineEntry vm, string colKey)
+    {
+        return colKey switch
+        {
+            "Ip" => vm.Ip ?? string.Empty,
+            "MachineName" => vm.MachineName ?? string.Empty,
+            "DomainOrWorkgroup" => vm.DomainOrWorkgroup ?? string.Empty,
+            "Os" => vm.Os ?? string.Empty,
+            "Username" => vm.Username ?? string.Empty,
+            "Tns" => vm.Tns ?? string.Empty,
+            "DatabaseName" => vm.DatabaseName ?? string.Empty,
+            "OracleVersion" => vm.OracleVersion ?? string.Empty,
+            "Tester" => vm.Tester ?? string.Empty,
+            "Notes" => vm.Notes ?? string.Empty,
+            "ExpirationDate" => vm.ExpirationDate ?? string.Empty,
+            _ => string.Empty
+        };
+    }
+
+    private static string GetColumnDisplayName(string colKey) => colKey switch
+    {
+        "Ip" => "Địa Chỉ IP",
+        "MachineName" => "Tên Máy",
+        "DomainOrWorkgroup" => "Domain / Workgroup",
+        "Os" => "Hệ Điều Hành",
+        "Username" => "User",
+        "Tns" => "TNS",
+        "DatabaseName" => "Database Name",
+        "OracleVersion" => "Oracle Ver",
+        "Tester" => "Người KT",
+        "Notes" => "Ghi Chú",
+        "ExpirationDate" => "Ngày Hết Hạn",
+        _ => colKey
+    };
+
+    #endregion
+
     private void BtnAddVm_Click(object sender, RoutedEventArgs e)
     {
         var parentWindow = Window.GetWindow(this);
@@ -389,6 +702,15 @@ public partial class VmManagerView : UserControl
         {
             _allEntries.Clear();
             _displayEntries.Clear();
+            _activeColumnFilters.Clear();
+            foreach (var btn in _columnFilterButtons.Values)
+            {
+                if (btn.Content is MaterialDesignThemes.Wpf.PackIcon icon)
+                {
+                    icon.Kind = MaterialDesignThemes.Wpf.PackIconKind.FilterOutline;
+                    icon.Foreground = (Brush)FindResource("AppSecondaryTextBrush");
+                }
+            }
             _vmService.ClearAll();
             _collectionView?.Refresh();
             UpdateSummary();
@@ -533,4 +855,27 @@ public partial class VmManagerView : UserControl
             MessageBox.Show(parentWindow, $"Không thể xuất file mẫu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
+}
+
+public class ColumnFilterItem : INotifyPropertyChanged
+{
+    private bool _isChecked = true;
+
+    public string RawValue { get; set; } = string.Empty;
+    public string DisplayText { get; set; } = string.Empty;
+
+    public bool IsChecked
+    {
+        get => _isChecked;
+        set
+        {
+            if (_isChecked != value)
+            {
+                _isChecked = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsChecked)));
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }
