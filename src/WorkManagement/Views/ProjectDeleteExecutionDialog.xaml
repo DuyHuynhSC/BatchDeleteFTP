@@ -176,7 +176,7 @@
                 <Button x:Name="BtnStartCleanup" Style="{StaticResource AppDangerButtonStyle}"
                         Height="34" Padding="18,0" Click="BtnStartCleanup_Click">
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="TrashCanAlert" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <materialDesign:PackIcon Kind="DeleteForeverOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock Text="XÁC NHẬN &amp; XÓA DỰ ÁN" FontWeight="Bold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>

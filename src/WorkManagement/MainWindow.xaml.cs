@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -1097,12 +1097,14 @@ public partial class MainWindow : Window
     {
         ViewContainerFtp.Visibility = targetView == AppNavView.FtpCleaner ? Visibility.Visible : Visibility.Collapsed;
         ViewContainerVm.Visibility = targetView == AppNavView.VmManager ? Visibility.Visible : Visibility.Collapsed;
+        ViewContainerProject.Visibility = targetView == AppNavView.ProjectManager ? Visibility.Visible : Visibility.Collapsed;
         ViewContainerScheduler.Visibility = targetView == AppNavView.TaskScheduler ? Visibility.Visible : Visibility.Collapsed;
         ViewContainerFtpConfig.Visibility = targetView == AppNavView.FtpConfig ? Visibility.Visible : Visibility.Collapsed;
         ViewContainerEmailConfig.Visibility = targetView == AppNavView.EmailConfig ? Visibility.Visible : Visibility.Collapsed;
 
         NavBtnFtp.Style = (Style)FindResource(targetView == AppNavView.FtpCleaner ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
         NavBtnVm.Style = (Style)FindResource(targetView == AppNavView.VmManager ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
+        if (NavBtnProject != null) NavBtnProject.Style = (Style)FindResource(targetView == AppNavView.ProjectManager ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
         NavBtnScheduler.Style = (Style)FindResource(targetView == AppNavView.TaskScheduler ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
         BtnOpenConnectionSettings.Style = (Style)FindResource(targetView == AppNavView.FtpConfig ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
         BtnEmailSettings.Style = (Style)FindResource(targetView == AppNavView.EmailConfig ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
@@ -1120,6 +1122,13 @@ public partial class MainWindow : Window
                 TxtCurrentPageSub.Text = "Quản lý thông tin máy chủ, tài khoản, kết nối Remote Desktop một chạm và Oracle DB";
                 IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.DesktopTowerMonitor;
                 VmManagerControl.LoadData();
+                break;
+
+            case AppNavView.ProjectManager:
+                TxtCurrentPageTitle.Text = "Quản Lý Dự Án & Dọn Dẹp Workspace";
+                TxtCurrentPageSub.Text = "Quản lý thông tin source folder, kết nối Oracle DB, tự động backup và xóa tuần tự";
+                IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.FolderCogOutline;
+                ProjectManagerControl.LoadData();
                 break;
 
             case AppNavView.TaskScheduler:
