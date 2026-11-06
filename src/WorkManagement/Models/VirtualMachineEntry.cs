@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 namespace WorkManagement.Models;
 
@@ -21,6 +22,7 @@ public class VirtualMachineEntry : INotifyPropertyChanged
     private string _notes = string.Empty;
     private string _expirationDate = "Vô hạn";
     private bool _isPasswordMasked = true;
+    private bool _isSelected;
 
     public string Id
     {
@@ -122,6 +124,13 @@ public class VirtualMachineEntry : INotifyPropertyChanged
         ? new string('•', Math.Min(_password.Length, 8))
         : _password;
 
+    [JsonIgnore]
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetField(ref _isSelected, value);
+    }
+
     public VirtualMachineEntry Clone()
     {
         return new VirtualMachineEntry
@@ -140,7 +149,8 @@ public class VirtualMachineEntry : INotifyPropertyChanged
             Tester = Tester,
             Notes = Notes,
             ExpirationDate = ExpirationDate,
-            IsPasswordMasked = IsPasswordMasked
+            IsPasswordMasked = IsPasswordMasked,
+            IsSelected = IsSelected
         };
     }
 

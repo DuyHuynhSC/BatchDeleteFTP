@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -96,6 +96,47 @@ public class VmManagerServiceTests
 
             var afterClear = service.LoadAll();
             Assert.Empty(afterClear);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void IsSelected_DefaultFalse_CanBeToggled_AndClonePreservesIt()
+    {
+        var entry = new VirtualMachineEntry { Ip = "10.0.0.1", IsSelected = false };
+        Assert.False(entry.IsSelected);
+
+        entry.IsSelected = true;
+        Assert.True(entry.IsSelected);
+
+        var cloned = entry.Clone();
+        Assert.True(cloned.IsSelected);
+        Assert.Equal("10.0.0.1", cloned.Ip);
+    }
+
+    [Fact]
+    public void SaveAll_IgnoresIsSelected_WhenSavedToJson()
+    {
+        string tempFile = Path.Combine(Path.GetTempPath(), $"vm_json_test_{Guid.NewGuid()}.json");
+        try
+        {
+            var service = new VmManagerService(tempFile);
+            var testList = new List<VirtualMachineEntry>
+            {
+                new() { Ip = "192.168.1.50", IsSelected = true }
+            };
+
+            service.SaveAll(testList);
+
+            string json = File.ReadAllText(tempFile);
+            Assert.DoesNotContain("\"IsSelected\"", json);
+
+            var reloaded = service.LoadAll();
+            Assert.Single(reloaded);
+            Assert.False(reloaded[0].IsSelected);
         }
         finally
         {
