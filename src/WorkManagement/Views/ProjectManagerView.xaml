@@ -54,13 +54,23 @@
                         </StackPanel>
                     </Button>
 
+                    <!-- NÚT XÓA DÒNG RA KHỎI GRID -->
+                    <Button x:Name="BtnDeleteSelectedRows" Style="{StaticResource AppDangerButtonStyle}"
+                            Height="32" Padding="12,0" Margin="0,0,8,0" Click="BtnDeleteSelectedRows_Click"
+                            ToolTip="Xóa các dòng dự án đang chọn ra khỏi grid (không xóa dữ liệu trên Server/Folder)">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="DeleteOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <TextBlock Text="Xóa Dòng" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+
                     <!-- NÚT XÓA DỰ ÁN (XÓA TUẦN TỰ FOLDER + DB USER + TABLESPACE) -->
                     <Button x:Name="BtnDeleteSelected" Style="{StaticResource AppDangerButtonStyle}"
                             Height="32" Padding="12,0" Margin="0,0,8,0" Click="BtnDeleteSelected_Click"
                             ToolTip="Xóa các dự án đang chọn (xóa tuần tự Source Folder, DB User, Tablespace kèm backup)">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="DeleteForeverOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                            <TextBlock Text="Xóa Dự Án" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12"/>
+                            <TextBlock Text="Xóa Dự Án (Folder &amp; DB)" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12"/>
                         </StackPanel>
                     </Button>
 

@@ -300,6 +300,44 @@ public partial class ProjectManagerView : UserControl
         _isUpdatingSelectAllHeader = false;
     }
 
+    private void BtnDeleteSelectedRows_Click(object sender, RoutedEventArgs e)
+    {
+        var selectedProjects = _allEntries.Where(x => x.IsSelected).ToList();
+        if (selectedProjects.Count == 0)
+        {
+            MessageBox.Show(Window.GetWindow(this),
+                "Vui lòng tích chọn ít nhất một dự án trong danh sách để xóa khỏi grid.",
+                "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var parentWindow = Window.GetWindow(this);
+        var confirm = MessageBox.Show(parentWindow,
+            $"Bạn có chắc chắn muốn xóa {selectedProjects.Count} dòng dự án đang chọn ra khỏi grid không?\n\n(Lưu ý: Thao tác này chỉ xóa dòng thông tin trong bảng danh sách, không xóa source folder hay database trên máy chủ).",
+            "Xác nhận xóa dòng",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm == MessageBoxResult.Yes)
+        {
+            var selectedIds = new HashSet<string>(selectedProjects.Select(x => x.Id));
+            _allEntries.RemoveAll(x => selectedIds.Contains(x.Id));
+
+            for (int i = _displayEntries.Count - 1; i >= 0; i--)
+            {
+                if (selectedIds.Contains(_displayEntries[i].Id))
+                {
+                    _displayEntries.RemoveAt(i);
+                }
+            }
+
+            _projectService.SaveAll(_allEntries);
+            _collectionView?.Refresh();
+            UpdateSummary();
+            UpdateSelectAllState();
+        }
+    }
+
     private void BtnDeleteSelected_Click(object sender, RoutedEventArgs e)
     {
         var selectedProjects = _allEntries.Where(x => x.IsSelected).ToList();
