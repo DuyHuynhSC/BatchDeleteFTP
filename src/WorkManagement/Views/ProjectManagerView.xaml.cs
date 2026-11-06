@@ -21,6 +21,8 @@ public partial class ProjectManagerView : UserControl
 {
     private readonly ProjectManagerService _projectService;
     private readonly ProjectExcelService _excelService;
+    private readonly VmManagerService _vmService;
+    private readonly RemoteDesktopService _rdpService;
     private readonly List<ProjectEntry> _allEntries = new();
     private readonly ObservableCollection<ProjectEntry> _displayEntries = new();
     private readonly ICollectionView _collectionView;
@@ -41,6 +43,8 @@ public partial class ProjectManagerView : UserControl
         InitializeComponent();
         _projectService = new ProjectManagerService();
         _excelService = new ProjectExcelService();
+        _vmService = new VmManagerService();
+        _rdpService = new RemoteDesktopService();
 
         _searchDebounceTimer = new DispatcherTimer
         {
@@ -805,6 +809,63 @@ public partial class ProjectManagerView : UserControl
             catch (Exception ex)
             {
                 MessageBox.Show(Window.GetWindow(this), $"Không thể mở thư mục: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private async void BtnPlayHostRdp_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.DataContext is ProjectEntry p)
+        {
+            string host = p.HostServer?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                MessageBox.Show(Window.GetWindow(this), "Dự án này chưa có thông tin Host Server để kết nối.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                var vmList = _vmService.LoadAll();
+                var matchedVm = vmList.FirstOrDefault(v =>
+                    !string.IsNullOrWhiteSpace(v.Ip) && v.Ip.Trim().Equals(host, StringComparison.OrdinalIgnoreCase))
+                    ?? vmList.FirstOrDefault(v =>
+                    !string.IsNullOrWhiteSpace(v.MachineName) && v.MachineName.Trim().Equals(host, StringComparison.OrdinalIgnoreCase))
+                    ?? vmList.FirstOrDefault(v =>
+                    !string.IsNullOrWhiteSpace(v.Ip) && (v.Ip.Contains(host) || host.Contains(v.Ip)))
+                    ?? vmList.FirstOrDefault(v =>
+                    !string.IsNullOrWhiteSpace(v.MachineName) && (v.MachineName.IndexOf(host, StringComparison.OrdinalIgnoreCase) >= 0 || host.IndexOf(v.MachineName, StringComparison.OrdinalIgnoreCase) >= 0));
+
+                if (matchedVm != null)
+                {
+                    bool success = await _rdpService.ConnectAsync(matchedVm);
+                    if (!success)
+                    {
+                        MessageBox.Show(Window.GetWindow(this), $"Không thể mở Remote Desktop tới máy ảo {matchedVm.Ip} ({matchedVm.MachineName}).", "Lỗi RDP", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                else
+                {
+                    var confirm = MessageBox.Show(Window.GetWindow(this),
+                        $"Không tìm thấy máy chủ '{host}' trong Quản lý danh sách máy ảo.\n\nBạn có muốn mở Remote Desktop trực tiếp tới địa chỉ '{host}' không?",
+                        "Xác nhận kết nối RDP",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (confirm == MessageBoxResult.Yes)
+                    {
+                        var directVm = new VirtualMachineEntry { Ip = host };
+                        bool success = await _rdpService.ConnectAsync(directVm);
+                        if (!success)
+                        {
+                            MessageBox.Show(Window.GetWindow(this), $"Không thể mở Remote Desktop tới {host}.", "Lỗi RDP", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Window.GetWindow(this), $"Lỗi khi kết nối Remote Desktop: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

@@ -263,7 +263,7 @@
                     </DataGridTemplateColumn>
 
                     <!-- HOST SERVER (IP) -->
-                    <DataGridTemplateColumn Width="Auto" MinWidth="130">
+                    <DataGridTemplateColumn Width="Auto" MinWidth="150">
                         <DataGridTemplateColumn.Header>
                             <DockPanel LastChildFill="True">
                                 <Button x:Name="BtnFilter_HostServer" Style="{StaticResource MaterialDesignFlatButton}"
@@ -278,12 +278,20 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <DockPanel LastChildFill="True">
-                                    <Button Style="{StaticResource MaterialDesignFlatButton}"
-                                            DockPanel.Dock="Right" Width="20" Height="20" Padding="0"
-                                            Click="BtnCopyHost_Click" ToolTip="Sao chép IP máy chủ">
-                                        <materialDesign:PackIcon Kind="ContentCopy" Width="12" Height="12"
-                                                                 Foreground="{DynamicResource AppSecondaryTextBrush}"/>
-                                    </Button>
+                                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                        <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                                Width="22" Height="22" Padding="0" Margin="0,0,2,0"
+                                                Click="BtnPlayHostRdp_Click" ToolTip="Mở Remote Desktop (RDP) dựa trên Quản lý máy ảo">
+                                            <materialDesign:PackIcon Kind="Play" Width="14" Height="14"
+                                                                     Foreground="#2E7D32"/>
+                                        </Button>
+                                        <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                                Width="20" Height="20" Padding="0"
+                                                Click="BtnCopyHost_Click" ToolTip="Sao chép IP máy chủ">
+                                            <materialDesign:PackIcon Kind="ContentCopy" Width="12" Height="12"
+                                                                     Foreground="{DynamicResource AppSecondaryTextBrush}"/>
+                                        </Button>
+                                    </StackPanel>
                                     <TextBlock Text="{Binding HostServer}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                 </DockPanel>
                             </DataTemplate>
