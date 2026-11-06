@@ -1,0 +1,121 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using WorkManagement.Models;
+
+namespace WorkManagement.Services;
+
+public class ProjectManagerService
+{
+    private readonly string _storagePath;
+    private readonly string _settingsPath;
+    private readonly JsonSerializerOptions _jsonOptions;
+
+    public ProjectManagerService(string? customStoragePath = null)
+    {
+        if (!string.IsNullOrWhiteSpace(customStoragePath))
+        {
+            _storagePath = customStoragePath;
+            _settingsPath = Path.Combine(Path.GetDirectoryName(customStoragePath) ?? string.Empty, "project_cleanup_settings.json");
+        }
+        else
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string appDir = Path.Combine(appData, "WorkManagement");
+            Directory.CreateDirectory(appDir);
+            _storagePath = Path.Combine(appDir, "projects.json");
+            _settingsPath = Path.Combine(appDir, "project_cleanup_settings.json");
+        }
+
+        _jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+    }
+
+    public List<ProjectEntry> LoadAll()
+    {
+        try
+        {
+            if (File.Exists(_storagePath))
+            {
+                string json = File.ReadAllText(_storagePath);
+                var list = JsonSerializer.Deserialize<List<ProjectEntry>>(json, _jsonOptions);
+                if (list != null)
+                {
+                    return list;
+                }
+            }
+        }
+        catch
+        {
+            // Trả về rỗng nếu file lỗi
+        }
+
+        return new List<ProjectEntry>();
+    }
+
+    public void SaveAll(IEnumerable<ProjectEntry> list)
+    {
+        try
+        {
+            string? dir = Path.GetDirectoryName(_storagePath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            string json = JsonSerializer.Serialize(list, _jsonOptions);
+            File.WriteAllText(_storagePath, json);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Không thể lưu danh sách dự án: {ex.Message}", ex);
+        }
+    }
+
+    public void ClearAll()
+    {
+        SaveAll(new List<ProjectEntry>());
+    }
+
+    public ProjectCleanupSettings LoadSettings()
+    {
+        try
+        {
+            if (File.Exists(_settingsPath))
+            {
+                string json = File.ReadAllText(_settingsPath);
+                var settings = JsonSerializer.Deserialize<ProjectCleanupSettings>(json, _jsonOptions);
+                if (settings != null)
+                {
+                    return settings;
+                }
+            }
+        }
+        catch { }
+
+        var def = new ProjectCleanupSettings();
+        SaveSettings(def);
+        return def;
+    }
+
+    public void SaveSettings(ProjectCleanupSettings settings)
+    {
+        try
+        {
+            string? dir = Path.GetDirectoryName(_settingsPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            string json = JsonSerializer.Serialize(settings, _jsonOptions);
+            File.WriteAllText(_settingsPath, json);
+        }
+        catch { }
+    }
+}

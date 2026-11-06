@@ -24,6 +24,7 @@
     <PackageReference Include="FluentFTP" Version="51.1.0" />
     <PackageReference Include="MaterialDesignThemes" Version="5.4.0" />
     <PackageReference Include="MiniExcel" Version="1.46.0" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.26.400" />
   </ItemGroup>
 
 </Project>

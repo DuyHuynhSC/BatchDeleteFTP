@@ -1,0 +1,186 @@
+<Window x:Class="WorkManagement.Views.ProjectDeleteExecutionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Quy Trình Xóa &amp; Dọn Dẹp Dự Án"
+        Height="700" Width="850" MinHeight="600" MinWidth="750"
+        WindowStartupLocation="CenterOwner"
+        Style="{StaticResource AppWindowStyle}">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Title Header -->
+            <RowDefinition Height="Auto"/> <!-- Project Summary & Options -->
+            <RowDefinition Height="*"/>    <!-- Real-time Console Log -->
+            <RowDefinition Height="Auto"/> <!-- Progress & Action Buttons -->
+        </Grid.RowDefinitions>
+
+        <!-- ROW 0: TITLE & WARNING HEADER -->
+        <Border Grid.Row="0" Margin="0,0,0,12" Padding="12,10" Background="{DynamicResource AppDangerButtonBackground}" CornerRadius="6">
+            <DockPanel LastChildFill="True">
+                <materialDesign:PackIcon Kind="AlertDecagramOutline" Width="28" Height="28"
+                                         Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="XÁC NHẬN TIẾN TRÌNH XÓA &amp; DỌN DẸP DỰ ÁN" FontSize="14" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="Cảnh báo: Dữ liệu Source Folder, Oracle DB Users và Tablespace sẽ bị xóa vĩnh viễn theo thứ tự bạn chọn bên dưới!"
+                               FontSize="11" Foreground="White" Opacity="0.9"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ROW 1: OPTIONS & CREDENTIALS -->
+        <materialDesign:Card Grid.Row="1" Margin="0,0,0,12" Padding="14,10"
+                             Background="{DynamicResource AppCardBackgroundBrush}"
+                             BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}" BorderThickness="1">
+            <StackPanel>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- CỘT TRÁI: DANH SÁCH DỰ ÁN VÀ CÁC BƯỚC XÓA -->
+                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                        <TextBlock x:Name="TxtSelectedProjectsSummary" Text="Dự án chọn xóa: UTSUGI (1 dự án)"
+                                   FontWeight="Bold" FontSize="12.5" Foreground="{DynamicResource AppPrimaryTextBrush}" Margin="0,0,0,8"/>
+
+                        <TextBlock Text="Các bước thực hiện xóa tuần tự:" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppSecondaryTextBrush}" Margin="0,0,0,6"/>
+
+                        <CheckBox x:Name="ChkDeleteFolder" Content="1. Xóa Source Folder trên Network Drive"
+                                  IsChecked="True" FontSize="11.5" Margin="0,0,0,4" Cursor="Hand"/>
+
+                        <CheckBox x:Name="ChkDeleteUsers" Content="2. Xóa Users trong Oracle DB (Kill session &amp; DROP CASCADE)"
+                                  IsChecked="True" FontSize="11.5" Margin="0,0,0,4" Cursor="Hand"/>
+
+                        <CheckBox x:Name="ChkDeleteTablespace" Content="3. Xóa Tablespace chứa User (kèm Datafiles)"
+                                  IsChecked="True" FontSize="11.5" Margin="0,0,0,4" Cursor="Hand"/>
+                    </StackPanel>
+
+                    <!-- CỘT PHẢI: TÙY CHỌN SAO LƯU (BACKUP) -->
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Tùy chọn sao lưu trước khi xóa (Khuyến nghị):"
+                                   FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppPrimaryButtonBackground}" Margin="0,0,0,8"/>
+
+                        <CheckBox x:Name="ChkBackupFolder" Content="Sao lưu Source Folder thành file .zip"
+                                  IsChecked="True" FontSize="11.5" Margin="0,0,0,4" Cursor="Hand"/>
+
+                        <CheckBox x:Name="ChkBackupDatabase" Content="Sao lưu Database User (.dmp / DDL)"
+                                  IsChecked="True" FontSize="11.5" Margin="0,0,0,6" Cursor="Hand"/>
+
+                        <!-- Thư mục lưu Backup -->
+                        <DockPanel LastChildFill="True">
+                            <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                    DockPanel.Dock="Right" Width="26" Height="26" Padding="0" Margin="4,0,0,0"
+                                    Click="BtnChooseBackupDir_Click" ToolTip="Chọn thư mục lưu Backup">
+                                <materialDesign:PackIcon Kind="FolderOpenOutline" Width="16" Height="16"/>
+                            </Button>
+                            <TextBox x:Name="TxtBackupDir" FontSize="11" FontFamily="Consolas"
+                                     materialDesign:HintAssist.Hint="Thư mục lưu Backup"
+                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Grid>
+
+                <Separator Margin="0,4,0,8" Background="{DynamicResource AppSubtlePanelBorderBrush}"/>
+
+                <!-- KHU VỰC NHẬP TÀI KHOẢN DBA DÙNG ĐỂ XÓA -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <TextBlock Text="Tài khoản DBA để xóa DB:" FontWeight="Bold" FontSize="11.5" Foreground="{DynamicResource AppPrimaryTextBrush}"/>
+                        <TextBlock Text="(User &amp; Pass kết nối máy ảo)" FontSize="10" Foreground="{DynamicResource AppSecondaryTextBrush}"/>
+                    </StackPanel>
+
+                    <TextBox x:Name="TxtDbaUser" Grid.Column="1" Margin="0,0,8,0" Text="SYSTEM"
+                             materialDesign:HintAssist.Hint="Tài khoản DBA *" FontSize="11.5"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+
+                    <Grid Grid.Column="2" Margin="0,0,8,0">
+                        <PasswordBox x:Name="PbDbaPassword" FontSize="11.5"
+                                     materialDesign:HintAssist.Hint="Mật khẩu DBA *"
+                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"/>
+                        <TextBox x:Name="TxtDbaPasswordRevealed" Visibility="Collapsed" FontSize="11.5"
+                                 materialDesign:HintAssist.Hint="Mật khẩu DBA *"
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
+                    </Grid>
+
+                    <Button Style="{StaticResource MaterialDesignFlatButton}" Grid.Column="3"
+                            Width="26" Height="26" Padding="0" VerticalAlignment="Bottom" Margin="0,0,0,2"
+                            HorizontalAlignment="Left"
+                            Click="BtnToggleDbaPassword_Click" ToolTip="Ẩn / Hiện mật khẩu DBA">
+                        <materialDesign:PackIcon x:Name="IconDbaPassEye" Kind="EyeOutline" Width="16" Height="16"/>
+                    </Button>
+                </Grid>
+            </StackPanel>
+        </materialDesign:Card>
+
+        <!-- ROW 2: REAL-TIME CONSOLE LOG TERMINAL -->
+        <Border Grid.Row="2" Background="{DynamicResource AppTerminalBackgroundBrush}"
+                BorderBrush="{DynamicResource AppTerminalBorderBrush}"
+                BorderThickness="1" CornerRadius="6" Padding="8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0" Margin="4,2,4,6">
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                        <materialDesign:PackIcon Kind="Console" Width="14" Height="14"
+                                                 Foreground="#00E676" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Nhật Ký Thực Thi (Console Log)" FontWeight="Bold" FontSize="11" Foreground="#EEEEEE"/>
+                    </StackPanel>
+                    <Button Style="{StaticResource MaterialDesignFlatButton}"
+                            DockPanel.Dock="Right" Padding="4,0" Height="20"
+                            Click="BtnClearLog_Click" ToolTip="Xóa log trên màn hình">
+                        <TextBlock Text="Xóa Màn Hình" FontSize="10" Foreground="#AAAAAA"/>
+                    </Button>
+                </DockPanel>
+
+                <ScrollViewer x:Name="ScrollerLog" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <TextBox x:Name="TxtLogOutput" IsReadOnly="True" BorderThickness="0"
+                             Background="Transparent" Foreground="#EEEEEE"
+                             FontFamily="Consolas" FontSize="11.5"
+                             TextWrapping="Wrap" Text="Sẵn sàng thực thi. Nhấn 'XÁC NHẬN &amp; XÓA DỰ ÁN' để bắt đầu...&#x0a;"/>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- ROW 3: PROGRESS BAR & BUTTONS -->
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Tiến trình -->
+            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                <ProgressBar x:Name="ProgressBarExecution" Height="6" Maximum="100" Value="0"
+                             Foreground="{DynamicResource AppPrimaryButtonBackground}" Margin="0,0,0,4"/>
+                <TextBlock x:Name="TxtProgressStatus" Text="Trạng thái: Đang chờ lệnh"
+                           FontSize="11" Foreground="{DynamicResource AppSecondaryTextBrush}"/>
+            </StackPanel>
+
+            <!-- Nút hành động -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="BtnClose" Style="{StaticResource AppOutlinedButtonStyle}"
+                        Height="34" Padding="14,0" Margin="0,0,10,0" Content="Đóng"
+                        Click="BtnClose_Click"/>
+
+                <Button x:Name="BtnStartCleanup" Style="{StaticResource AppDangerButtonStyle}"
+                        Height="34" Padding="18,0" Click="BtnStartCleanup_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="TrashCanAlert" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="XÁC NHẬN &amp; XÓA DỰ ÁN" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

@@ -1067,6 +1067,7 @@ public partial class MainWindow : Window
     {
         FtpCleaner,
         VmManager,
+        ProjectManager,
         TaskScheduler,
         FtpConfig,
         EmailConfig
@@ -1080,6 +1081,11 @@ public partial class MainWindow : Window
     private void NavBtnVm_Click(object sender, RoutedEventArgs e)
     {
         SwitchToView(AppNavView.VmManager);
+    }
+
+    private void NavBtnProject_Click(object sender, RoutedEventArgs e)
+    {
+        SwitchToView(AppNavView.ProjectManager);
     }
 
     private void NavBtnScheduler_Click(object sender, RoutedEventArgs e)
