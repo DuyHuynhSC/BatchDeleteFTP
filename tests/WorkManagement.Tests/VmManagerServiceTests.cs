@@ -11,7 +11,7 @@ namespace WorkManagement.Tests;
 public class VmManagerServiceTests
 {
     [Fact]
-    public void LoadAll_WhenFileDoesNotExist_ReturnsInitialSampleDataAndCreatesFile()
+    public void LoadAll_WhenFileDoesNotExist_ReturnsEmptyList()
     {
         string tempFile = Path.Combine(Path.GetTempPath(), $"vm_test_{Guid.NewGuid()}.json");
         try
@@ -20,9 +20,8 @@ public class VmManagerServiceTests
             var list = service.LoadAll();
 
             Assert.NotNull(list);
-            Assert.NotEmpty(list);
-            Assert.Contains(list, x => x.Ip == "172.16.6.16");
-            Assert.True(File.Exists(tempFile));
+            Assert.Empty(list);
+            Assert.False(File.Exists(tempFile));
         }
         finally
         {
@@ -83,14 +82,18 @@ public class VmManagerServiceTests
     }
 
     [Fact]
-    public void ClearAll_EmptiesList_AndDoesNotReloadSampleData()
+    public void ClearAll_EmptiesList()
     {
         string tempFile = Path.Combine(Path.GetTempPath(), $"vm_clear_test_{Guid.NewGuid()}.json");
         try
         {
             var service = new VmManagerService(tempFile);
-            var initial = service.LoadAll();
-            Assert.NotEmpty(initial);
+            var testList = new List<VirtualMachineEntry>
+            {
+                new() { Ip = "10.0.0.1" }
+            };
+            service.SaveAll(testList);
+            Assert.NotEmpty(service.LoadAll());
 
             service.ClearAll();
 
