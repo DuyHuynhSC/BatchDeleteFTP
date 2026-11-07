@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using WorkManagement.Helpers;
 using WorkManagement.Models;
 
 namespace WorkManagement.Services;
@@ -28,8 +29,25 @@ public class ConfigService
         }
 
         string json = File.ReadAllText(targetPath);
+        bool hadPlaintextSecrets = HasAnyPlaintextSecretsInJson(json);
+
         var settings = JsonSerializer.Deserialize<FtpSettings>(json, JsonOptions) ?? new FtpSettings();
+        UnprotectSettingsSecrets(settings);
         EnsureProfilesInitialized(settings);
+
+        // Tự động nâng cấp (Auto-migrate) các mật khẩu plain-text cũ sang chuẩn mã hóa DPAPI
+        if (hadPlaintextSecrets)
+        {
+            try
+            {
+                Save(settings, targetPath);
+            }
+            catch
+            {
+                // Bỏ qua nếu file đang chỉ đọc (Read-only)
+            }
+        }
+
         return settings;
     }
 
@@ -46,8 +64,131 @@ public class ConfigService
         SyncEmailSettingsAcrossAllProfiles(settings);
         NormalizeThemeSettings(settings);
 
-        string json = JsonSerializer.Serialize(settings, JsonOptions);
+        // Tạo bản sao để mã hóa toàn bộ mật khẩu khi lưu xuống đĩa mà không làm ảnh hưởng tới đối tượng đang chạy trên RAM
+        var settingsToWrite = CreateEncryptedCopy(settings);
+        string json = JsonSerializer.Serialize(settingsToWrite, JsonOptions);
         File.WriteAllText(targetPath, json);
+    }
+
+    private static bool HasAnyPlaintextSecretsInJson(string json)
+    {
+        try
+        {
+            var raw = JsonSerializer.Deserialize<FtpSettings>(json, JsonOptions);
+            if (raw == null) return false;
+
+            if (IsPlaintextNonEmpty(raw.Password) ||
+                IsPlaintextNonEmpty(raw.ProxyPassword) ||
+                IsPlaintextNonEmpty(raw.SmtpPassword))
+            {
+                return true;
+            }
+
+            if (raw.Profiles != null)
+            {
+                foreach (var p in raw.Profiles)
+                {
+                    if (IsPlaintextNonEmpty(p.Password) ||
+                        IsPlaintextNonEmpty(p.ProxyPassword) ||
+                        IsPlaintextNonEmpty(p.SmtpPassword))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return false;
+    }
+
+    private static bool IsPlaintextNonEmpty(string? val) =>
+        !string.IsNullOrEmpty(val) && !SecretProtector.IsEncrypted(val);
+
+    private static void UnprotectSettingsSecrets(FtpSettings settings)
+    {
+        settings.Password = SecretProtector.Unprotect(settings.Password);
+        settings.ProxyPassword = SecretProtector.Unprotect(settings.ProxyPassword);
+        settings.SmtpPassword = SecretProtector.Unprotect(settings.SmtpPassword);
+
+        if (settings.Profiles != null)
+        {
+            foreach (var p in settings.Profiles)
+            {
+                p.Password = SecretProtector.Unprotect(p.Password);
+                p.ProxyPassword = SecretProtector.Unprotect(p.ProxyPassword);
+                p.SmtpPassword = SecretProtector.Unprotect(p.SmtpPassword);
+            }
+        }
+    }
+
+    private static FtpSettings CreateEncryptedCopy(FtpSettings source)
+    {
+        var copy = new FtpSettings
+        {
+            SelectedProfileName = source.SelectedProfileName,
+            SelectedScanProfileNames = new List<string>(source.SelectedScanProfileNames ?? new List<string>()),
+            Host = source.Host,
+            Port = source.Port,
+            EncryptionMode = source.EncryptionMode,
+            Username = source.Username,
+            Password = SecretProtector.Protect(source.Password),
+            UseProxy = source.UseProxy,
+            ProxyHost = source.ProxyHost,
+            ProxyPort = source.ProxyPort,
+            ProxyUser = source.ProxyUser,
+            ProxyPassword = SecretProtector.Protect(source.ProxyPassword),
+            RemotePaths = new List<string>(source.RemotePaths ?? new List<string> { "/" }),
+            RetentionDays = source.RetentionDays,
+            EnableBackup = source.EnableBackup,
+            LocalBackupPath = source.LocalBackupPath,
+            IsDarkTheme = source.IsDarkTheme,
+            ThemeName = source.ThemeName,
+            SmtpHost = source.SmtpHost,
+            SmtpPort = source.SmtpPort,
+            SmtpEnableSsl = source.SmtpEnableSsl,
+            SmtpUser = source.SmtpUser,
+            SmtpPassword = SecretProtector.Protect(source.SmtpPassword),
+            SenderEmail = source.SenderEmail,
+            RecipientEmails = new List<string>(source.RecipientEmails ?? new List<string>()),
+            AutoSendEmailOnPreview = source.AutoSendEmailOnPreview,
+            Profiles = new List<FtpSiteProfile>()
+        };
+
+        if (source.Profiles != null)
+        {
+            foreach (var p in source.Profiles)
+            {
+                copy.Profiles.Add(new FtpSiteProfile
+                {
+                    Name = p.Name,
+                    Host = p.Host,
+                    Port = p.Port,
+                    EncryptionMode = p.EncryptionMode,
+                    Username = p.Username,
+                    Password = SecretProtector.Protect(p.Password),
+                    UseProxy = p.UseProxy,
+                    ProxyHost = p.ProxyHost,
+                    ProxyPort = p.ProxyPort,
+                    ProxyUser = p.ProxyUser,
+                    ProxyPassword = SecretProtector.Protect(p.ProxyPassword),
+                    RemotePaths = new List<string>(p.RemotePaths ?? new List<string> { "/" }),
+                    RetentionDays = p.RetentionDays,
+                    EnableBackup = p.EnableBackup,
+                    LocalBackupPath = p.LocalBackupPath,
+                    SmtpHost = p.SmtpHost,
+                    SmtpPort = p.SmtpPort,
+                    SmtpEnableSsl = p.SmtpEnableSsl,
+                    SmtpUser = p.SmtpUser,
+                    SmtpPassword = SecretProtector.Protect(p.SmtpPassword),
+                    SenderEmail = p.SenderEmail,
+                    RecipientEmails = new List<string>(p.RecipientEmails ?? new List<string>()),
+                    AutoSendEmailOnPreview = p.AutoSendEmailOnPreview
+                });
+            }
+        }
+
+        return copy;
     }
 
     public void EnsureProfilesInitialized(FtpSettings settings)

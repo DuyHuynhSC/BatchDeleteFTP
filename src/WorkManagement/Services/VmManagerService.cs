@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using WorkManagement.Helpers;
 using WorkManagement.Models;
 
 namespace WorkManagement.Services;
@@ -44,6 +45,26 @@ public class VmManagerService
                 var list = JsonSerializer.Deserialize<List<VirtualMachineEntry>>(json, _jsonOptions);
                 if (list != null)
                 {
+                    bool hadPlaintextPassword = false;
+                    foreach (var vm in list)
+                    {
+                        if (!string.IsNullOrEmpty(vm.Password) && !SecretProtector.IsEncrypted(vm.Password))
+                        {
+                            hadPlaintextPassword = true;
+                        }
+                        vm.Password = SecretProtector.Unprotect(vm.Password);
+                    }
+
+                    // Tự động nâng cấp file JSON cũ (chứa mật khẩu plain-text) sang chuẩn mã hóa DPAPI
+                    if (hadPlaintextPassword)
+                    {
+                        try
+                        {
+                            SaveAll(list);
+                        }
+                        catch { }
+                    }
+
                     return list;
                 }
             }
@@ -71,7 +92,15 @@ public class VmManagerService
                 Directory.CreateDirectory(dir);
             }
 
-            string json = JsonSerializer.Serialize(list, _jsonOptions);
+            // Tạo bản sao có mật khẩu đã mã hóa DPAPI để lưu xuống đĩa, giữ nguyên mật khẩu giải mã trên RAM
+            var encryptedList = list.Select(vm =>
+            {
+                var copy = vm.Clone();
+                copy.Password = SecretProtector.Protect(vm.Password);
+                return copy;
+            }).ToList();
+
+            string json = JsonSerializer.Serialize(encryptedList, _jsonOptions);
             File.WriteAllText(_storagePath, json);
         }
         catch (Exception ex)

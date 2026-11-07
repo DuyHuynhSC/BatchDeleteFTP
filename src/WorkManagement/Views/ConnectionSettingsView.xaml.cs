@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using WorkManagement.Models;
 using WorkManagement.Services;
@@ -19,6 +20,8 @@ public partial class ConnectionSettingsView : UserControl
     private FtpCleanupService _ftpService = null!;
     private AppLogger _logger = null!;
     private bool _suppressProfileSelectionChanged;
+    private bool _isFtpPasswordRevealed;
+    private bool _isProxyPasswordRevealed;
 
     public event EventHandler? SettingsSaved;
 
@@ -82,6 +85,7 @@ public partial class ConnectionSettingsView : UserControl
         CboEncryption.SelectedIndex = string.Equals(s.EncryptionMode, "Explicit", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
         TxtUser.Text = s.Username;
         TxtPassword.Password = s.Password;
+        TxtPasswordRevealed.Text = s.Password;
         TxtRetentionDays.Text = s.RetentionDays.ToString();
 
         ChkUseProxy.IsChecked = s.UseProxy;
@@ -89,6 +93,7 @@ public partial class ConnectionSettingsView : UserControl
         TxtProxyPort.Text = s.ProxyPort.ToString();
         TxtProxyUser.Text = s.ProxyUser;
         TxtProxyPassword.Password = s.ProxyPassword;
+        TxtProxyPasswordRevealed.Text = s.ProxyPassword;
 
         TxtRemotePaths.Text = string.Join(";", s.RemotePaths ?? new List<string> { "/" });
         ChkEnableBackup.IsChecked = s.EnableBackup;
@@ -116,6 +121,9 @@ public partial class ConnectionSettingsView : UserControl
             ? _settings.SelectedProfileName
             : CboProfiles.Text.Trim();
 
+        string ftpPass = _isFtpPasswordRevealed ? TxtPasswordRevealed.Text : TxtPassword.Password;
+        string proxyPass = _isProxyPasswordRevealed ? TxtProxyPasswordRevealed.Text : TxtProxyPassword.Password;
+
         return new FtpSettings
         {
             SelectedProfileName = profileName,
@@ -123,12 +131,12 @@ public partial class ConnectionSettingsView : UserControl
             Port = port,
             EncryptionMode = encTag,
             Username = TxtUser.Text.Trim(),
-            Password = TxtPassword.Password,
+            Password = ftpPass,
             UseProxy = ChkUseProxy.IsChecked == true,
             ProxyHost = TxtProxyHost.Text.Trim(),
             ProxyPort = proxyPort,
             ProxyUser = TxtProxyUser.Text.Trim(),
-            ProxyPassword = TxtProxyPassword.Password,
+            ProxyPassword = proxyPass,
             RemotePaths = FtpCleanupService.NormalizeRemotePaths(paths).ToList(),
             RetentionDays = retentionDays,
             EnableBackup = ChkEnableBackup.IsChecked == true,
@@ -144,6 +152,44 @@ public partial class ConnectionSettingsView : UserControl
             AutoSendEmailOnPreview = _settings.AutoSendEmailOnPreview,
             Profiles = _settings.Profiles
         };
+    }
+
+    private void BtnToggleFtpPassword_Click(object sender, RoutedEventArgs e)
+    {
+        _isFtpPasswordRevealed = !_isFtpPasswordRevealed;
+        if (_isFtpPasswordRevealed)
+        {
+            TxtPasswordRevealed.Text = TxtPassword.Password;
+            TxtPassword.Visibility = Visibility.Collapsed;
+            TxtPasswordRevealed.Visibility = Visibility.Visible;
+            IconFtpPassEye.Kind = PackIconKind.EyeOffOutline;
+        }
+        else
+        {
+            TxtPassword.Password = TxtPasswordRevealed.Text;
+            TxtPasswordRevealed.Visibility = Visibility.Collapsed;
+            TxtPassword.Visibility = Visibility.Visible;
+            IconFtpPassEye.Kind = PackIconKind.EyeOutline;
+        }
+    }
+
+    private void BtnToggleProxyPassword_Click(object sender, RoutedEventArgs e)
+    {
+        _isProxyPasswordRevealed = !_isProxyPasswordRevealed;
+        if (_isProxyPasswordRevealed)
+        {
+            TxtProxyPasswordRevealed.Text = TxtProxyPassword.Password;
+            TxtProxyPassword.Visibility = Visibility.Collapsed;
+            TxtProxyPasswordRevealed.Visibility = Visibility.Visible;
+            IconProxyPassEye.Kind = PackIconKind.EyeOffOutline;
+        }
+        else
+        {
+            TxtProxyPassword.Password = TxtProxyPasswordRevealed.Text;
+            TxtProxyPasswordRevealed.Visibility = Visibility.Collapsed;
+            TxtProxyPassword.Visibility = Visibility.Visible;
+            IconProxyPassEye.Kind = PackIconKind.EyeOutline;
+        }
     }
 
     private void ApplyToSettings(FtpSettings target)

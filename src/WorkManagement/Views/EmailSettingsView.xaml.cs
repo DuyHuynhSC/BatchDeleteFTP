@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using MaterialDesignThemes.Wpf;
 using WorkManagement.Models;
 using WorkManagement.Services;
 
@@ -13,6 +14,7 @@ public partial class EmailSettingsView : UserControl
     private FtpSettings _settings = new();
     private EmailNotificationService _emailService = null!;
     private Func<IReadOnlyList<FtpFileCandidate>>? _candidatesProvider;
+    private bool _isSmtpPasswordRevealed;
 
     public event EventHandler? SettingsSaved;
 
@@ -42,6 +44,7 @@ public partial class EmailSettingsView : UserControl
         ChkSmtpSsl.IsChecked = _settings.SmtpEnableSsl;
         TxtSmtpUser.Text = _settings.SmtpUser;
         TxtSmtpPassword.Password = _settings.SmtpPassword;
+        TxtSmtpPasswordRevealed.Text = _settings.SmtpPassword;
         TxtSenderEmail.Text = _settings.SenderEmail;
         TxtRecipientEmails.Text = _settings.RecipientEmails != null
             ? string.Join("; ", _settings.RecipientEmails)
@@ -55,15 +58,36 @@ public partial class EmailSettingsView : UserControl
         int.TryParse(TxtSmtpPort.Text, out int smtpPort);
         if (smtpPort <= 0) smtpPort = 25;
 
+        string smtpPass = _isSmtpPasswordRevealed ? TxtSmtpPasswordRevealed.Text : TxtSmtpPassword.Password;
+
         target.SmtpHost = TxtSmtpHost.Text.Trim();
         target.SmtpPort = smtpPort;
         target.SmtpEnableSsl = ChkSmtpSsl.IsChecked == true;
         target.SmtpUser = TxtSmtpUser.Text.Trim();
-        target.SmtpPassword = TxtSmtpPassword.Password;
+        target.SmtpPassword = smtpPass;
         target.SenderEmail = TxtSenderEmail.Text.Trim();
         target.RecipientEmails = EmailNotificationService.ParseRecipientEmails(TxtRecipientEmails.Text);
         target.AutoSendEmailOnPreview = ChkAutoSendOnPreview.IsChecked == true;
         ConfigService.SyncEmailSettingsAcrossAllProfiles(target);
+    }
+
+    private void BtnToggleSmtpPassword_Click(object sender, RoutedEventArgs e)
+    {
+        _isSmtpPasswordRevealed = !_isSmtpPasswordRevealed;
+        if (_isSmtpPasswordRevealed)
+        {
+            TxtSmtpPasswordRevealed.Text = TxtSmtpPassword.Password;
+            TxtSmtpPassword.Visibility = Visibility.Collapsed;
+            TxtSmtpPasswordRevealed.Visibility = Visibility.Visible;
+            IconSmtpPassEye.Kind = PackIconKind.EyeOffOutline;
+        }
+        else
+        {
+            TxtSmtpPassword.Password = TxtSmtpPasswordRevealed.Text;
+            TxtSmtpPasswordRevealed.Visibility = Visibility.Collapsed;
+            TxtSmtpPassword.Visibility = Visibility.Visible;
+            IconSmtpPassEye.Kind = PackIconKind.EyeOutline;
+        }
     }
 
     private void TxtRecipientEmails_TextChanged(object sender, TextChangedEventArgs e)

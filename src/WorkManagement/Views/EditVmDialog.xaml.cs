@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Windows;
+using MaterialDesignThemes.Wpf;
 using WorkManagement.Models;
 using WorkManagement.Services;
 
@@ -9,6 +10,7 @@ public partial class EditVmDialog : Window
 {
     public VirtualMachineEntry Entry { get; private set; }
     private readonly RemoteDesktopService _rdpService;
+    private bool _isPasswordRevealed;
 
     public EditVmDialog(VirtualMachineEntry? existing = null)
     {
@@ -37,6 +39,7 @@ public partial class EditVmDialog : Window
         TxtDomain.Text = Entry.DomainOrWorkgroup;
         TxtOs.Text = Entry.Os;
         TxtUsername.Text = Entry.Username;
+        PbPassword.Password = Entry.Password;
         TxtPassword.Text = Entry.Password;
         TxtTns.Text = Entry.Tns;
         TxtDatabaseName.Text = Entry.DatabaseName;
@@ -48,19 +51,40 @@ public partial class EditVmDialog : Window
 
     private void SaveToEntry()
     {
+        string rawPass = _isPasswordRevealed ? TxtPassword.Text : PbPassword.Password;
+
         Entry.No = TxtNo.Text.Trim();
         Entry.Ip = TxtIp.Text.Trim();
         Entry.MachineName = TxtMachineName.Text.Trim();
         Entry.DomainOrWorkgroup = TxtDomain.Text.Trim();
         Entry.Os = TxtOs.Text.Trim();
         Entry.Username = TxtUsername.Text.Trim();
-        Entry.Password = TxtPassword.Text.Trim();
+        Entry.Password = rawPass.Trim();
         Entry.Tns = TxtTns.Text.Trim();
         Entry.DatabaseName = TxtDatabaseName.Text.Trim();
         Entry.OracleVersion = TxtOracleVersion.Text.Trim();
         Entry.Tester = TxtTester.Text.Trim();
         Entry.Notes = TxtNotes.Text.Trim();
         Entry.ExpirationDate = string.IsNullOrWhiteSpace(TxtExpirationDate.Text) ? "Vô hạn" : TxtExpirationDate.Text.Trim();
+    }
+
+    private void BtnTogglePassword_Click(object sender, RoutedEventArgs e)
+    {
+        _isPasswordRevealed = !_isPasswordRevealed;
+        if (_isPasswordRevealed)
+        {
+            TxtPassword.Text = PbPassword.Password;
+            PbPassword.Visibility = Visibility.Collapsed;
+            TxtPassword.Visibility = Visibility.Visible;
+            IconPassEye.Kind = PackIconKind.EyeOffOutline;
+        }
+        else
+        {
+            PbPassword.Password = TxtPassword.Text;
+            TxtPassword.Visibility = Visibility.Collapsed;
+            PbPassword.Visibility = Visibility.Visible;
+            IconPassEye.Kind = PackIconKind.EyeOutline;
+        }
     }
 
     private async void BtnTestRdp_Click(object sender, RoutedEventArgs e)

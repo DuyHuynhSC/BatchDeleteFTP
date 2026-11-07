@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using WorkManagement.Helpers;
 using WorkManagement.Models;
 
 namespace WorkManagement.Services;
@@ -46,6 +48,26 @@ public class ProjectManagerService
                 var list = JsonSerializer.Deserialize<List<ProjectEntry>>(json, _jsonOptions);
                 if (list != null)
                 {
+                    bool hadPlaintextPassword = false;
+                    foreach (var proj in list)
+                    {
+                        if (!string.IsNullOrEmpty(proj.DbaPassword) && !SecretProtector.IsEncrypted(proj.DbaPassword))
+                        {
+                            hadPlaintextPassword = true;
+                        }
+                        proj.DbaPassword = SecretProtector.Unprotect(proj.DbaPassword);
+                    }
+
+                    // Tự động nâng cấp file JSON cũ (chứa mật khẩu DBA plain-text) sang chuẩn mã hóa DPAPI
+                    if (hadPlaintextPassword)
+                    {
+                        try
+                        {
+                            SaveAll(list);
+                        }
+                        catch { }
+                    }
+
                     return list;
                 }
             }
@@ -68,7 +90,15 @@ public class ProjectManagerService
                 Directory.CreateDirectory(dir);
             }
 
-            string json = JsonSerializer.Serialize(list, _jsonOptions);
+            // Tạo bản sao có mật khẩu DBA đã mã hóa DPAPI để lưu xuống đĩa, giữ nguyên mật khẩu giải mã trên RAM
+            var encryptedList = list.Select(p =>
+            {
+                var copy = p.Clone();
+                copy.DbaPassword = SecretProtector.Protect(p.DbaPassword);
+                return copy;
+            }).ToList();
+
+            string json = JsonSerializer.Serialize(encryptedList, _jsonOptions);
             File.WriteAllText(_storagePath, json);
         }
         catch (Exception ex)
