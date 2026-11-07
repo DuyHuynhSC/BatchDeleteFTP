@@ -33,7 +33,13 @@ public partial class CommandPaletteWindow : Window
         LstResults.ItemsSource = _filteredItems;
 
         ApplyFilter(string.Empty);
-        Loaded += (_, _) => TxtQuery.Focus();
+        Loaded += (_, _) =>
+        {
+            Activate();
+            Focus();
+            TxtQuery.Focus();
+            Keyboard.Focus(TxtQuery);
+        };
     }
 
     private void ApplyFilter(string query)

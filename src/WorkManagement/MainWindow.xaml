@@ -8,6 +8,8 @@
         Icon="pack://application:,,,/WorkManagement;component/Assets/app.ico"
         WindowStartupLocation="CenterScreen"
         PreviewKeyDown="MainWindow_PreviewKeyDown"
+        Closing="MainWindow_Closing"
+        Closed="MainWindow_Closed"
         Style="{StaticResource AppWindowStyle}">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -188,6 +190,16 @@
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
                                 <TextBlock Text="Tìm nhanh (Ctrl + K)" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="BtnMinimizeToTray" Style="{StaticResource AppOutlinedButtonStyle}"
+                                Height="30" Padding="10,0" Margin="0,0,10,0"
+                                Click="BtnMinimizeToTray_Click"
+                                ToolTip="Thu nhỏ ứng dụng chạy ngầm dưới Khay hệ thống (System Tray)">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="TrayArrowDown" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="Ẩn xuống Tray" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 

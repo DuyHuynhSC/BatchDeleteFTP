@@ -30,7 +30,13 @@ public partial class MainWindow : Window
     private FtpSettings _currentSettings = new();
     private bool _suppressProfileSelectionChanged;
     private bool _suppressThemeChanged;
-    private readonly List<string> _selectedScanProfileNames = new();
+    private readonly List<string> _selectedScanProfileNames = new();
+    private SystemTrayService? _systemTrayService;
+    private bool _isExplicitExit;
+    private bool _hasShownTrayBalloonOnce;
+    private bool _isCommandPaletteOpen;
+
+    public SystemTrayService? TrayService => _systemTrayService;
 
     public MainWindow() : this(new ConfigService(), new AppLogger())
     {
@@ -85,6 +91,90 @@ public partial class MainWindow : Window
         EmailConfigViewControl.SettingsSaved += EmailConfigViewControl_SettingsSaved;
 
         DashboardViewControl.OpenCommandPaletteRequested += (_, _) => OpenCommandPalette();
+
+        _systemTrayService = new SystemTrayService(
+            this,
+            _configService,
+            _currentSettings,
+            _logger,
+            RestoreFromTray,
+            OpenCommandPalette,
+            TriggerPreviewScanFromTray,
+            ExitApplicationExplicitly);
+    }
+
+    public void InitializeSystemTray(bool startMinimized = false)
+    {
+        _systemTrayService?.Initialize();
+        if (startMinimized)
+        {
+            MinimizeToTray(showNotification: true);
+        }
+    }
+
+    public void MinimizeToTray(bool showNotification = true)
+    {
+        _systemTrayService?.Initialize();
+        _systemTrayService?.SetTrayGlobalHotkeyEnabled(true);
+        ShowInTaskbar = false;
+        Hide();
+
+        if (showNotification && !_hasShownTrayBalloonOnce)
+        {
+            _hasShownTrayBalloonOnce = true;
+            _systemTrayService?.ShowBalloonNotification(
+                "WorkManagement đang chạy ngầm",
+                "Nhấn phím tắt Ctrl + K (hoặc Ctrl + Alt + K) bất cứ lúc nào để mở nhanh Command Palette, hoặc nhấp chuột phải vào biểu tượng Tray.");
+        }
+    }
+
+    public void RestoreFromTray()
+    {
+        _systemTrayService?.SetTrayGlobalHotkeyEnabled(false);
+        ShowInTaskbar = true;
+        Show();
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Maximized;
+        }
+        Activate();
+        Topmost = true;
+        Topmost = false;
+        Focus();
+    }
+
+    public void ExitApplicationExplicitly()
+    {
+        _isExplicitExit = true;
+        _systemTrayService?.Dispose();
+        Close();
+        Application.Current?.Shutdown();
+    }
+
+    private void TriggerPreviewScanFromTray()
+    {
+        SwitchToView(AppNavView.FtpCleaner);
+        MainTabControl.SelectedIndex = 0;
+        BtnPreview_Click(this, new RoutedEventArgs());
+    }
+
+    private void BtnMinimizeToTray_Click(object sender, RoutedEventArgs e)
+    {
+        MinimizeToTray(showNotification: true);
+    }
+
+    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (!_isExplicitExit && _currentSettings.MinimizeToTrayOnClose && _systemTrayService is { IsInitialized: true })
+        {
+            e.Cancel = true;
+            MinimizeToTray(showNotification: true);
+        }
+    }
+
+    private void MainWindow_Closed(object? sender, EventArgs e)
+    {
+        _systemTrayService?.Dispose();
     }
 
     private void FtpConfigViewControl_SettingsSaved(object? sender, EventArgs e)
@@ -1336,16 +1426,43 @@ public partial class MainWindow : Window
 
     public void OpenCommandPalette()
     {
-        var items = BuildCommandPaletteItems();
-        var palette = new CommandPaletteWindow(items)
-        {
-            Owner = this
-        };
+        if (_isCommandPaletteOpen) return;
+        _isCommandPaletteOpen = true;
 
-        if (palette.ShowDialog() == true && palette.SelectedCommand?.ExecuteAction != null)
+        try
         {
-            palette.SelectedCommand.ExecuteAction.Invoke();
+            var items = BuildCommandPaletteItems();
+            var palette = new CommandPaletteWindow(items);
+
+            if (IsVisible && WindowState != WindowState.Minimized)
+            {
+                palette.Owner = this;
+                palette.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            }
+            else
+            {
+                palette.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                palette.Topmost = true;
+            }
+
+            if (palette.ShowDialog() == true && palette.SelectedCommand?.ExecuteAction != null)
+            {
+                palette.SelectedCommand.ExecuteAction.Invoke();
+            }
         }
+        finally
+        {
+            _isCommandPaletteOpen = false;
+        }
+    }
+
+    private void NavigateAndRestore(AppNavView targetView)
+    {
+        if (!IsVisible || WindowState == WindowState.Minimized)
+        {
+            RestoreFromTray();
+        }
+        SwitchToView(targetView);
     }
 
     public List<CommandPaletteItem> BuildCommandPaletteItems()
@@ -1359,7 +1476,7 @@ public partial class MainWindow : Window
                 CategoryBadge = "ĐIỀU HƯỚNG",
                 IconKind = PackIconKind.ViewDashboardVariantOutline,
                 SearchKeywords = "dashboard tong quan thong ke log backup",
-                ExecuteAction = () => SwitchToView(AppNavView.Dashboard)
+                ExecuteAction = () => NavigateAndRestore(AppNavView.Dashboard)
             },
             new()
             {
@@ -1368,7 +1485,7 @@ public partial class MainWindow : Window
                 CategoryBadge = "ĐIỀU HƯỚNG",
                 IconKind = PackIconKind.FolderSyncOutline,
                 SearchKeywords = "ftp cleaner file manager xoa file",
-                ExecuteAction = () => SwitchToView(AppNavView.FtpCleaner)
+                ExecuteAction = () => NavigateAndRestore(AppNavView.FtpCleaner)
             },
             new()
             {
@@ -1377,7 +1494,7 @@ public partial class MainWindow : Window
                 CategoryBadge = "ĐIỀU HƯỚNG",
                 IconKind = PackIconKind.DesktopTowerMonitor,
                 SearchKeywords = "vm may ao server rdp remote desktop",
-                ExecuteAction = () => SwitchToView(AppNavView.VmManager)
+                ExecuteAction = () => NavigateAndRestore(AppNavView.VmManager)
             },
             new()
             {
@@ -1386,7 +1503,7 @@ public partial class MainWindow : Window
                 CategoryBadge = "ĐIỀU HƯỚNG",
                 IconKind = PackIconKind.FolderCogOutline,
                 SearchKeywords = "project du an oracle database tablespace",
-                ExecuteAction = () => SwitchToView(AppNavView.ProjectManager)
+                ExecuteAction = () => NavigateAndRestore(AppNavView.ProjectManager)
             },
             new()
             {
@@ -1395,7 +1512,7 @@ public partial class MainWindow : Window
                 CategoryBadge = "ĐIỀU HƯỚNG",
                 IconKind = PackIconKind.CalendarClock,
                 SearchKeywords = "scheduler lich chay tu dong task",
-                ExecuteAction = () => SwitchToView(AppNavView.TaskScheduler)
+                ExecuteAction = () => NavigateAndRestore(AppNavView.TaskScheduler)
             },
             new()
             {
@@ -1404,7 +1521,7 @@ public partial class MainWindow : Window
                 CategoryBadge = "CẤU HÌNH",
                 IconKind = PackIconKind.TuneVariant,
                 SearchKeywords = "config ftp proxy backup filter",
-                ExecuteAction = () => SwitchToView(AppNavView.FtpConfig)
+                ExecuteAction = () => NavigateAndRestore(AppNavView.FtpConfig)
             },
             new()
             {
@@ -1413,7 +1530,16 @@ public partial class MainWindow : Window
                 CategoryBadge = "CẤU HÌNH",
                 IconKind = PackIconKind.EmailFastOutline,
                 SearchKeywords = "email smtp mail bao cao",
-                ExecuteAction = () => SwitchToView(AppNavView.EmailConfig)
+                ExecuteAction = () => NavigateAndRestore(AppNavView.EmailConfig)
+            },
+            new()
+            {
+                Title = "Thu Nhỏ Ứng Dụng Chạy Ngầm Dưới Khay Hệ Thống (System Tray)",
+                Subtitle = "Ẩn cửa sổ chính xuống góc phải thanh Taskbar Windows",
+                CategoryBadge = "HỆ THỐNG",
+                IconKind = PackIconKind.TrayArrowDown,
+                SearchKeywords = "tray system tray an thu nho chay ngam minimize",
+                ExecuteAction = () => MinimizeToTray(showNotification: true)
             }
         };
 
@@ -1461,7 +1587,7 @@ public partial class MainWindow : Window
                         }
                         else
                         {
-                            SwitchToView(AppNavView.ProjectManager);
+                            NavigateAndRestore(AppNavView.ProjectManager);
                         }
                     }
                 });

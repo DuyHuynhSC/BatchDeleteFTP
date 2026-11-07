@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using WorkManagement.Helpers;
 using System.Collections.Generic;
@@ -136,6 +136,10 @@ public partial class App : Application
 
         var mainWindow = new MainWindow(configService, logger, ftpService, emailService);
         MainWindow = mainWindow;
-        mainWindow.Show();
+        mainWindow.InitializeSystemTray(startMinimized: cliOptions.StartMinimizedToTray);
+        if (!cliOptions.StartMinimizedToTray)
+        {
+            mainWindow.Show();
+        }
     }
 }

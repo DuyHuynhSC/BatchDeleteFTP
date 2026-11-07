@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -192,6 +192,16 @@ public class ConfigServiceTests
                 Assert.Equal(2121, readConn.Port);
                 Assert.Equal("test-user", readConn.Username);
                 Assert.Equal(5, readConn.RetentionDays);
+
+                // Verify SystemTrayService ContextMenu construction & CliOptions --tray parsing
+                Assert.NotNull(window.TrayService);
+                var trayMenu = window.TrayService!.BuildContextMenu();
+                Assert.NotNull(trayMenu);
+                Assert.True(trayMenu.Items.Count >= 6);
+
+                var cliTray = WorkManagement.Helpers.CliOptions.Parse(new[] { "--tray" });
+                Assert.True(cliTray.StartMinimizedToTray);
+                Assert.False(cliTray.IsConsoleMode);
             }
             catch (Exception ex)
             {

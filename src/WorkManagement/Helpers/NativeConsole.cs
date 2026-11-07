@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -12,6 +12,7 @@ public class CliOptions
     public bool IsPreviewOnly { get; init; }
     public bool IsAllProfiles { get; init; }
     public bool SendEmailIfCandidatesFound { get; init; }
+    public bool StartMinimizedToTray { get; init; }
 
     public static CliOptions Parse(string[] args)
     {
@@ -22,7 +23,8 @@ public class CliOptions
                 IsConsoleMode = false,
                 IsPreviewOnly = false,
                 IsAllProfiles = false,
-                SendEmailIfCandidatesFound = false
+                SendEmailIfCandidatesFound = false,
+                StartMinimizedToTray = false
             };
         }
 
@@ -48,12 +50,19 @@ public class CliOptions
             a.Equals("/send-email", StringComparison.OrdinalIgnoreCase) ||
             a.Equals("/email", StringComparison.OrdinalIgnoreCase));
 
+        bool startInTray = args.Any(a =>
+            a.Equals("--tray", StringComparison.OrdinalIgnoreCase) ||
+            a.Equals("--minimized", StringComparison.OrdinalIgnoreCase) ||
+            a.Equals("/tray", StringComparison.OrdinalIgnoreCase) ||
+            a.Equals("/minimized", StringComparison.OrdinalIgnoreCase));
+
         return new CliOptions
         {
             IsConsoleMode = isAuto || isPreview,
             IsPreviewOnly = isPreview,
             IsAllProfiles = isAll,
-            SendEmailIfCandidatesFound = sendEmail
+            SendEmailIfCandidatesFound = sendEmail,
+            StartMinimizedToTray = startInTray
         };
     }
 }

@@ -147,6 +147,7 @@ public class ConfigService
             LocalBackupPath = source.LocalBackupPath,
             IsDarkTheme = source.IsDarkTheme,
             ThemeName = source.ThemeName,
+            MinimizeToTrayOnClose = source.MinimizeToTrayOnClose,
             SmtpHost = source.SmtpHost,
             SmtpPort = source.SmtpPort,
             SmtpEnableSsl = source.SmtpEnableSsl,
