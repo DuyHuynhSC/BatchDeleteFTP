@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -466,6 +466,31 @@ public class ExcelImportService
         await Task.Run(() =>
         {
             MiniExcel.SaveAs(destinationPath, sampleRows, overwriteFile: true);
+        });
+    }
+
+    public async Task ExportVmListAsync(string destinationPath, IEnumerable<VirtualMachineEntry> entries)
+    {
+        var rows = entries.Select(v => new Dictionary<string, object>
+        {
+            ["No"] = v.No ?? string.Empty,
+            ["IP"] = v.Ip ?? string.Empty,
+            ["Tên máy"] = v.MachineName ?? string.Empty,
+            ["Domain / Workgroup"] = v.DomainOrWorkgroup ?? string.Empty,
+            ["OS"] = v.Os ?? string.Empty,
+            ["User"] = v.Username ?? string.Empty,
+            ["Password"] = v.Password ?? string.Empty,
+            ["TNS"] = v.Tns ?? string.Empty,
+            ["Database Name"] = v.DatabaseName ?? string.Empty,
+            ["Version Oracle"] = v.OracleVersion ?? string.Empty,
+            ["Người kiểm tra"] = v.Tester ?? string.Empty,
+            ["Ghi chú"] = v.Notes ?? string.Empty,
+            ["Ngày hết hạn"] = v.ExpirationDate ?? string.Empty
+        }).ToList();
+
+        await Task.Run(() =>
+        {
+            MiniExcel.SaveAs(destinationPath, rows, overwriteFile: true);
         });
     }
 

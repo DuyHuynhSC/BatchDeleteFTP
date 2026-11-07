@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 
 namespace WorkManagement.Models;
@@ -19,6 +19,9 @@ public class FtpSettings
     public string ProxyPassword { get; set; } = string.Empty;
     public List<string> RemotePaths { get; set; } = new() { "/" };
     public int RetentionDays { get; set; } = 1;
+    public string ExcludePatterns { get; set; } = string.Empty;
+    public string IncludeExtensions { get; set; } = string.Empty;
+    public double MinFileSizeMb { get; set; } = 0;
     public bool EnableBackup { get; set; } = true;
     public string LocalBackupPath { get; set; } = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Backups");
     public bool IsDarkTheme { get; set; } = false;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -197,7 +197,7 @@ public class FtpCleanupService
         foreach (string remoteRoot in targetPaths)
         {
             _logger.Info($"Đang quét đệ quy thư mục: {remoteRoot}");
-            await ScanDirectoryRecursiveAsync(client, remoteRoot, currentSystemDate, settings.RetentionDays, candidates, visitedFiles, ct);
+            await ScanDirectoryRecursiveAsync(client, remoteRoot, currentSystemDate, settings, candidates, visitedFiles, ct);
         }
 
         _logger.Info($"Quét hoàn tất. Tìm thấy {candidates.Count} file thỏa điều kiện xóa (SystemDate > UploadDate + {settings.RetentionDays}).");
@@ -208,12 +208,18 @@ public class FtpCleanupService
         AsyncFtpClient client,
         string currentPath,
         DateTime currentSystemDate,
-        int retentionDays,
+        FtpSettings settings,
         List<FtpFileCandidate> candidates,
         HashSet<string> visitedFiles,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
+        if (DateFilterRule.IsExcludedDirectory(currentPath, settings.ExcludePatterns))
+        {
+            _logger.Info($"[Bỏ qua] Thư mục '{currentPath}' nằm trong danh sách loại trừ an toàn (ExcludePatterns).");
+            return;
+        }
+
         FtpListItem[] items;
         try
         {
@@ -232,7 +238,7 @@ public class FtpCleanupService
             if (item.Type == FtpObjectType.Directory)
             {
                 if (item.Name is "." or "..") continue;
-                await ScanDirectoryRecursiveAsync(client, item.FullName, currentSystemDate, retentionDays, candidates, visitedFiles, ct);
+                await ScanDirectoryRecursiveAsync(client, item.FullName, currentSystemDate, settings, candidates, visitedFiles, ct);
             }
             else if (item.Type == FtpObjectType.File)
             {
@@ -249,7 +255,7 @@ public class FtpCleanupService
                 }
 
                 if (modified != DateTime.MinValue &&
-                    DateFilterRule.ShouldDelete(modified, currentSystemDate, retentionDays) &&
+                    DateFilterRule.ShouldDeleteCandidate(item.FullName, item.Name, item.Size, modified, currentSystemDate, settings) &&
                     visitedFiles.Add(item.FullName))
                 {
                     candidates.Add(new FtpFileCandidate
@@ -607,6 +613,60 @@ public class FtpCleanupService
         await ConnectOptimizedAsync(client, settings, ct);
         await client.CreateDirectory(target, true, ct);
         _logger.Info($"[FTP] Đã tạo thư mục trên FTP: '{target}'");
+    }
+
+    public async Task<bool> UploadSingleFileAsync(
+        FtpSettings settings,
+        string localFilePath,
+        string remoteFilePath,
+        CancellationToken ct = default)
+    {
+        if (!File.Exists(localFilePath)) return false;
+        string target = NormalizeSingleRemotePath(remoteFilePath);
+
+        await using var client = CreateClient(settings);
+        _logger.Info($"[Upload] Đang kết nối tới {settings.Host}:{settings.Port} để lưu đè '{target}'...");
+        await ConnectOptimizedAsync(client, settings, ct);
+
+        var status = await client.UploadFile(
+            localFilePath,
+            target,
+            FtpRemoteExists.Overwrite,
+            createRemoteDir: true,
+            verifyOptions: FtpVerify.None,
+            progress: null,
+            token: ct);
+
+        bool ok = status == FtpStatus.Success;
+        if (ok)
+        {
+            _logger.Info($"[Upload] Đã lưu và cập nhật file lên FTP thành công: '{target}'");
+        }
+        else
+        {
+            _logger.Error($"[Upload] Không thể cập nhật file '{target}' trên FTP.");
+        }
+
+        return ok;
+    }
+
+    public async Task<bool> RenameRemoteEntryAsync(
+        FtpSettings settings,
+        FileManagerEntry entry,
+        string newName,
+        CancellationToken ct = default)
+    {
+        if (entry == null || entry.IsParentEntry || string.IsNullOrWhiteSpace(newName)) return false;
+
+        string parentDir = GetParentRemotePath(entry.FullPath);
+        string newRemotePath = CombineRemotePath(parentDir, newName.Trim());
+        if (string.Equals(entry.FullPath, newRemotePath, StringComparison.Ordinal)) return true;
+
+        await using var client = CreateClient(settings);
+        await ConnectOptimizedAsync(client, settings, ct);
+        await client.Rename(entry.FullPath, newRemotePath, ct);
+        _logger.Info($"[FTP] Đã đổi tên '{entry.FullPath}' -> '{newRemotePath}'");
+        return true;
     }
 
     public async Task<(int DeletedCount, int FailedCount)> DeleteRemoteEntriesAsync(

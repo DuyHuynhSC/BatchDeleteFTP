@@ -154,4 +154,30 @@ public class ProjectExcelService
             MiniExcel.SaveAs(destinationPath, sampleRows, overwriteFile: true);
         });
     }
+
+    public Task ExportProjectsToExcelAsync(string destinationPath, IEnumerable<ProjectEntry> projects)
+    {
+        return Task.Run(() =>
+        {
+            var rows = projects.Select(p => new Dictionary<string, object>
+            {
+                ["No"] = p.No ?? string.Empty,
+                ["Project"] = p.ProjectName ?? string.Empty,
+                ["Giải thích thêm (Version - Mục đích)"] = p.Description ?? string.Empty,
+                ["Source Folder"] = p.SourceFolder ?? string.Empty,
+                ["tnsname (tham khảo file:"] = p.TnsName ?? string.Empty,
+                ["Host Server"] = p.HostServer ?? string.Empty,
+                ["Service Name"] = p.ServiceName ?? string.Empty,
+                ["Port"] = p.Port ?? string.Empty,
+                ["User"] = p.DbUsers ?? string.Empty,
+                ["Tablespace"] = p.Tablespace ?? string.Empty,
+                ["DBA User"] = p.DbaUsername ?? string.Empty,
+                ["Ghi chú"] = p.Notes ?? string.Empty,
+                ["Người phụ trách"] = p.PersonInCharge ?? string.Empty,
+                ["Ghi chú 2"] = p.Notes2 ?? string.Empty
+            }).ToList();
+
+            MiniExcel.SaveAs(destinationPath, rows, overwriteFile: true);
+        });
+    }
 }

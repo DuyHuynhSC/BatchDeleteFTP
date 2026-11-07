@@ -817,6 +817,41 @@ public partial class ProjectManagerView : UserControl
         }
     }
 
+    private async void BtnExportExcel_Click(object sender, RoutedEventArgs e)
+    {
+        var parent = Window.GetWindow(this);
+        var visibleItems = (_collectionView?.Cast<ProjectEntry>() ?? _displayEntries).ToList();
+        if (visibleItems.Count == 0)
+        {
+            MessageBox.Show(parent, "Không có dữ liệu dự án nào đang hiển thị để xuất Excel.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var selectedItems = visibleItems.Where(x => x.IsSelected).ToList();
+        var itemsToExport = selectedItems.Count > 0 ? selectedItems : visibleItems;
+
+        var sfd = new SaveFileDialog
+        {
+            Title = $"Xuất {itemsToExport.Count} dự án ra file Excel",
+            Filter = "File Excel (*.xlsx)|*.xlsx",
+            FileName = $"DanhSachDuAn_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+        };
+
+        if (sfd.ShowDialog(parent) != true) return;
+
+        try
+        {
+            await _excelService.ExportProjectsToExcelAsync(sfd.FileName, itemsToExport);
+            MessageBox.Show(parent,
+                $"Đã xuất thành công {itemsToExport.Count} dự án ra file Excel:\n{sfd.FileName}",
+                "Xuất Excel Thành Công", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(parent, $"Lỗi khi xuất file Excel: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     #endregion
 
     #region Copy & Quick Actions

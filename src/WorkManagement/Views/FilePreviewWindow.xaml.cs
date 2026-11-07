@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using WorkManagement.Models;
 using MaterialDesignThemes.Wpf;
@@ -15,12 +17,20 @@ public partial class FilePreviewWindow : Window
 {
     private readonly FileManagerEntry _entry;
     private readonly string _localFilePath;
+    private readonly Func<string, Task<bool>>? _saveToFtpCallback;
+    private bool _isTextFileEditable;
 
-    public FilePreviewWindow(FileManagerEntry entry, string localFilePath)
+    public bool HasSavedToFtp { get; private set; }
+
+    public FilePreviewWindow(
+        FileManagerEntry entry,
+        string localFilePath,
+        Func<string, Task<bool>>? saveToFtpCallback = null)
     {
         InitializeComponent();
         _entry = entry;
         _localFilePath = localFilePath;
+        _saveToFtpCallback = saveToFtpCallback;
 
         InitPreview();
     }
@@ -79,6 +89,7 @@ public partial class FilePreviewWindow : Window
             TextContainer.Visibility = Visibility.Collapsed;
             BinaryContainer.Visibility = Visibility.Collapsed;
             ChkWarpText.Visibility = Visibility.Collapsed;
+            ChkEditMode.Visibility = Visibility.Collapsed;
         }
         catch
         {
@@ -101,6 +112,8 @@ public partial class FilePreviewWindow : Window
             string content;
             if (fileInfo.Length > maxBytes)
             {
+                _isTextFileEditable = false;
+                ChkEditMode.Visibility = Visibility.Collapsed;
                 using var fs = new FileStream(_localFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 byte[] buffer = new byte[maxBytes];
                 int read = fs.Read(buffer, 0, maxBytes);
@@ -109,6 +122,8 @@ public partial class FilePreviewWindow : Window
             }
             else
             {
+                _isTextFileEditable = true;
+                ChkEditMode.Visibility = _saveToFtpCallback != null ? Visibility.Visible : Visibility.Collapsed;
                 content = File.ReadAllText(_localFilePath, Encoding.UTF8);
             }
 
@@ -132,6 +147,60 @@ public partial class FilePreviewWindow : Window
         ImageContainer.Visibility = Visibility.Collapsed;
         BinaryContainer.Visibility = Visibility.Visible;
         ChkWarpText.Visibility = Visibility.Collapsed;
+        ChkEditMode.Visibility = Visibility.Collapsed;
+    }
+
+    private void ChkEditMode_Changed(object sender, RoutedEventArgs e)
+    {
+        if (TxtContent == null || BtnSaveToFtp == null) return;
+        bool canEdit = _isTextFileEditable && ChkEditMode.IsChecked == true;
+        TxtContent.IsReadOnly = !canEdit;
+        TxtContent.AcceptsReturn = canEdit;
+        TxtContent.AcceptsTab = canEdit;
+        BtnSaveToFtp.Visibility = (canEdit && _saveToFtpCallback != null) ? Visibility.Visible : Visibility.Collapsed;
+        if (canEdit)
+        {
+            TxtContent.Focus();
+        }
+    }
+
+    private async void BtnSaveToFtp_Click(object sender, RoutedEventArgs e)
+    {
+        if (_saveToFtpCallback == null || !_isTextFileEditable) return;
+
+        BtnSaveToFtp.IsEnabled = false;
+        TxtSaveToFtpLabel.Text = "Đang lưu lên FTP...";
+        Mouse.OverrideCursor = Cursors.Wait;
+
+        try
+        {
+            await File.WriteAllTextAsync(_localFilePath, TxtContent.Text, Encoding.UTF8);
+            long newBytes = new FileInfo(_localFilePath).Length;
+            bool ok = await _saveToFtpCallback(_localFilePath);
+            if (ok)
+            {
+                _entry.Size = newBytes;
+                _entry.ModifiedDate = DateTime.Now;
+                TxtFileSize.Text = FileManagerEntry.FormatFileSize(newBytes);
+                TxtFileModified.Text = _entry.ModifiedFormatted;
+                HasSavedToFtp = true;
+                MessageBox.Show(this, $"Đã lưu và cập nhật file '{_entry.Name}' lên máy chủ FTP thành công!", "Lưu Thành Công", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show(this, $"Không thể tải file '{_entry.Name}' đè lên máy chủ FTP.", "Lỗi Upload", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Lỗi khi lưu file lên FTP:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+            TxtSaveToFtpLabel.Text = "Lưu & Upload Lên FTP";
+            BtnSaveToFtp.IsEnabled = true;
+        }
     }
 
     private void ChkWarpText_Changed(object sender, RoutedEventArgs e)

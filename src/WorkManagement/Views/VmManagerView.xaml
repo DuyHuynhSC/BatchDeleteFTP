@@ -46,6 +46,15 @@
                         </StackPanel>
                     </Button>
 
+                    <Button x:Name="BtnExportExcel" Style="{StaticResource AppTealButtonStyle}"
+                            Height="32" Padding="12,0" Margin="0,0,8,0" Click="BtnExportExcel_Click"
+                            ToolTip="Xuất danh sách máy ảo hiện tại (hoặc danh sách đang lọc/chọn) ra file Excel (.xlsx)">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FileExportOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Xuất Excel" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+
                     <Button x:Name="BtnDownloadTemplate" Style="{StaticResource AppOutlinedButtonStyle}"
                             Height="32" Padding="10,0" Margin="0,0,8,0" Click="BtnDownloadTemplate_Click"
                             ToolTip="Xuất file mẫu Excel để nhập liệu">

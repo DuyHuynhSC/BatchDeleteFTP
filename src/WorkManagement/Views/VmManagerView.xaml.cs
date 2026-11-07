@@ -855,6 +855,41 @@ public partial class VmManagerView : UserControl
             MessageBox.Show(parentWindow, $"Không thể xuất file mẫu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
+
+    private async void BtnExportExcel_Click(object sender, RoutedEventArgs e)
+    {
+        var parentWindow = Window.GetWindow(this);
+        var visibleItems = (_collectionView?.Cast<VirtualMachineEntry>() ?? _displayEntries).ToList();
+        if (visibleItems.Count == 0)
+        {
+            MessageBox.Show(parentWindow, "Không có dữ liệu máy ảo nào đang hiển thị để xuất Excel.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var selectedItems = visibleItems.Where(x => x.IsSelected).ToList();
+        var itemsToExport = selectedItems.Count > 0 ? selectedItems : visibleItems;
+
+        var sfd = new SaveFileDialog
+        {
+            Title = $"Xuất {itemsToExport.Count} máy ảo ra file Excel",
+            Filter = "File Excel (*.xlsx)|*.xlsx",
+            FileName = $"DanhSachMayAo_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+        };
+
+        if (sfd.ShowDialog(parentWindow) != true) return;
+
+        try
+        {
+            await _excelService.ExportVmListAsync(sfd.FileName, itemsToExport);
+            MessageBox.Show(parentWindow,
+                $"Đã xuất thành công {itemsToExport.Count} máy ảo ra file Excel:\n{sfd.FileName}",
+                "Xuất Excel Thành Công", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(parentWindow, $"Lỗi khi xuất file Excel: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
 }
 
 public class ColumnFilterItem : INotifyPropertyChanged

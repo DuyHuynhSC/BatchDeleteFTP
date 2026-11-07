@@ -96,6 +96,9 @@ public partial class ConnectionSettingsView : UserControl
         TxtProxyPasswordRevealed.Text = s.ProxyPassword;
 
         TxtRemotePaths.Text = string.Join(";", s.RemotePaths ?? new List<string> { "/" });
+        TxtExcludePatterns.Text = s.ExcludePatterns ?? string.Empty;
+        TxtIncludeExtensions.Text = s.IncludeExtensions ?? string.Empty;
+        TxtMinFileSizeMb.Text = s.MinFileSizeMb > 0 ? s.MinFileSizeMb.ToString("0.##") : "0";
         ChkEnableBackup.IsChecked = s.EnableBackup;
         TxtLocalBackupPath.Text = s.LocalBackupPath;
     }
@@ -110,6 +113,9 @@ public partial class ConnectionSettingsView : UserControl
 
         int.TryParse(TxtRetentionDays.Text, out int retentionDays);
         if (retentionDays < 0) retentionDays = 1;
+
+        double.TryParse(TxtMinFileSizeMb.Text, out double minSizeMb);
+        if (minSizeMb < 0) minSizeMb = 0;
 
         string encTag = (CboEncryption.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Implicit";
 
@@ -139,6 +145,9 @@ public partial class ConnectionSettingsView : UserControl
             ProxyPassword = proxyPass,
             RemotePaths = FtpCleanupService.NormalizeRemotePaths(paths).ToList(),
             RetentionDays = retentionDays,
+            ExcludePatterns = TxtExcludePatterns.Text.Trim(),
+            IncludeExtensions = TxtIncludeExtensions.Text.Trim(),
+            MinFileSizeMb = minSizeMb,
             EnableBackup = ChkEnableBackup.IsChecked == true,
             LocalBackupPath = TxtLocalBackupPath.Text.Trim(),
             IsDarkTheme = _settings.IsDarkTheme,
@@ -208,6 +217,9 @@ public partial class ConnectionSettingsView : UserControl
         target.ProxyPassword = read.ProxyPassword;
         target.RemotePaths = read.RemotePaths;
         target.RetentionDays = read.RetentionDays;
+        target.ExcludePatterns = read.ExcludePatterns;
+        target.IncludeExtensions = read.IncludeExtensions;
+        target.MinFileSizeMb = read.MinFileSizeMb;
         target.EnableBackup = read.EnableBackup;
         target.LocalBackupPath = read.LocalBackupPath;
     }

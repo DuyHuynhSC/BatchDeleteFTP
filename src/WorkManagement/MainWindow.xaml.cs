@@ -83,6 +83,8 @@ public partial class MainWindow : Window
 
         EmailConfigViewControl.Initialize(_currentSettings, _emailService, () => _candidates);
         EmailConfigViewControl.SettingsSaved += EmailConfigViewControl_SettingsSaved;
+
+        DashboardViewControl.OpenCommandPaletteRequested += (_, _) => OpenCommandPalette();
     }
 
     private void FtpConfigViewControl_SettingsSaved(object? sender, EventArgs e)
@@ -797,11 +799,23 @@ public partial class MainWindow : Window
             if (ok && File.Exists(localFile))
             {
                 entry.Status = "Đã mở";
-                var viewer = new FilePreviewWindow(entry, localFile)
+                var viewer = new FilePreviewWindow(
+                    entry,
+                    localFile,
+                    async updatedLocalPath =>
+                    {
+                        using var uploadCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+                        return await _ftpService.UploadSingleFileAsync(settings, updatedLocalPath, entry.FullPath, uploadCts.Token);
+                    })
                 {
                     Owner = this
                 };
                 viewer.ShowDialog();
+                if (viewer.HasSavedToFtp)
+                {
+                    entry.Status = "Đã cập nhật";
+                    await LoadFileManagerDirectoryAsync(_currentFmRemotePath);
+                }
             }
             else
             {
@@ -1056,6 +1070,140 @@ public partial class MainWindow : Window
 
     private void CtxFmRefresh_Click(object sender, RoutedEventArgs e) => BtnFmRefresh_Click(sender, e);
 
+    private async void CtxFmRename_Click(object sender, RoutedEventArgs e)
+    {
+        var items = GetSelectedOrActiveEntries();
+        if (items.Count == 0)
+        {
+            MessageBox.Show(this, "Vui lòng chọn một file hoặc thư mục để đổi tên.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var target = items[0];
+        string? newName = PromptDialogWindow.Show(
+            this,
+            "Đổi Tên Trên FTP",
+            $"Nhập tên mới cho '{target.Name}':",
+            target.Name,
+            PackIconKind.FormTextbox);
+
+        if (string.IsNullOrWhiteSpace(newName) || string.Equals(newName.Trim(), target.Name, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var settings = ReadSettingsFromUi();
+        SetFmBusy(true);
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            await _ftpService.RenameRemoteEntryAsync(settings, target, newName.Trim(), cts.Token);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"[File Manager] Lỗi khi đổi tên '{target.FullPath}': {ex.Message}");
+            MessageBox.Show(this, $"Không thể đổi tên:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetFmBusy(false);
+            await LoadFileManagerDirectoryAsync(_currentFmRemotePath);
+        }
+    }
+
+    private void CtxFmCopyPath_Click(object sender, RoutedEventArgs e)
+    {
+        var items = GetSelectedOrActiveEntries();
+        if (items.Count == 0) return;
+
+        try
+        {
+            string paths = string.Join(Environment.NewLine, items.Select(i => i.FullPath));
+            Clipboard.SetText(paths);
+            _logger.Info($"[File Manager] Đã sao chép đường dẫn vào Clipboard: {paths}");
+        }
+        catch { }
+    }
+
+    private void GridFileManager_DragOver(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            e.Effects = DragDropEffects.Copy;
+        }
+        else
+        {
+            e.Effects = DragDropEffects.None;
+        }
+        e.Handled = true;
+    }
+
+    private async void GridFileManager_Drop(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] droppedPaths || droppedPaths.Length == 0) return;
+
+        var uploadEntries = new List<FileManagerEntry>();
+        foreach (string path in droppedPaths)
+        {
+            if (File.Exists(path))
+            {
+                var fi = new FileInfo(path);
+                uploadEntries.Add(new FileManagerEntry
+                {
+                    Name = fi.Name,
+                    FullPath = path,
+                    IsDirectory = false,
+                    Size = fi.Length
+                });
+            }
+            else if (Directory.Exists(path))
+            {
+                var di = new DirectoryInfo(path);
+                uploadEntries.Add(new FileManagerEntry
+                {
+                    Name = di.Name,
+                    FullPath = path,
+                    IsDirectory = true
+                });
+            }
+        }
+
+        if (uploadEntries.Count == 0) return;
+
+        var confirm = MessageBox.Show(
+            this,
+            $"Bạn có muốn tải {uploadEntries.Count} mục vừa kéo thả lên thư mục FTP '{_currentFmRemotePath}' không?",
+            "Xác nhận Upload Kéo & Thả",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        var settings = ReadSettingsFromUi();
+        SetFmBusy(true);
+        try
+        {
+            _logger.Info($"[File Manager] Bắt đầu upload {uploadEntries.Count} mục (Kéo & Thả) lên '{_currentFmRemotePath}'...");
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(20));
+            var (success, failed) = await _ftpService.UploadItemsAsync(settings, uploadEntries, _currentFmRemotePath, cts.Token);
+
+            string msg = $"Hoàn tất tải lên (Drag & Drop)!\n- Thành công: {success} mục\n- Thất bại: {failed} mục";
+            _logger.Info($"[File Manager] {msg}");
+            MessageBox.Show(this, msg, "Kết quả Tải Lên", MessageBoxButton.OK, failed > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"[File Manager] Lỗi khi upload kéo thả: {ex.Message}");
+            MessageBox.Show(this, $"Lỗi khi tải lên:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetFmBusy(false);
+            await LoadFileManagerDirectoryAsync(_currentFmRemotePath);
+        }
+    }
+
     private void BtnClearLog_Click(object sender, RoutedEventArgs e)
     {
         TxtLogs.Clear();
@@ -1065,12 +1213,18 @@ public partial class MainWindow : Window
 
     public enum AppNavView
     {
+        Dashboard,
         FtpCleaner,
         VmManager,
         ProjectManager,
         TaskScheduler,
         FtpConfig,
         EmailConfig
+    }
+
+    private void NavBtnDashboard_Click(object sender, RoutedEventArgs e)
+    {
+        SwitchToView(AppNavView.Dashboard);
     }
 
     private void NavBtnFtp_Click(object sender, RoutedEventArgs e)
@@ -1095,6 +1249,8 @@ public partial class MainWindow : Window
 
     private void SwitchToView(AppNavView targetView)
     {
+        if (ViewContainerDashboard != null)
+            ViewContainerDashboard.Visibility = targetView == AppNavView.Dashboard ? Visibility.Visible : Visibility.Collapsed;
         ViewContainerFtp.Visibility = targetView == AppNavView.FtpCleaner ? Visibility.Visible : Visibility.Collapsed;
         ViewContainerVm.Visibility = targetView == AppNavView.VmManager ? Visibility.Visible : Visibility.Collapsed;
         ViewContainerProject.Visibility = targetView == AppNavView.ProjectManager ? Visibility.Visible : Visibility.Collapsed;
@@ -1102,6 +1258,8 @@ public partial class MainWindow : Window
         ViewContainerFtpConfig.Visibility = targetView == AppNavView.FtpConfig ? Visibility.Visible : Visibility.Collapsed;
         ViewContainerEmailConfig.Visibility = targetView == AppNavView.EmailConfig ? Visibility.Visible : Visibility.Collapsed;
 
+        if (NavBtnDashboard != null)
+            NavBtnDashboard.Style = (Style)FindResource(targetView == AppNavView.Dashboard ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
         NavBtnFtp.Style = (Style)FindResource(targetView == AppNavView.FtpCleaner ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
         NavBtnVm.Style = (Style)FindResource(targetView == AppNavView.VmManager ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
         if (NavBtnProject != null) NavBtnProject.Style = (Style)FindResource(targetView == AppNavView.ProjectManager ? "AppNavButtonActiveStyle" : "AppNavButtonInactiveStyle");
@@ -1111,6 +1269,13 @@ public partial class MainWindow : Window
 
         switch (targetView)
         {
+            case AppNavView.Dashboard:
+                TxtCurrentPageTitle.Text = "Tổng Quan Hệ Thống & Nhật Ký Kiểm Toán (Dashboard)";
+                TxtCurrentPageSub.Text = "Theo dõi số liệu máy ảo, dự án Oracle, cảnh báo hạn sử dụng và quản lý dung lượng sao lưu cục bộ";
+                IconCurrentPage.Kind = MaterialDesignThemes.Wpf.PackIconKind.ViewDashboardVariantOutline;
+                DashboardViewControl?.LoadDashboard();
+                break;
+
             case AppNavView.FtpCleaner:
                 TxtCurrentPageTitle.Text = "Quản Lý File & Tự Động Xóa FTP";
                 TxtCurrentPageSub.Text = "Quét, sao lưu và dọn dẹp file tự động theo ngày trên máy chủ FTP";
@@ -1153,6 +1318,158 @@ public partial class MainWindow : Window
                 EmailConfigViewControl.LoadFromSettings();
                 break;
         }
+    }
+
+    private void BtnHeaderCommandPalette_Click(object sender, RoutedEventArgs e)
+    {
+        OpenCommandPalette();
+    }
+
+    private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.K && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            e.Handled = true;
+            OpenCommandPalette();
+        }
+    }
+
+    public void OpenCommandPalette()
+    {
+        var items = BuildCommandPaletteItems();
+        var palette = new CommandPaletteWindow(items)
+        {
+            Owner = this
+        };
+
+        if (palette.ShowDialog() == true && palette.SelectedCommand?.ExecuteAction != null)
+        {
+            palette.SelectedCommand.ExecuteAction.Invoke();
+        }
+    }
+
+    public List<CommandPaletteItem> BuildCommandPaletteItems()
+    {
+        var items = new List<CommandPaletteItem>
+        {
+            new()
+            {
+                Title = "Mở Trang Tổng Quan (Dashboard & Audit Log)",
+                Subtitle = "Xem thống kê máy ảo, dự án, dung lượng backup và nhật ký hoạt động",
+                CategoryBadge = "ĐIỀU HƯỚNG",
+                IconKind = PackIconKind.ViewDashboardVariantOutline,
+                SearchKeywords = "dashboard tong quan thong ke log backup",
+                ExecuteAction = () => SwitchToView(AppNavView.Dashboard)
+            },
+            new()
+            {
+                Title = "Mở Quản Lý File & Tự Động Xóa FTP",
+                Subtitle = "Quét file quá hạn và duyệt file trực tiếp trên FTP Server",
+                CategoryBadge = "ĐIỀU HƯỚNG",
+                IconKind = PackIconKind.FolderSyncOutline,
+                SearchKeywords = "ftp cleaner file manager xoa file",
+                ExecuteAction = () => SwitchToView(AppNavView.FtpCleaner)
+            },
+            new()
+            {
+                Title = "Mở Danh Sách Máy Ảo (VMs & RDP)",
+                Subtitle = "Quản lý server, mật khẩu và kết nối Remote Desktop 1 chạm",
+                CategoryBadge = "ĐIỀU HƯỚNG",
+                IconKind = PackIconKind.DesktopTowerMonitor,
+                SearchKeywords = "vm may ao server rdp remote desktop",
+                ExecuteAction = () => SwitchToView(AppNavView.VmManager)
+            },
+            new()
+            {
+                Title = "Mở Quản Lý Dự Án & Oracle DB Cleanup",
+                Subtitle = "Quản lý source folder, DB Users, Tablespace và dọn dẹp dự án",
+                CategoryBadge = "ĐIỀU HƯỚNG",
+                IconKind = PackIconKind.FolderCogOutline,
+                SearchKeywords = "project du an oracle database tablespace",
+                ExecuteAction = () => SwitchToView(AppNavView.ProjectManager)
+            },
+            new()
+            {
+                Title = "Mở Lịch Chạy Tự Động (Windows Task Scheduler)",
+                Subtitle = "Thiết lập chạy ngầm mỗi sáng hoặc theo giờ cố định",
+                CategoryBadge = "ĐIỀU HƯỚNG",
+                IconKind = PackIconKind.CalendarClock,
+                SearchKeywords = "scheduler lich chay tu dong task",
+                ExecuteAction = () => SwitchToView(AppNavView.TaskScheduler)
+            },
+            new()
+            {
+                Title = "Cấu Hình Kết Nối FTP, Proxy & Bộ Lọc Nâng Cao",
+                Subtitle = "Thiết lập Site Profile, Whitelist Exclude, dung lượng tối thiểu và Backup",
+                CategoryBadge = "CẤU HÌNH",
+                IconKind = PackIconKind.TuneVariant,
+                SearchKeywords = "config ftp proxy backup filter",
+                ExecuteAction = () => SwitchToView(AppNavView.FtpConfig)
+            },
+            new()
+            {
+                Title = "Cấu Hình Gửi Email Báo Cáo (SMTP)",
+                Subtitle = "Thiết lập máy chủ gửi mail và danh sách người nhận",
+                CategoryBadge = "CẤU HÌNH",
+                IconKind = PackIconKind.EmailFastOutline,
+                SearchKeywords = "email smtp mail bao cao",
+                ExecuteAction = () => SwitchToView(AppNavView.EmailConfig)
+            }
+        };
+
+        // Thêm toàn bộ Máy ảo để gõ IP/Tên máy -> Enter là mở RDP ngay
+        try
+        {
+            var vmService = new VmManagerService();
+            var rdpService = new RemoteDesktopService(_logger);
+            foreach (var vm in vmService.LoadAll())
+            {
+                if (string.IsNullOrWhiteSpace(vm.Ip)) continue;
+                var capturedVm = vm;
+                items.Add(new CommandPaletteItem
+                {
+                    Title = $"Kết nối RDP: {capturedVm.MachineName} ({capturedVm.Ip})",
+                    Subtitle = $"User: {capturedVm.Username} | OS: {capturedVm.Os} | DB: {capturedVm.DatabaseName} ({capturedVm.Tns}) | KT: {capturedVm.Tester}",
+                    CategoryBadge = "MỞ RDP NGAY",
+                    IconKind = PackIconKind.RemoteDesktop,
+                    SearchKeywords = $"rdp {capturedVm.Ip} {capturedVm.MachineName} {capturedVm.DatabaseName} {capturedVm.Tns} {capturedVm.Tester}",
+                    ExecuteAction = async () => await rdpService.ConnectAsync(capturedVm)
+                });
+            }
+        }
+        catch { }
+
+        // Thêm toàn bộ Dự án để mở nhanh Source Folder hoặc xem dự án
+        try
+        {
+            var projService = new ProjectManagerService();
+            foreach (var proj in projService.LoadAll())
+            {
+                var capturedProj = proj;
+                items.Add(new CommandPaletteItem
+                {
+                    Title = $"Dự án: {capturedProj.ProjectName} (No: {capturedProj.No})",
+                    Subtitle = $"Folder: {capturedProj.SourceFolder} | Host DB: {capturedProj.HostServer} ({capturedProj.ServiceName}) | PIC: {capturedProj.PersonInCharge}",
+                    CategoryBadge = "DỰ ÁN",
+                    IconKind = PackIconKind.FolderOpenOutline,
+                    SearchKeywords = $"project du an {capturedProj.ProjectName} {capturedProj.No} {capturedProj.SourceFolder} {capturedProj.HostServer} {capturedProj.DbUsers}",
+                    ExecuteAction = () =>
+                    {
+                        if (!string.IsNullOrWhiteSpace(capturedProj.SourceFolder) && Directory.Exists(capturedProj.SourceFolder))
+                        {
+                            System.Diagnostics.Process.Start("explorer.exe", capturedProj.SourceFolder);
+                        }
+                        else
+                        {
+                            SwitchToView(AppNavView.ProjectManager);
+                        }
+                    }
+                });
+            }
+        }
+        catch { }
+
+        return items;
     }
 
     private bool _isDockExpanded = true;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -19,6 +19,9 @@ public class FtpSiteProfile
     public string ProxyPassword { get; set; } = string.Empty;
     public List<string> RemotePaths { get; set; } = new() { "/" };
     public int RetentionDays { get; set; } = 1;
+    public string ExcludePatterns { get; set; } = string.Empty;
+    public string IncludeExtensions { get; set; } = string.Empty;
+    public double MinFileSizeMb { get; set; } = 0;
     public bool EnableBackup { get; set; } = true;
     public string LocalBackupPath { get; set; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups");
 
@@ -47,6 +50,9 @@ public class FtpSiteProfile
         ProxyPassword = s.ProxyPassword,
         RemotePaths = new List<string>(s.RemotePaths != null && s.RemotePaths.Count > 0 ? s.RemotePaths : new List<string> { "/" }),
         RetentionDays = s.RetentionDays,
+        ExcludePatterns = s.ExcludePatterns ?? string.Empty,
+        IncludeExtensions = s.IncludeExtensions ?? string.Empty,
+        MinFileSizeMb = s.MinFileSizeMb,
         EnableBackup = s.EnableBackup,
         LocalBackupPath = s.LocalBackupPath,
         SmtpHost = s.SmtpHost,
@@ -74,6 +80,9 @@ public class FtpSiteProfile
         s.ProxyPassword = ProxyPassword;
         s.RemotePaths = new List<string>(RemotePaths != null && RemotePaths.Count > 0 ? RemotePaths : new List<string> { "/" });
         s.RetentionDays = RetentionDays;
+        s.ExcludePatterns = ExcludePatterns ?? string.Empty;
+        s.IncludeExtensions = IncludeExtensions ?? string.Empty;
+        s.MinFileSizeMb = MinFileSizeMb;
         s.EnableBackup = EnableBackup;
         s.LocalBackupPath = LocalBackupPath;
         // Do not override global email settings on profile switch

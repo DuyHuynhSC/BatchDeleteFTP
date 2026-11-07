@@ -7,6 +7,7 @@
         Height="840" Width="1280" MinHeight="700" MinWidth="1050"
         Icon="pack://application:,,,/WorkManagement;component/Assets/app.ico"
         WindowStartupLocation="CenterScreen"
+        PreviewKeyDown="MainWindow_PreviewKeyDown"
         Style="{StaticResource AppWindowStyle}">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -55,6 +56,16 @@
                     <StackPanel>
                         <TextBlock Text="CHỨC NĂNG CHÍNH" FontSize="10" FontWeight="Bold" Margin="10,0,0,8"
                                    Foreground="{DynamicResource AppHeaderForegroundBrush}" Opacity="0.7"/>
+
+                        <!-- NAV 0: DASHBOARD & AUDIT -->
+                        <Button x:Name="NavBtnDashboard" Style="{StaticResource AppNavButtonInactiveStyle}"
+                                Height="40" Margin="0,0,0,6" HorizontalContentAlignment="Left" Padding="12,0"
+                                Click="NavBtnDashboard_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ViewDashboardVariantOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Tổng Quan (Dashboard)" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
                         <!-- NAV 1: FTP CLEANER & MANAGER -->
                         <Button x:Name="NavBtnFtp" Style="{StaticResource AppPrimaryButtonStyle}"
@@ -168,25 +179,37 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Theme Switcher (Right) -->
-                    <Border HorizontalAlignment="Right" Background="{DynamicResource AppCardBackgroundBrush}"
-                            TextElement.Foreground="{DynamicResource AppPrimaryTextBrush}"
-                            BorderBrush="{DynamicResource AppHeaderPillBorderBrush}"
-                            BorderThickness="1" CornerRadius="6" Padding="8,3">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <materialDesign:PackIcon x:Name="IconThemeMode" Kind="PaletteOutline" Width="18" Height="18"
-                                                     Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="Theme:" FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <ComboBox x:Name="CboThemes" Width="148"
-                                      DisplayMemberPath="DisplayName"
-                                      SelectedValuePath="Kind"
-                                      VerticalContentAlignment="Center"
-                                      FontSize="12" FontWeight="SemiBold"
-                                      SelectionChanged="CboThemes_SelectionChanged"
-                                      ToolTip="Chọn phong cách giao diện (Material Light/Dark, Skeuomorphism, Neumorphism, Frutiger Aero...)"/>
-                        </StackPanel>
-                    </Border>
+                    <!-- Theme Switcher & Quick Command Palette (Right) -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button x:Name="BtnHeaderCommandPalette" Style="{StaticResource AppOutlinedButtonStyle}"
+                                Height="30" Padding="10,0" Margin="0,0,10,0"
+                                Click="BtnHeaderCommandPalette_Click"
+                                ToolTip="Tìm nhanh Máy ảo, Dự án, Mở RDP hoặc Chuyển trang (Ctrl + K)">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="Tìm nhanh (Ctrl + K)" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Border Background="{DynamicResource AppCardBackgroundBrush}"
+                                TextElement.Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                BorderBrush="{DynamicResource AppHeaderPillBorderBrush}"
+                                BorderThickness="1" CornerRadius="6" Padding="8,3">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon x:Name="IconThemeMode" Kind="PaletteOutline" Width="18" Height="18"
+                                                         Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Theme:" FontSize="12" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <ComboBox x:Name="CboThemes" Width="148"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Kind"
+                                          VerticalContentAlignment="Center"
+                                          FontSize="12" FontWeight="SemiBold"
+                                          SelectionChanged="CboThemes_SelectionChanged"
+                                          ToolTip="Chọn phong cách giao diện (Material Light/Dark, Skeuomorphism, Neumorphism, Frutiger Aero...)"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </DockPanel>
             </Border>
 
@@ -502,13 +525,16 @@
                                               AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="False"
                                               HeadersVisibility="Column" SelectionUnit="FullRow"
                                               GridLinesVisibility="Horizontal"
+                                              AllowDrop="True"
+                                              DragOver="GridFileManager_DragOver"
+                                              Drop="GridFileManager_Drop"
                                               materialDesign:DataGridAssist.CellPadding="8,5"
                                               materialDesign:DataGridAssist.ColumnHeaderPadding="8,6"
                                               BorderThickness="1" BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}"
                                               MouseDoubleClick="GridFileManager_MouseDoubleClick">
                                         <DataGrid.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Header="Xem File (Quick Preview / Open)" Click="CtxFmView_Click">
+                                                <MenuItem Header="Xem / Sửa Nhanh File (Quick Preview &amp; Edit)" Click="CtxFmView_Click">
                                                     <MenuItem.Icon>
                                                         <materialDesign:PackIcon Kind="EyeOutline" Width="16" Height="16"/>
                                                     </MenuItem.Icon>
@@ -516,6 +542,16 @@
                                                 <MenuItem Header="Tải Về Máy Tính (Download)" Click="CtxFmDownload_Click">
                                                     <MenuItem.Icon>
                                                         <materialDesign:PackIcon Kind="DownloadOutline" Width="16" Height="16"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Đổi Tên (Rename)..." Click="CtxFmRename_Click">
+                                                    <MenuItem.Icon>
+                                                        <materialDesign:PackIcon Kind="FormTextbox" Width="16" Height="16"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Sao Chép Đường Dẫn FTP (Copy Path)" Click="CtxFmCopyPath_Click">
+                                                    <MenuItem.Icon>
+                                                        <materialDesign:PackIcon Kind="ContentCopy" Width="16" Height="16"/>
                                                     </MenuItem.Icon>
                                                 </MenuItem>
                                                 <Separator/>
@@ -643,6 +679,11 @@
                 <!-- VIEW 5: EMAIL CONFIG -->
                 <Grid x:Name="ViewContainerEmailConfig" Visibility="Collapsed">
                     <views:EmailSettingsView x:Name="EmailConfigViewControl"/>
+                </Grid>
+
+                <!-- VIEW 6: DASHBOARD & AUDIT -->
+                <Grid x:Name="ViewContainerDashboard" Visibility="Collapsed">
+                    <views:DashboardView x:Name="DashboardViewControl"/>
                 </Grid>
             </Grid>
         </Grid>

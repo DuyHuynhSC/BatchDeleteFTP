@@ -1,0 +1,256 @@
+<UserControl x:Class="WorkManagement.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="720" d:DesignWidth="1120">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="14,10,14,14">
+        <StackPanel MaxWidth="1220" HorizontalAlignment="Stretch">
+
+            <!-- TOP ACTION BAR -->
+            <Border Style="{StaticResource AppSubtleToolbarBorderStyle}" Padding="14,10" Margin="0,0,0,12">
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="ShieldCrownOutline" Width="22" Height="22"
+                                                 Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Trung Tâm Chỉ Huy &amp; Thống Kê Hệ Thống (DevOps Command Center)" FontWeight="Bold" FontSize="13.5"/>
+                            <TextBlock x:Name="TxtLastRefreshed" Text="Cập nhật lúc: -" FontSize="11" Opacity="0.75"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button x:Name="BtnOpenCommandPalette" Style="{StaticResource AppPrimaryButtonStyle}"
+                                Height="32" Padding="14,0" Margin="0,0,8,0" Click="BtnOpenCommandPalette_Click"
+                                ToolTip="Mở thanh tìm kiếm &amp; thực thi lệnh nhanh (Phím tắt: Ctrl + K)">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ConsoleLine" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Command Palette (Ctrl + K)" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="BtnRefreshDashboard" Style="{StaticResource AppOutlinedButtonStyle}"
+                                Height="32" Padding="12,0" Click="BtnRefreshDashboard_Click"
+                                ToolTip="Làm mới toàn bộ số liệu thống kê">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="Làm Mới Số Liệu" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- 4 KPI SUMMARY CARDS -->
+            <UniformGrid Columns="4" Margin="0,0,0,12">
+                <!-- CARD 1: VIRTUAL MACHINES -->
+                <materialDesign:Card Margin="0,0,8,0" Padding="14,12">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock Text="MÁY ẢO (VMs &amp; RDP)" FontSize="11" FontWeight="Bold" Opacity="0.75" VerticalAlignment="Center"/>
+                            <materialDesign:PackIcon Kind="DesktopTowerMonitor" Width="22" Height="22" HorizontalAlignment="Right"
+                                                     Foreground="{DynamicResource AppSectionIconBrush}"/>
+                        </DockPanel>
+                        <TextBlock x:Name="TxtKpiVmTotal" Text="0" FontSize="26" FontWeight="Bold" Margin="0,2,0,4"/>
+                        <TextBlock x:Name="TxtKpiVmSub" Text="0 sắp hết hạn / quá hạn" FontSize="11.5" Opacity="0.8"/>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- CARD 2: PROJECTS & ORACLE DB -->
+                <materialDesign:Card Margin="4,0,4,0" Padding="14,12">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock Text="DỰ ÁN &amp; ORACLE DB" FontSize="11" FontWeight="Bold" Opacity="0.75" VerticalAlignment="Center"/>
+                            <materialDesign:PackIcon Kind="DatabaseCogOutline" Width="22" Height="22" HorizontalAlignment="Right"
+                                                     Foreground="{DynamicResource AppSectionIconBrush}"/>
+                        </DockPanel>
+                        <TextBlock x:Name="TxtKpiProjectTotal" Text="0" FontSize="26" FontWeight="Bold" Margin="0,2,0,4"/>
+                        <TextBlock x:Name="TxtKpiProjectSub" Text="0 DB servers quản lý" FontSize="11.5" Opacity="0.8"/>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- CARD 3: FTP PROFILES & SECURITY -->
+                <materialDesign:Card Margin="4,0,4,0" Padding="14,12">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock Text="FTP PROFILES &amp; DPAPI" FontSize="11" FontWeight="Bold" Opacity="0.75" VerticalAlignment="Center"/>
+                            <materialDesign:PackIcon Kind="ShieldLockOutline" Width="22" Height="22" HorizontalAlignment="Right"
+                                                     Foreground="{DynamicResource AppSectionIconBrush}"/>
+                        </DockPanel>
+                        <TextBlock x:Name="TxtKpiFtpProfiles" Text="0" FontSize="26" FontWeight="Bold" Margin="0,2,0,4"/>
+                        <TextBlock x:Name="TxtKpiSecuritySub" Text="Mật khẩu mã hóa DPAPI" FontSize="11.5" Opacity="0.8"/>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- CARD 4: LOCAL BACKUP & LOGS STORAGE -->
+                <materialDesign:Card Margin="8,0,0,0" Padding="14,12">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock Text="DUNG LƯỢNG BACKUP &amp; LOG" FontSize="11" FontWeight="Bold" Opacity="0.75" VerticalAlignment="Center"/>
+                            <materialDesign:PackIcon Kind="Harddisk" Width="22" Height="22" HorizontalAlignment="Right"
+                                                     Foreground="{DynamicResource AppSectionIconBrush}"/>
+                        </DockPanel>
+                        <TextBlock x:Name="TxtKpiBackupSize" Text="0 MB" FontSize="26" FontWeight="Bold" Margin="0,2,0,4"/>
+                        <TextBlock x:Name="TxtKpiBackupSub" Text="0 file sao lưu &amp; nhật ký" FontSize="11.5" Opacity="0.8"/>
+                    </StackPanel>
+                </materialDesign:Card>
+            </UniformGrid>
+
+            <!-- MIDDLE ROW: EXPIRING VMS ALERT & LOCAL BACKUP STORAGE CLEANER -->
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.25*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- LEFT: EXPIRING / EXPIRED VMS WATCHLIST -->
+                <materialDesign:Card Grid.Column="0" Padding="14,12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="200"/>
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="CalendarAlert" Width="19" Height="19"
+                                                         Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Cảnh Báo Máy Ảo Sắp Hết Hạn / Đã Quá Hạn (≤ 14 ngày)" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <DataGrid x:Name="GridExpiringVms" Grid.Row="1"
+                                  AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                                  HeadersVisibility="Column" SelectionUnit="FullRow"
+                                  GridLinesVisibility="Horizontal"
+                                  materialDesign:DataGridAssist.CellPadding="8,4"
+                                  materialDesign:DataGridAssist.ColumnHeaderPadding="8,5"
+                                  BorderThickness="1" BorderBrush="{DynamicResource AppSubtlePanelBorderBrush}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="IP" Binding="{Binding Ip}" Width="120" FontWeight="Bold"/>
+                                <DataGridTextColumn Header="Tên Máy" Binding="{Binding MachineName}" Width="140"/>
+                                <DataGridTextColumn Header="Người KT" Binding="{Binding Tester}" Width="95"/>
+                                <DataGridTextColumn Header="Hạn Sử Dụng" Binding="{Binding ExpirationDate}" Width="110"/>
+                                <DataGridTextColumn Header="Trạng Thái" Binding="{Binding StatusText}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- RIGHT: LOCAL BACKUP & LOG STORAGE MANAGER -->
+                <materialDesign:Card Grid.Column="2" Padding="14,12">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <materialDesign:PackIcon Kind="DeleteSweepOutline" Width="19" Height="19"
+                                                     Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Quản Lý &amp; Dọn Dẹp Ổ Đĩa Sao Lưu Cục Bộ" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Border Style="{StaticResource AppSubtleToolbarBorderStyle}" Padding="10,8" Margin="0,0,0,10">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,4">
+                                    <TextBlock Text="Thư mục FTP Backup:" FontSize="11.5" Opacity="0.8"/>
+                                    <TextBlock x:Name="TxtFtpBackupFolderInfo" Text="-" FontSize="11.5" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                </DockPanel>
+                                <DockPanel Margin="0,0,0,4">
+                                    <TextBlock Text="Thư mục Project Backup:" FontSize="11.5" Opacity="0.8"/>
+                                    <TextBlock x:Name="TxtProjBackupFolderInfo" Text="-" FontSize="11.5" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                </DockPanel>
+                                <DockPanel>
+                                    <TextBlock Text="Thư mục Nhật ký (Logs):" FontSize="11.5" Opacity="0.8"/>
+                                    <TextBlock x:Name="TxtLogFolderInfo" Text="-" FontSize="11.5" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Giữ lại bản backup/log trong:" VerticalAlignment="Center" FontSize="12" Margin="0,0,8,0"/>
+                                <ComboBox x:Name="CboRetentionLocalDays" Width="95" SelectedIndex="2" VerticalContentAlignment="Center" FontSize="12" FontWeight="Bold">
+                                    <ComboBoxItem Content="7 ngày" Tag="7"/>
+                                    <ComboBoxItem Content="14 ngày" Tag="14"/>
+                                    <ComboBoxItem Content="30 ngày" Tag="30"/>
+                                    <ComboBoxItem Content="60 ngày" Tag="60"/>
+                                    <ComboBoxItem Content="90 ngày" Tag="90"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <Button x:Name="BtnCleanOldLocalBackups" Grid.Column="1"
+                                    Style="{StaticResource AppDangerButtonStyle}"
+                                    Height="32" Padding="12,0" Click="BtnCleanOldLocalBackups_Click"
+                                    ToolTip="Xóa các bản sao lưu và file log trên máy cục bộ đã cũ hơn số ngày chọn">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Broom" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Dọn Backup Cũ" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <WrapPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="28" Padding="10,0" Margin="0,0,6,6"
+                                    Click="BtnOpenFtpBackupFolder_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FolderOpenOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Mở FTP Backups" FontSize="11.5" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="28" Padding="10,0" Margin="0,0,6,6"
+                                    Click="BtnOpenProjectBackupFolder_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FolderZipOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Mở Project Backups" FontSize="11.5" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource AppOutlinedButtonStyle}" Height="28" Padding="10,0" Margin="0,0,0,6"
+                                    Click="BtnOpenLogsFolder_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FileDocumentOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Mở Thư Mục Logs" FontSize="11.5" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </materialDesign:Card>
+            </Grid>
+
+            <!-- BOTTOM ROW: AUDIT LOG VIEWER -->
+            <materialDesign:Card Padding="14,12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="220"/>
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="History" Width="19" Height="19"
+                                                     Foreground="{DynamicResource AppSectionIconBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Nhật Ký Kiểm Toán &amp; Lịch Sử Hoạt Động Gần Đây (Audit Log)" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <ComboBox x:Name="CboLogFiles" DockPanel.Dock="Right" HorizontalAlignment="Right" Width="260"
+                                  FontSize="12" SelectionChanged="CboLogFiles_SelectionChanged"
+                                  ToolTip="Chọn file nhật ký theo ngày để tra cứu"/>
+                    </DockPanel>
+
+                    <Border Grid.Row="1" Style="{StaticResource AppTerminalBorderStyle}" Padding="8">
+                        <TextBox x:Name="TxtAuditLogViewer" IsReadOnly="True"
+                                 FontFamily="Consolas" FontSize="12"
+                                 Background="Transparent" Foreground="{DynamicResource AppTerminalForegroundBrush}"
+                                 BorderThickness="0"
+                                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+                    </Border>
+                </Grid>
+            </materialDesign:Card>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
